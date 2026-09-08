@@ -664,7 +664,7 @@ GEM
     reline (0.7.0)
       io-console (~> 0.5)
     require-hooks (0.5.1)
-    resend (1.13.0)
+    resend (1.14.0)
       base64
       httparty (>= 0.22.0)
     responders (3.2.1)
