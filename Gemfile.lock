@@ -821,7 +821,7 @@ GEM
       concurrent-ruby (~> 1.0, >= 1.0.2)
       logger
     sexp_processor (4.17.5)
-    simplecov (1.1.1)
+    simplecov (1.2.0)
     sin_lru_redux (2.5.3)
     sitemap_generator (7.1.1)
       builder (~> 3.0)
