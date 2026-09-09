@@ -5,69 +5,6 @@
 # Please instead update this file by running `bin/tapioca gem rails_semantic_logger`.
 
 
-# Upstream source (identical across supported versions):
-#   https://github.com/rails/rails/blob/v7.2.2/actioncable/lib/action_cable/connection/tagged_logger_proxy.rb
-#   https://github.com/rails/rails/blob/v8.0.2/actioncable/lib/action_cable/connection/tagged_logger_proxy.rb
-#   https://github.com/rails/rails/blob/v8.1.3/actioncable/lib/action_cable/connection/tagged_logger_proxy.rb
-#
-# pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/extensions/action_cable/tagged_logger_proxy.rb:7
-module ActionCable; end
-
-# pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/extensions/action_cable/tagged_logger_proxy.rb:8
-module ActionCable::Connection; end
-
-# pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/extensions/action_cable/tagged_logger_proxy.rb:9
-class ActionCable::Connection::TaggedLoggerProxy
-  # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/extensions/action_cable/tagged_logger_proxy.rb:32
-  def debug(message = T.unsafe(nil), payload = T.unsafe(nil), exception = T.unsafe(nil), &block); end
-
-  # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/extensions/action_cable/tagged_logger_proxy.rb:32
-  def error(message = T.unsafe(nil), payload = T.unsafe(nil), exception = T.unsafe(nil), &block); end
-
-  # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/extensions/action_cable/tagged_logger_proxy.rb:32
-  def fatal(message = T.unsafe(nil), payload = T.unsafe(nil), exception = T.unsafe(nil), &block); end
-
-  # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/extensions/action_cable/tagged_logger_proxy.rb:32
-  def info(message = T.unsafe(nil), payload = T.unsafe(nil), exception = T.unsafe(nil), &block); end
-
-  # Mirrors upstream #tag, including the `respond_to?(:tagged)` guard so a
-  # target logger without tagging support (e.g. when handed a non-tagged
-  # ActiveRecord::Base.logger by the worker pool) simply yields. Diverges in
-  # one place: upstream reads the already-applied tags via
-  # `logger.formatter.current_tags` (ActiveSupport::TaggedLogging), but
-  # Semantic Logger exposes them via `#tags`, so resolve from whichever the
-  # target logger supports. See #220.
-  #
-  # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/extensions/action_cable/tagged_logger_proxy.rb:17
-  def tag(logger, &_arg1); end
-
-  # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/extensions/action_cable/tagged_logger_proxy.rb:32
-  def unknown(message = T.unsafe(nil), payload = T.unsafe(nil), exception = T.unsafe(nil), &block); end
-
-  # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/extensions/action_cable/tagged_logger_proxy.rb:32
-  def warn(message = T.unsafe(nil), payload = T.unsafe(nil), exception = T.unsafe(nil), &block); end
-
-  private
-
-  # Tags already applied to the target logger, so they are not duplicated.
-  # Semantic Logger exposes them via `#tags`; ActiveSupport::TaggedLogging
-  # via `formatter.current_tags`. Fall back to none when neither is present.
-  #
-  # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/extensions/action_cable/tagged_logger_proxy.rb:59
-  def applied_tags_for(logger); end
-
-  # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/extensions/action_cable/tagged_logger_proxy.rb:51
-  def extended_signature?(logger, severity); end
-
-  # Only forward the extra payload/exception arguments when the wrapped logger's
-  # method can accept them. A standard Ruby Logger (e.g. the one wrapped by
-  # ActionCable::Connection::TestCase) only accepts a single `progname` argument
-  # and raises ArgumentError given more, so fall back to the single-arg call. See #317.
-  #
-  # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/extensions/action_cable/tagged_logger_proxy.rb:43
-  def forward(severity, message, payload, exception, &_arg4); end
-end
-
 # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/extensions/action_controller/live.rb:4
 module ActionController; end
 
@@ -257,6 +194,11 @@ end
 # against it when adding fields:
 #
 #   Rails 8.1: https://github.com/rails/rails/blob/8-1-stable/activerecord/lib/active_record/structured_event_subscriber.rb
+# Upstream source (identical across supported versions, only the namespace differs):
+#   https://github.com/rails/rails/blob/v7.2.2/actioncable/lib/action_cable/connection/tagged_logger_proxy.rb
+#   https://github.com/rails/rails/blob/v8.0.2/actioncable/lib/action_cable/connection/tagged_logger_proxy.rb
+#   https://github.com/rails/rails/blob/v8.1.3/actioncable/lib/action_cable/connection/tagged_logger_proxy.rb
+#   https://github.com/rails/rails/blob/main/actioncable/lib/action_cable/server/tagged_logger_proxy.rb
 #
 # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/options.rb:1
 module RailsSemanticLogger
@@ -324,6 +266,17 @@ module RailsSemanticLogger
     def unattach(subscriber); end
   end
 end
+
+# pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/extensions/action_cable/tagged_logger_proxy.rb:7
+module RailsSemanticLogger::ActionCable; end
+
+# Rails 8.2 moved the proxy from ActionCable::Connection to ActionCable::Server, as part of
+# the ActionCable::Server::Socket refactor, without leaving a back-compat alias behind.
+# Resolve whichever constant this version of ActionCable ships rather than hard-coding a
+# namespace, so that a `require` of the old path cannot fail the app's boot. See #326.
+#
+# pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/extensions/action_cable/tagged_logger_proxy.rb:12
+RailsSemanticLogger::ActionCable::TaggedLoggerProxy = ActionCable::Connection::TaggedLoggerProxy
 
 # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger.rb:6
 module RailsSemanticLogger::ActionController; end
@@ -1031,6 +984,25 @@ class RailsSemanticLogger::Options
   # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/options.rb:242
   def filter=(value); end
 
+  # Emit the deprecation warnings recorded by the deprecated appender option
+  # setters, and warn immediately from any later call. Called by the engine once
+  # Rails has applied the application's deprecation configuration.
+  #
+  # The deprecated options are documented to be set in `config/application.rb` or
+  # `config/environments/*.rb`, which Rails reads in `load_environment_config`,
+  # long before `active_support.deprecation_behavior` applies
+  # `config.active_support.report_deprecations`, `config.active_support.deprecation`,
+  # and any per-deprecator settings. Warning from the setter itself would therefore
+  # land in a window where nothing the application configures can reach it. The
+  # setters record instead, and this flushes once the settings are in place.
+  #
+  # Each option is reported once, attributed to the first place it was set, so an
+  # application setting several deprecated options gets one warning per option
+  # rather than one per assignment.
+  #
+  # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/options.rb:274
+  def flush_deprecations!; end
+
   # DEPRECATED: configure these on the appender instead, via #appenders.
   #
   # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/options.rb:139
@@ -1099,14 +1071,23 @@ class RailsSemanticLogger::Options
 
   private
 
-  # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/options.rb:261
+  # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/options.rb:284
   def deprecate_appender_option(option, via: T.unsafe(nil)); end
+
+  # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/options.rb:307
+  def deprecations_flushed?; end
+
+  # Deprecations recorded before Rails applied its deprecation configuration,
+  # keyed by option so that each is reported only once. See #flush_deprecations!.
+  #
+  # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/options.rb:303
+  def pending_deprecations; end
 
   # Warn when a setting consumed at the end of Rails initialization is changed
   # after the application has already booted. Unlike #warn_if_logger_initialized,
   # `config/initializers/*` is *not* too late for these, so it is not suggested.
   #
-  # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/options.rb:282
+  # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/options.rb:324
   def warn_if_fully_initialized(setting); end
 
   # Warn when an init-time setting is changed after the logger and its
@@ -1114,7 +1095,7 @@ class RailsSemanticLogger::Options
   # logger configuration in `config/initializers/*`, which Rails loads *after*
   # the logger is initialized, so the change silently has no effect.
   #
-  # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/options.rb:273
+  # pkg:gem/rails_semantic_logger#lib/rails_semantic_logger/options.rb:315
   def warn_if_logger_initialized(setting); end
 end
 

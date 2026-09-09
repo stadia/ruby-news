@@ -110,6 +110,12 @@ class LocalizedDisplayTest < ActiveSupport::TestCase
     assert @article.available_in?(:ja)
   end
 
+  test "available_in? for ja deserializes a persisted JSONB summary key" do
+    @article.update_columns(summary_key_ja: [ "永続化された要約" ])
+
+    assert @article.reload.available_in?(:ja)
+  end
+
   # 번역 완료 신호는 summary_key_ja 이므로, 일본어 원문 제목으로 title_ja 가
   # 미리 채워졌더라도 실제 번역(summary_key_ja) 전에는 :ja 로 노출하지 않는다.
   test "available_in? for ja is false when only title_ja present without summary_key_ja" do
