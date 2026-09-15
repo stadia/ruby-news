@@ -1523,9 +1523,6 @@ module ERB::DefMethod
   def def_erb_method(methodname, erb_or_fname); end
 
   class << self
-    # define _methodname_ as instance method of current module, using ERB
-    # object or eRuby file
-    #
     # pkg:gem/erb#lib/erb/def_method.rb:46
     def def_erb_method(methodname, erb_or_fname); end
   end
@@ -1572,19 +1569,6 @@ module ERB::Util
     # pkg:gem/erb#lib/erb/util.rb:75
     def u(s); end
 
-    # A utility method for encoding the String _s_ as a URL.
-    #
-    #   require "erb"
-    #   include ERB::Util
-    #
-    #   puts url_encode("Programming Ruby:  The Pragmatic Programmer's Guide")
-    #
-    # _Generates_
-    #
-    #   Programming%20Ruby%3A%20%20The%20Pragmatic%20Programmer%27s%20Guide
-    #
-    # cgi.gem <= v0.3.2
-    #
     # pkg:gem/erb#lib/erb/util.rb:76
     def url_encode(s); end
   end

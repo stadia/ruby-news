@@ -3051,7 +3051,7 @@ class NewRelic::Agent::Configuration::Manager
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:62
   def add_config_for_testing(source, level = T.unsafe(nil)); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:352
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:361
   def apply_mask(hash); end
 
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:265
@@ -3060,16 +3060,16 @@ class NewRelic::Agent::Configuration::Manager
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:166
   def boolean?(type, value); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:397
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:406
   def break_label_string_into_pairs(labels); end
 
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:150
   def config_category(klass); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:545
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:554
   def config_classes_for_testing; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:281
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:290
   def default_source; end
 
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:246
@@ -3078,7 +3078,7 @@ class NewRelic::Agent::Configuration::Manager
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:253
   def default_without_warning(key); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:531
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:540
   def delete_all_configs_for_testing; end
 
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:273
@@ -3090,10 +3090,10 @@ class NewRelic::Agent::Configuration::Manager
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:133
   def fetch(key); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:332
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:341
   def finished_configuring?; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:336
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:345
   def flattened; end
 
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:187
@@ -3112,7 +3112,7 @@ class NewRelic::Agent::Configuration::Manager
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:182
   def instrumentation_key?(key); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:290
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:299
   def invoke_callbacks(direction, source); end
 
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:52
@@ -3121,34 +3121,37 @@ class NewRelic::Agent::Configuration::Manager
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:242
   def likely_transformed_already?(key, value); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:458
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:467
   def limit_number_of_labels(pairs); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:518
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:527
   def log_config(direction, source); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:425
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:434
   def make_label_hash(pairs, labels = T.unsafe(nil)); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:514
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:523
   def new_cache; end
+
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:284
+  def normalized_case_match(allowlist, value); end
 
   # This event is intended to be fired once during the entire lifespan of
   # an agent run, after the server source has been applied for the first
   # time.  This should indicate that all configuration has been applied,
   # and the main functions of the agent are safe to start.
   #
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:328
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:337
   def notify_finished_configuring; end
 
   # This event is intended to be fired every time the server source is
   # applied.  This happens after the agent's initial connect, and again
   # on every forced reconnect.
   #
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:320
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:329
   def notify_server_source_added; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:541
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:550
   def num_configs_for_testing; end
 
   # permit an int to be supplied for a float based param and vice versa
@@ -3156,16 +3159,16 @@ class NewRelic::Agent::Configuration::Manager
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:200
   def numeric_conversion(value); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:473
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:482
   def parse_labels_from_dictionary; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:391
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:400
   def parse_labels_from_string; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:379
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:388
   def parsed_labels; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:285
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:294
   def register_callback(key, &proc); end
 
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:84
@@ -3176,7 +3179,7 @@ class NewRelic::Agent::Configuration::Manager
 
   # We only take the last value provided for a given label type key
   #
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:468
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:477
   def remove_duplicates(pairs); end
 
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:101
@@ -3185,12 +3188,12 @@ class NewRelic::Agent::Configuration::Manager
   # reset the configuration hash, but do not replace previously auto
   # determined dependency detection values with nil or 'auto'
   #
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:494
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:503
   def reset_cache; end
 
   # Generally only useful during initial construction and tests
   #
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:478
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:487
   def reset_to_defaults; end
 
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:125
@@ -3201,19 +3204,19 @@ class NewRelic::Agent::Configuration::Manager
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:205
   def string_conversion(value); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:359
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:368
   def to_collector_hash; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:444
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:453
   def truncate(text, key = T.unsafe(nil)); end
 
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:209
   def type_coerce(key, value, category); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:415
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:424
   def valid_label_item?(item); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:407
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:416
   def valid_label_pairs?(label_pairs); end
 
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:258
@@ -3221,7 +3224,7 @@ class NewRelic::Agent::Configuration::Manager
 
   private
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:551
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:560
   def config_stack; end
 end
 
@@ -3237,19 +3240,19 @@ NewRelic::Agent::Configuration::Manager::INSTRUMENTATION_DISABLED_VALUES = T.let
 # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:28
 NewRelic::Agent::Configuration::Manager::INSTRUMENTATION_VALUES = T.let(T.unsafe(nil), Array)
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:373
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:382
 NewRelic::Agent::Configuration::Manager::MALFORMED_LABELS_WARNING = T.let(T.unsafe(nil), String)
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:376
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:385
 NewRelic::Agent::Configuration::Manager::MAX_LABEL_COUNT = T.let(T.unsafe(nil), Integer)
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:377
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:386
 NewRelic::Agent::Configuration::Manager::MAX_LABEL_LENGTH = T.let(T.unsafe(nil), Integer)
 
 # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:30
 NewRelic::Agent::Configuration::Manager::NUMERIC_TYPES = T.let(T.unsafe(nil), Array)
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:374
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:383
 NewRelic::Agent::Configuration::Manager::PARSING_LABELS_FAILURE = T.let(T.unsafe(nil), String)
 
 # pkg:gem/newrelic_rpm#lib/new_relic/agent/configuration/manager.rb:31
@@ -5554,22 +5557,28 @@ end
 # pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:10
 module NewRelic::Agent::Hostname
   class << self
-    # pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:28
+    # The revision (Service, Worker Pool) or execution (Job) name for the
+    # Cloud Run resource this process belongs to, or nil when not on Cloud Run.
+    #
+    # pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:39
+    def cloud_run_revision; end
+
+    # pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:32
     def gcp_cloud_run?; end
 
-    # pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:33
+    # pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:43
     def gcp_cloud_run_host; end
 
-    # pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:44
+    # pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:54
     def gcp_instance_id; end
 
-    # pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:15
+    # pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:19
     def get; end
 
-    # pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:79
+    # pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:89
     def get_dyno_prefixes; end
 
-    # pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:97
+    # pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:107
     def get_external(host_or_ip); end
 
     # Pass '-f' to the external executable 'hostname' to request the fully
@@ -5580,27 +5589,32 @@ module NewRelic::Agent::Hostname
     # available (within an AWS Lambda function, for example), call the
     # 'get' method which uses Socket instead of an external executable.
     #
-    # pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:62
+    # pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:72
     def get_fqdn; end
 
-    # pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:73
+    # pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:83
     def heroku_dyno_name_prefix(dyno_name); end
 
-    # pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:93
+    # pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:103
     def local?(host_or_ip); end
   end
 end
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:11
-NewRelic::Agent::Hostname::CLOUD_RUN_REVISION = T.let(T.unsafe(nil), String)
+# Cloud Run sets a different revision variable per resource type: K_REVISION
+# on a Service, CLOUD_RUN_REVISION on a Worker Pool, and CLOUD_RUN_EXECUTION
+# on a Job. The first non-empty value identifies Cloud Run and names the revision.
+# https://docs.cloud.google.com/run/docs/container-contract#env-vars
+#
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:15
+NewRelic::Agent::Hostname::CLOUD_RUN_REVISION_VARS = T.let(T.unsafe(nil), Array)
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:12
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:16
 NewRelic::Agent::Hostname::GCP_INSTANCE_ID_URI = T.let(T.unsafe(nil), String)
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:13
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:17
 NewRelic::Agent::Hostname::GCP_METADATA_HEADERS = T.let(T.unsafe(nil), Hash)
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:83
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/hostname.rb:93
 NewRelic::Agent::Hostname::LOCALHOST = T.let(T.unsafe(nil), Array)
 
 # pkg:gem/newrelic_rpm#lib/new_relic/agent/monitors/inbound_request_monitor.rb:17
@@ -6311,94 +6325,97 @@ class NewRelic::Agent::JavaScriptInstrumentor
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:15
   def initialize(event_listener); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:171
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:183
   def add_attributes(data, txn); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:165
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:177
   def add_ssl_for_http(data); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:196
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:208
   def append_agent_attributes!(txn, atts); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:184
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:196
   def append_custom_attributes!(txn, atts); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:105
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:117
   def browser_timing_config(state, nonce = T.unsafe(nil)); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:85
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:97
   def browser_timing_header(nonce = T.unsafe(nil)); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:101
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:113
   def browser_timing_loader(nonce = T.unsafe(nil)); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:118
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:130
   def create_nonce(nonce = T.unsafe(nil)); end
 
   # NOTE: Internal prototyping may override this, so leave name stable!
   #
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:138
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:150
   def data_for_js_agent(transaction); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:29
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:41
   def enabled?; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:203
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:215
   def html_safe_if_needed(string); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:62
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:74
   def insert_js?(state); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:37
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:49
   def js_enabled_and_ready?; end
 
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:19
   def log_configuration; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:80
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:92
   def missing_config?(key); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:33
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:45
   def obfuscator; end
+
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:31
+  def warn_if_requested_version_not_used; end
 end
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:131
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:143
 NewRelic::Agent::JavaScriptInstrumentor::AGENT_KEY = T.let(T.unsafe(nil), String)
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:127
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:139
 NewRelic::Agent::JavaScriptInstrumentor::APPLICATIONID_KEY = T.let(T.unsafe(nil), String)
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:130
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:142
 NewRelic::Agent::JavaScriptInstrumentor::APPLICATION_TIME_KEY = T.let(T.unsafe(nil), String)
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:135
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:147
 NewRelic::Agent::JavaScriptInstrumentor::ATTS_AGENT_SUBKEY = T.let(T.unsafe(nil), String)
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:133
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:145
 NewRelic::Agent::JavaScriptInstrumentor::ATTS_KEY = T.let(T.unsafe(nil), String)
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:134
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:146
 NewRelic::Agent::JavaScriptInstrumentor::ATTS_USER_SUBKEY = T.let(T.unsafe(nil), String)
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:124
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:136
 NewRelic::Agent::JavaScriptInstrumentor::BEACON_KEY = T.let(T.unsafe(nil), String)
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:125
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:137
 NewRelic::Agent::JavaScriptInstrumentor::ERROR_BEACON_KEY = T.let(T.unsafe(nil), String)
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:126
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:138
 NewRelic::Agent::JavaScriptInstrumentor::LICENSE_KEY_KEY = T.let(T.unsafe(nil), String)
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:129
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:141
 NewRelic::Agent::JavaScriptInstrumentor::QUEUE_TIME_KEY = T.let(T.unsafe(nil), String)
 
 # pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:13
 NewRelic::Agent::JavaScriptInstrumentor::RUM_KEY_LENGTH = T.let(T.unsafe(nil), Integer)
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:132
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:144
 NewRelic::Agent::JavaScriptInstrumentor::SSL_FOR_HTTP_KEY = T.let(T.unsafe(nil), String)
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:128
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/javascript_instrumentor.rb:140
 NewRelic::Agent::JavaScriptInstrumentor::TRANSACTION_NAME_KEY = T.let(T.unsafe(nil), String)
 
 # pkg:gem/newrelic_rpm#lib/new_relic/agent/llm.rb:13
@@ -9346,42 +9363,42 @@ module NewRelic::Agent::SpanEventPrimitive
   # Builds a Hash of error attributes as well as the Span ID when
   # an error is present.  Otherwise, returns nil when no error present.
   #
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:62
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:64
   def error_attributes(segment); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:97
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:100
   def for_datastore_segment(segment); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:76
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:79
   def for_external_request_segment(segment); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:69
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:71
   def for_segment(segment); end
 
   private
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:197
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:200
   def agent_attributes(segment); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:228
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:231
   def allowed?(key); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:180
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:183
   def custom_attributes(segment); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:137
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:140
   def intrinsics_for(segment); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:190
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:193
   def merge_hashes(hash1, hash2); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:215
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:218
   def milliseconds_since_epoch(segment); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:207
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:210
   def parent_guid(segment); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:219
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:222
   def truncate(value, max_size = T.unsafe(nil)); end
 end
 
@@ -9394,6 +9411,9 @@ NewRelic::Agent::SpanEventPrimitive::CLIENT = T.let(T.unsafe(nil), String)
 # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:35
 NewRelic::Agent::SpanEventPrimitive::COMPONENT_KEY = T.let(T.unsafe(nil), String)
 
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:58
+NewRelic::Agent::SpanEventPrimitive::CONSUMER = T.let(T.unsafe(nil), String)
+
 # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:55
 NewRelic::Agent::SpanEventPrimitive::DATASTORE_CATEGORY = T.let(T.unsafe(nil), String)
 
@@ -9403,7 +9423,7 @@ NewRelic::Agent::SpanEventPrimitive::DB_INSTANCE_KEY = T.let(T.unsafe(nil), Stri
 # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:37
 NewRelic::Agent::SpanEventPrimitive::DB_STATEMENT_KEY = T.let(T.unsafe(nil), String)
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:58
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:60
 NewRelic::Agent::SpanEventPrimitive::DB_STATEMENT_MAX_BYTES = T.let(T.unsafe(nil), Integer)
 
 # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:38
@@ -9463,6 +9483,9 @@ NewRelic::Agent::SpanEventPrimitive::PEER_HOSTNAME_KEY = T.let(T.unsafe(nil), St
 
 # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:25
 NewRelic::Agent::SpanEventPrimitive::PRIORITY_KEY = T.let(T.unsafe(nil), String)
+
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:57
+NewRelic::Agent::SpanEventPrimitive::PRODUCER = T.let(T.unsafe(nil), String)
 
 # pkg:gem/newrelic_rpm#lib/new_relic/agent/span_event_primitive.rb:24
 NewRelic::Agent::SpanEventPrimitive::SAMPLED_KEY = T.let(T.unsafe(nil), String)
@@ -11674,7 +11697,7 @@ class NewRelic::Agent::Transaction::AbstractSegment
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:30
   def initialize(name = T.unsafe(nil), start_time = T.unsafe(nil)); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:129
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:130
   def all_code_information_present?; end
 
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:23
@@ -11683,16 +11706,16 @@ class NewRelic::Agent::Transaction::AbstractSegment
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:23
   def children_time=(_arg0); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:112
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:113
   def children_time_ranges?; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:133
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:134
   def code_attributes; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:120
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:121
   def code_information=(info = T.unsafe(nil)); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:116
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:117
   def concurrent_children?; end
 
   # This class is the base class for all segments. It is responsible for
@@ -11737,13 +11760,13 @@ class NewRelic::Agent::Transaction::AbstractSegment
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:22
   def exclusive_duration; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:94
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:95
   def finalize; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:66
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:67
   def finish; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:78
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:79
   def finished?; end
 
   # This class is the base class for all segments. It is responsible for
@@ -11760,7 +11783,7 @@ class NewRelic::Agent::Transaction::AbstractSegment
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:22
   def guid; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:144
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:145
   def inspect; end
 
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:23
@@ -11775,19 +11798,19 @@ class NewRelic::Agent::Transaction::AbstractSegment
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:23
   def name=(_arg0); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:165
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:166
   def notice_error(exception, options = T.unsafe(nil)); end
 
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:25
   def noticed_error; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:176
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:177
   def noticed_error_attributes; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:100
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:101
   def params; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:104
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:105
   def params?; end
 
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:23
@@ -11799,25 +11822,31 @@ class NewRelic::Agent::Transaction::AbstractSegment
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:24
   def record_metrics=(_arg0); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:82
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:83
   def record_metrics?; end
 
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:24
   def record_on_finish=(_arg0); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:90
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:91
   def record_on_finish?; end
 
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:24
   def record_scoped_metric=(_arg0); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:86
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:87
   def record_scoped_metric?; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:155
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:156
   def set_noticed_error(noticed_error); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:59
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:23
+  def span_kind; end
+
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:23
+  def span_kind=(_arg0); end
+
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:60
   def start; end
 
   # This class is the base class for all segments. It is responsible for
@@ -11862,7 +11891,7 @@ class NewRelic::Agent::Transaction::AbstractSegment
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:22
   def thread_id; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:108
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:109
   def time_range; end
 
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:23
@@ -11873,7 +11902,7 @@ class NewRelic::Agent::Transaction::AbstractSegment
 
   # callback for subclasses to override
   #
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:152
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:153
   def transaction_assigned; end
 
   # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:23
@@ -11884,10 +11913,10 @@ class NewRelic::Agent::Transaction::AbstractSegment
 
   protected
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:197
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:198
   def child_complete(segment); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:190
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:191
   def child_start(segment); end
 
   # When a child segment completes after its parent, we need to propagate
@@ -11897,29 +11926,29 @@ class NewRelic::Agent::Transaction::AbstractSegment
   # we can stop the propagation. We pass along the direct child so we can
   # make any corrections needed for exclusive time calculation.
   #
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:213
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:214
   def descendant_complete(child, descendant); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:184
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:185
   def range_recorded=(_arg0); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:186
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:187
   def range_recorded?; end
 
   private
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:231
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:232
   def add_child_timing(segment); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:237
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:238
   def force_finish; end
 
   # for segment callback usage info, see self.set_segment_callback
   #
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:339
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:340
   def invoke_callback; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:281
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:282
   def metric_cache; end
 
   # Child segments operating concurrently with this segment may have
@@ -11938,39 +11967,39 @@ class NewRelic::Agent::Transaction::AbstractSegment
   # segment's own time range. Keep a running sum of all of the overlap
   # amounts and then return it.
   #
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:310
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:311
   def overlapping_duration; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:289
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:290
   def range_overlap(range); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:285
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:286
   def ranges_intersect?(r1, r2); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:258
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:259
   def record_child_time(child); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:271
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:272
   def record_child_time_as_number(child); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:266
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:267
   def record_child_time_as_range(child); end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:275
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:276
   def record_exclusive_duration; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:250
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:251
   def record_metrics; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:244
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:245
   def run_complete_callbacks; end
 
   # callback for subclasses to override
   #
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:255
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:256
   def segment_complete; end
 
-  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:330
+  # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:331
   def transaction_state; end
 
   class << self
@@ -12004,7 +12033,7 @@ class NewRelic::Agent::Transaction::AbstractSegment
     # in non-production environments before being introduced to production
     # environments.
     #
-    # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:378
+    # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:379
     def set_segment_callback(callback_proc); end
   end
 end
@@ -12012,7 +12041,7 @@ end
 # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:27
 NewRelic::Agent::Transaction::AbstractSegment::CALLBACK = T.let(T.unsafe(nil), Symbol)
 
-# pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:142
+# pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:143
 NewRelic::Agent::Transaction::AbstractSegment::INSPECT_IGNORE = T.let(T.unsafe(nil), Array)
 
 # pkg:gem/newrelic_rpm#lib/new_relic/agent/transaction/abstract_segment.rb:28

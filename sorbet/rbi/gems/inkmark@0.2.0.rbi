@@ -50,17 +50,17 @@
 # @example Recommended profile
 #   Inkmark.to_html(md, options: { preset: :recommended })
 #
-# pkg:gem/inkmark#lib/inkmark.rb:49
+# pkg:gem/inkmark#lib/inkmark.rb:47
 class Inkmark
   # Create a new renderer for +source+.
   #
   # @param source [String, nil] markdown source; +nil+ is treated as an
   #   empty string
   # @param options [Hash, Inkmark::Options, nil] rendering options; falls back
-  #   to a dup of {Inkmark.default_options} when nil
+  #   to a mutable copy of {Inkmark.default_options} when nil
   # @raise [TypeError] if +options+ is not a Hash, Inkmark::Options, or nil
   #
-  # pkg:gem/inkmark#lib/inkmark.rb:423
+  # pkg:gem/inkmark#lib/inkmark.rb:458
   def initialize(source = T.unsafe(nil), options: T.unsafe(nil)); end
 
   # Chunk the document by heading into an Array of section Hashes, with
@@ -73,7 +73,7 @@ class Inkmark
   #   (if +statistics: true+) are recomputed on the truncated content.
   # @return [Array<Hash>] section records
   #
-  # pkg:gem/inkmark#lib/inkmark.rb:581
+  # pkg:gem/inkmark#lib/inkmark.rb:616
   def chunks_by_heading(truncate: T.unsafe(nil)); end
 
   # Split the stored document into sliding-window chunks. See
@@ -82,7 +82,7 @@ class Inkmark
   # @return [Array<Hash>] each +{index:, content:}+, with counts
   #   when +statistics: true+
   #
-  # pkg:gem/inkmark#lib/inkmark.rb:593
+  # pkg:gem/inkmark#lib/inkmark.rb:628
   def chunks_by_size(chars: T.unsafe(nil), words: T.unsafe(nil), overlap: T.unsafe(nil), at: T.unsafe(nil)); end
 
   # Return structured extracts for the element kinds requested via
@@ -105,7 +105,7 @@ class Inkmark
   #   md.extracts[:images]
   #   #=> [{ src: "cat.png", alt: "cat", title: "", byte_range: 12...28 }]
   #
-  # pkg:gem/inkmark#lib/inkmark.rb:672
+  # pkg:gem/inkmark#lib/inkmark.rb:707
   def extracts; end
 
   # Return the parsed frontmatter as a Hash, or +nil+ when the document
@@ -114,6 +114,9 @@ class Inkmark
   # The raw YAML text is extracted by Rust during the event walk;
   # parsing uses Ruby's stdlib +YAML.safe_load+ so all standard YAML
   # types (strings, numbers, arrays, nested hashes) are supported.
+  # Psych is loaded here, on first use, rather than with the gem: front
+  # matter is opt-in, and this keeps Psych's load time and its own
+  # constants out of processes that never enable it.
   #
   # @return [Hash, nil] parsed frontmatter or nil
   # @example
@@ -121,7 +124,7 @@ class Inkmark
   #                   options: { frontmatter: true })
   #   md.frontmatter  #=> { "title" => "Hello" }
   #
-  # pkg:gem/inkmark#lib/inkmark.rb:690
+  # pkg:gem/inkmark#lib/inkmark.rb:728
   def frontmatter; end
 
   # Register a handler block for a document element kind.
@@ -145,7 +148,7 @@ class Inkmark
   # @example Replace mermaid code blocks
   #   md.on(:code_block) { |c| c.html = Mermaid.render(c.source) if c.lang == "mermaid" }
   #
-  # pkg:gem/inkmark#lib/inkmark.rb:496
+  # pkg:gem/inkmark#lib/inkmark.rb:531
   def on(kind, &block); end
 
   # @!attribute [r] source
@@ -157,17 +160,17 @@ class Inkmark
   #   The rendering options for this instance.
   #   @return [Inkmark::Options]
   #
-  # pkg:gem/inkmark#lib/inkmark.rb:437
+  # pkg:gem/inkmark#lib/inkmark.rb:472
   def options; end
 
   # Set rendering options.
   #
-  # @param value [Hash, Inkmark::Options, nil] new options; nil resets to a dup
-  #   of {Inkmark.default_options}
+  # @param value [Hash, Inkmark::Options, nil] new options; nil resets to a
+  #   mutable copy of {Inkmark.default_options}
   # @return [Inkmark::Options] the stored options object
   # @raise [TypeError] if +value+ is not a Hash, Inkmark::Options, or nil
   #
-  # pkg:gem/inkmark#lib/inkmark.rb:466
+  # pkg:gem/inkmark#lib/inkmark.rb:501
   def options=(value); end
 
   # @!attribute [r] source
@@ -179,7 +182,7 @@ class Inkmark
   #   The rendering options for this instance.
   #   @return [Inkmark::Options]
   #
-  # pkg:gem/inkmark#lib/inkmark.rb:437
+  # pkg:gem/inkmark#lib/inkmark.rb:472
   def source; end
 
   # Set the markdown source.
@@ -188,7 +191,7 @@ class Inkmark
   #   via +#to_s+
   # @return [String] the stored source
   #
-  # pkg:gem/inkmark#lib/inkmark.rb:456
+  # pkg:gem/inkmark#lib/inkmark.rb:491
   def source=(value); end
 
   # Return the collected document statistics as a Hash, or +nil+ when
@@ -204,7 +207,7 @@ class Inkmark
   #
   # @return [Hash, nil]
   #
-  # pkg:gem/inkmark#lib/inkmark.rb:647
+  # pkg:gem/inkmark#lib/inkmark.rb:682
   def statistics; end
 
   # Render the stored source to HTML using the stored options.
@@ -216,7 +219,7 @@ class Inkmark
   #
   # @return [String] rendered HTML, or an empty string when source is empty
   #
-  # pkg:gem/inkmark#lib/inkmark.rb:527
+  # pkg:gem/inkmark#lib/inkmark.rb:562
   def to_html; end
 
   # Apply the filter pipeline and serialize back to Markdown text.
@@ -232,7 +235,7 @@ class Inkmark
   #
   # @return [String] filtered Markdown, or an empty string when source is empty
   #
-  # pkg:gem/inkmark#lib/inkmark.rb:557
+  # pkg:gem/inkmark#lib/inkmark.rb:592
   def to_markdown; end
 
   # Serialize the parsed document to plain text. Runs the same event-
@@ -241,7 +244,7 @@ class Inkmark
   #
   # @return [String] plain-text output, or an empty string when source is empty
   #
-  # pkg:gem/inkmark#lib/inkmark.rb:567
+  # pkg:gem/inkmark#lib/inkmark.rb:602
   def to_plain_text; end
 
   # Coerce the renderer to a String by returning the stored source.
@@ -253,7 +256,7 @@ class Inkmark
   #
   # @return [String] the stored source, unchanged
   #
-  # pkg:gem/inkmark#lib/inkmark.rb:447
+  # pkg:gem/inkmark#lib/inkmark.rb:482
   def to_s; end
 
   # Return the table of contents as a {Inkmark::Toc} value object,
@@ -271,7 +274,7 @@ class Inkmark
   #   g.toc.to_html      # "<ul><li>..."
   #   puts g.toc         # prints markdown form (via to_s)
   #
-  # pkg:gem/inkmark#lib/inkmark.rb:629
+  # pkg:gem/inkmark#lib/inkmark.rb:664
   def toc; end
 
   # Truncate the stored document. See {.truncate_markdown} for the full
@@ -280,7 +283,7 @@ class Inkmark
   # @return [String] truncated Markdown, or the source unchanged when
   #   it already fits
   #
-  # pkg:gem/inkmark#lib/inkmark.rb:607
+  # pkg:gem/inkmark#lib/inkmark.rb:642
   def truncate_markdown(chars: T.unsafe(nil), words: T.unsafe(nil), at: T.unsafe(nil), marker: T.unsafe(nil)); end
 
   # Walk the document, firing all registered handlers, without producing
@@ -295,7 +298,7 @@ class Inkmark
   #   md.on(:link) { |l| links << { href: l.dest, text: l.text } }
   #   md.walk
   #
-  # pkg:gem/inkmark#lib/inkmark.rb:513
+  # pkg:gem/inkmark#lib/inkmark.rb:548
   def walk; end
 
   private
@@ -304,7 +307,7 @@ class Inkmark
   # `toc: true` implicitly pulls headings into extracts. Matches the
   # mutual trigger implemented on the Rust side.
   #
-  # pkg:gem/inkmark#lib/inkmark.rb:712
+  # pkg:gem/inkmark#lib/inkmark.rb:753
   def extract_requested?; end
 
   # True when any request triggers the TOC walk—`toc: true`,
@@ -312,7 +315,7 @@ class Inkmark
   # {#toc} and {#toc_to_html} to decide whether to surface their
   # computed value to the caller.
   #
-  # pkg:gem/inkmark#lib/inkmark.rb:703
+  # pkg:gem/inkmark#lib/inkmark.rb:744
   def toc_surface_requested?; end
 
   class << self
@@ -381,7 +384,7 @@ class Inkmark
     #     embed_and_store("#{s[:heading]}\n\n#{s[:content]}") if s[:heading]
     #   end
     #
-    # pkg:gem/inkmark#lib/inkmark.rb:151
+    # pkg:gem/inkmark#lib/inkmark.rb:148
     def chunks_by_heading(source, options: T.unsafe(nil), truncate: T.unsafe(nil)); end
 
     # Split +source+ into sliding-window chunks bounded by a character
@@ -408,24 +411,49 @@ class Inkmark
     # @example
     #   Inkmark.chunks_by_size(readme, chars: 500, overlap: 50)
     #
-    # pkg:gem/inkmark#lib/inkmark.rb:183
+    # pkg:gem/inkmark#lib/inkmark.rb:180
     def chunks_by_size(source, chars: T.unsafe(nil), words: T.unsafe(nil), overlap: T.unsafe(nil), at: T.unsafe(nil), options: T.unsafe(nil)); end
 
-    # The class-level default options used when no per-instance options are given.
+    # Adjust the process-wide default options. Yields a mutable copy of
+    # the current {default_options}; the result is stored frozen through
+    # {default_options=}. Successive calls build on each other. Call this
+    # on the main Ractor before spawning workers.
     #
-    # @return [Inkmark::Options]
+    # @yieldparam options [Inkmark::Options] a mutable copy of the
+    #   current defaults
+    # @return [Inkmark::Options] the stored, frozen options
+    # @example In an application initializer
+    #   Inkmark.configure do |options|
+    #     options.math = true
+    #     options.links = { nofollow: true }
+    #   end
     #
-    # pkg:gem/inkmark#lib/inkmark.rb:364
+    # pkg:gem/inkmark#lib/inkmark.rb:405
+    def configure; end
+
+    # The process-wide default options, used when a render is given no
+    # options of its own. The instance is frozen all the way down and
+    # shared by every thread and Ractor in the process; change it with
+    # {configure} or {default_options=}, never in place.
+    #
+    # @return [Inkmark::Options] frozen
+    #
+    # pkg:gem/inkmark#lib/inkmark.rb:366
     def default_options; end
 
-    # Replace the class-level default options.
+    # Replace the process-wide default options. The value is copied and
+    # frozen all the way down (+Ractor.make_shareable+), so the caller
+    # keeps its own object mutable and worker Ractors can read the
+    # result. Call this on the main Ractor before spawning workers.
     #
-    # @param value [Hash, Inkmark::Options] new defaults; a Hash is converted to
-    #   Inkmark::Options, a Inkmark::Options is duped
-    # @return [Inkmark::Options] the stored options object
+    # @param value [Hash, Inkmark::Options] new defaults; a Hash is
+    #   converted to Inkmark::Options
+    # @return [Inkmark::Options] the stored, frozen options
     # @raise [TypeError] if +value+ is not a Hash or Inkmark::Options
+    # @example
+    #   Inkmark.default_options = { preset: :recommended, math: true }
     #
-    # pkg:gem/inkmark#lib/inkmark.rb:374
+    # pkg:gem/inkmark#lib/inkmark.rb:381
     def default_options=(value); end
 
     # Return the CSS stylesheet for syntax-highlighted code blocks.
@@ -439,15 +467,17 @@ class Inkmark
     #   Inkmark.highlight_css
     #   Inkmark.highlight_css(theme: "InspiredGitHub")
     #
-    # pkg:gem/inkmark#lib/inkmark.rb:349
+    # pkg:gem/inkmark#lib/inkmark.rb:346
     def highlight_css(theme: T.unsafe(nil)); end
 
     # Return an array of available syntax-highlighting theme names.
-    # Memoized—the theme list is fixed at compile time.
+    # Memoized—the theme list is fixed at compile time. The memo is
+    # warmed while this file loads (see the bottom of the file), so
+    # non-main Ractors only ever read it.
     #
-    # @return [Array<String>]
+    # @return [Array<String>] frozen, with frozen elements
     #
-    # pkg:gem/inkmark#lib/inkmark.rb:357
+    # pkg:gem/inkmark#lib/inkmark.rb:356
     def highlight_themes; end
 
     # Normalize and validate truncation params coming from either the
@@ -458,7 +488,7 @@ class Inkmark
     #
     # @api private
     #
-    # pkg:gem/inkmark#lib/inkmark.rb:260
+    # pkg:gem/inkmark#lib/inkmark.rb:257
     def normalize_truncate_params(params); end
 
     # Validate sliding-window chunking params. Keeps {.chunks_by_size}
@@ -468,7 +498,7 @@ class Inkmark
     #
     # @api private
     #
-    # pkg:gem/inkmark#lib/inkmark.rb:307
+    # pkg:gem/inkmark#lib/inkmark.rb:304
     def normalize_window_params(chars:, words:, overlap:, at:); end
 
     # Render +source+ markdown to HTML in one call.
@@ -476,12 +506,11 @@ class Inkmark
     # This is a class-method fast path that skips Inkmark instance and
     # Options copy allocation for the common one-shot render pattern.
     # When the caller passes +options: nil+ (the default), we reuse the
-    # cached frozen hash that {Inkmark::Options#to_native_hash_frozen}
-    # returns; the cache lives on the Options instance itself and is
-    # invalidated by the Options mutation methods, so
-    # +Inkmark.default_options.tables = false+ followed by
-    # +Inkmark.to_html(src)+ picks up the new value without stale-cache
-    # bugs.
+    # frozen hash memoized on {default_options} by
+    # {Inkmark::Options#to_native_hash_frozen}. {configure} and
+    # {default_options=} install a whole new frozen instance rather than
+    # mutating the shared one, so the next render sees the new values
+    # without any stale-cache bugs.
     #
     # **Raw HTML safety.** +raw_html: false+ (the default) escapes
     # every raw HTML tag in the source—safe for untrusted input.
@@ -500,7 +529,7 @@ class Inkmark
     # @example With a preset
     #   Inkmark.to_html(md, options: { preset: :recommended })
     #
-    # pkg:gem/inkmark#lib/inkmark.rb:90
+    # pkg:gem/inkmark#lib/inkmark.rb:87
     def to_html(source, options: T.unsafe(nil)); end
 
     # Render +source+ markdown through the filter pipeline and serialize back
@@ -522,7 +551,7 @@ class Inkmark
     # @param options [Hash, Inkmark::Options, nil] rendering options
     # @return [String] the filtered Markdown
     #
-    # pkg:gem/inkmark#lib/inkmark.rb:114
+    # pkg:gem/inkmark#lib/inkmark.rb:111
     def to_markdown(source, options: T.unsafe(nil)); end
 
     # Render +source+ through the filter pipeline and serialize to plain
@@ -539,7 +568,7 @@ class Inkmark
     # @param options [Hash, Inkmark::Options, nil] rendering options
     # @return [String] plain-text output
     #
-    # pkg:gem/inkmark#lib/inkmark.rb:247
+    # pkg:gem/inkmark#lib/inkmark.rb:244
     def to_plain_text(source, options: T.unsafe(nil)); end
 
     # Truncate a Markdown document to fit a char and/or word budget.
@@ -567,7 +596,7 @@ class Inkmark
     # @raise [ArgumentError] if neither chars nor words is set,
     #   +at+ is not +:block+/+:word+, or the marker exceeds the budget
     #
-    # pkg:gem/inkmark#lib/inkmark.rb:218
+    # pkg:gem/inkmark#lib/inkmark.rb:215
     def truncate_markdown(source, chars: T.unsafe(nil), words: T.unsafe(nil), at: T.unsafe(nil), marker: T.unsafe(nil), options: T.unsafe(nil)); end
 
     private
@@ -579,7 +608,7 @@ class Inkmark
     # skips hash-key lookups entirely and uses its hardcoded defaults—
     # the absolute fast path for one-shot renders.
     #
-    # pkg:gem/inkmark#lib/inkmark.rb:391
+    # pkg:gem/inkmark#lib/inkmark.rb:420
     def resolve_frozen_options(options); end
 
     # Resolve +options+ to a mutable flat hash for FFI paths that
@@ -588,14 +617,21 @@ class Inkmark
     # the nil fast path doesn't apply because the caller will mutate
     # the result.
     #
-    # pkg:gem/inkmark#lib/inkmark.rb:406
+    # pkg:gem/inkmark#lib/inkmark.rb:435
     def resolve_mutable_options(options); end
   end
 end
 
+# Built-in defaults, served by {default_options} until {configure} or
+# {default_options=} installs a replacement. Frozen all the way down
+# (which also memoizes its FFI hash, see {Inkmark::Options#freeze}).
+#
+# pkg:gem/inkmark#lib/inkmark.rb:448
+Inkmark::DEFAULT_OPTIONS = T.let(T.unsafe(nil), Inkmark::Options)
+
 # Base error class for Inkmark-specific runtime failures.
 #
-# pkg:gem/inkmark#lib/inkmark.rb:51
+# pkg:gem/inkmark#lib/inkmark.rb:49
 class Inkmark::Error < ::StandardError; end
 
 # Represents a parsed document element passed to {Inkmark#on} handlers.
@@ -1086,12 +1122,12 @@ class Inkmark::Options
   #   opts[:smart_punctuation]  #=> false  (override wins)
   #   opts[:syntax_highlight]   #=> true   (kept from :recommended)
   #
-  # pkg:gem/inkmark#lib/inkmark/options.rb:362
+  # pkg:gem/inkmark#lib/inkmark/options.rb:368
   def initialize(overrides = T.unsafe(nil)); end
 
   # Compare by value equality (user-shaped view).
   #
-  # pkg:gem/inkmark#lib/inkmark/options.rb:455
+  # pkg:gem/inkmark#lib/inkmark/options.rb:476
   def ==(other); end
 
   # Read an option by key. Nested element-policy keys return the nested
@@ -1102,7 +1138,7 @@ class Inkmark::Options
   # @return [Object] the current value for that key
   # @raise [KeyError] if +key+ is not present in {DEFAULTS}
   #
-  # pkg:gem/inkmark#lib/inkmark/options.rb:376
+  # pkg:gem/inkmark#lib/inkmark/options.rb:382
   def [](key); end
 
   # Write an option by key. For nested element-policy keys (+:headings+,
@@ -1115,83 +1151,96 @@ class Inkmark::Options
   #   hashes; the input value as-is otherwise)
   # @raise [ArgumentError] if +key+ is unknown, or the value (or any
   #   nested sub-value) has the wrong type
+  # @raise [FrozenError] if this instance is frozen (as
+  #   {Inkmark.default_options} always is)
   #
-  # pkg:gem/inkmark#lib/inkmark/options.rb:390
+  # pkg:gem/inkmark#lib/inkmark/options.rb:398
   def []=(key, value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def definition_list; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def definition_list=(value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def emoji_shortcodes; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def emoji_shortcodes=(value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:458
+  # pkg:gem/inkmark#lib/inkmark/options.rb:479
   def eql?(other); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def extract; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def extract=(value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def footnotes; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def footnotes=(value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # Freeze this instance. The memoized FFI hash is computed first, while
+  # the instance is still mutable, so {#to_native_hash_frozen} never has
+  # to write to a frozen object. +Ractor.make_shareable+ calls +freeze+
+  # on every object it visits, which is what makes a shared
+  # {Inkmark.default_options} renderable from any Ractor.
+  #
+  # @return [self]
+  #
+  # pkg:gem/inkmark#lib/inkmark/options.rb:488
+  def freeze; end
+
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def frontmatter; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def frontmatter=(value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def gfm; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def gfm=(value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def gfm_tag_filter; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def gfm_tag_filter=(value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def hard_wrap; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def hard_wrap=(value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def headings; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def headings=(value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def images; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def images=(value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def links; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def links=(value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def math; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def math=(value); end
 
   # Return a new Options instance with +other+'s values applied on top.
@@ -1203,61 +1252,61 @@ class Inkmark::Options
   # @param other [Inkmark::Options, Hash] source of overriding values
   # @return [Inkmark::Options] merged result; neither receiver nor +other+ is mutated
   #
-  # pkg:gem/inkmark#lib/inkmark/options.rb:447
+  # pkg:gem/inkmark#lib/inkmark/options.rb:468
   def merge(other); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def raw_html; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def raw_html=(value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def smart_punctuation; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def smart_punctuation=(value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def statistics; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def statistics=(value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def strikethrough; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def strikethrough=(value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def subscript; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def subscript=(value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def superscript; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def superscript=(value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def syntax_highlight; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def syntax_highlight=(value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def tables; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def tables=(value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def tasklists; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def tasklists=(value); end
 
   # Return a plain user-shaped Hash copy of the current option values.
@@ -1266,7 +1315,7 @@ class Inkmark::Options
   #
   # @return [Hash{Symbol => Object}]
   #
-  # pkg:gem/inkmark#lib/inkmark/options.rb:413
+  # pkg:gem/inkmark#lib/inkmark/options.rb:428
   def to_h; end
 
   # Return a Rust-facing flat Hash: nested element-policy hashes are
@@ -1277,30 +1326,36 @@ class Inkmark::Options
   #   add per-call params (truncate, window, etc.) mutate this hash
   # @api private
   #
-  # pkg:gem/inkmark#lib/inkmark/options.rb:424
+  # pkg:gem/inkmark#lib/inkmark/options.rb:439
   def to_native_hash; end
 
   # Memoized frozen variant of {#to_native_hash} used by the hot-path
   # FFI calls that don't need to add per-call params. The cache is
   # invalidated in {#[]=} and {#initialize_copy}.
   #
-  # @return [Hash{Symbol => Object}] frozen, shared across calls until
-  #   a mutation invalidates it
+  # The hash is frozen all the way down, as a copy: nested Arrays and
+  # Hashes are duplicated before freezing so caller-supplied values
+  # (an +allowed_hosts+ Array, say) stay mutable in the caller's hands.
+  # A deeply frozen memo is what lets a frozen +Options+ be shared
+  # across Ractors.
+  #
+  # @return [Hash{Symbol => Object}] deeply frozen, shared across calls
+  #   until a mutation invalidates it
   # @api private
   #
-  # pkg:gem/inkmark#lib/inkmark/options.rb:435
+  # pkg:gem/inkmark#lib/inkmark/options.rb:456
   def to_native_hash_frozen; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def toc; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def toc=(value); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:475
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def wikilinks; end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:476
+  # pkg:gem/inkmark#lib/inkmark/options.rb:513
   def wikilinks=(value); end
 
   private
@@ -1312,15 +1367,23 @@ class Inkmark::Options
   # +default_preset: nil+ so the receiver's state is preserved when
   # the caller doesn't specify a preset).
   #
-  # pkg:gem/inkmark#lib/inkmark/options.rb:487
+  # pkg:gem/inkmark#lib/inkmark/options.rb:532
   def apply_overrides!(overrides, default_preset:); end
 
   # Build the Rust-facing flat hash: nested element-policy hashes expand
   # into their flat keys via {NESTED_TO_FLAT}; the internal +@toc_depth+
   # is injected when set.
   #
-  # pkg:gem/inkmark#lib/inkmark/options.rb:523
+  # pkg:gem/inkmark#lib/inkmark/options.rb:581
   def build_native_hash; end
+
+  # Return a frozen copy of +value+ with every nested Hash, Array, and
+  # String frozen too. Scalars (booleans, nil, Integers, Symbols) are
+  # returned as is. Only the container shapes {#build_native_hash} can
+  # produce are handled.
+  #
+  # pkg:gem/inkmark#lib/inkmark/options.rb:569
+  def deep_frozen_copy(value); end
 
   # Shallow-dup a hash but deep-dup any one-level nested hashes, so
   # the caller can mutate nested entries without aliasing back into
@@ -1328,53 +1391,53 @@ class Inkmark::Options
   # +@values+ for {#to_h}, and to fork +@values+ in
   # {#initialize_copy}.
   #
-  # pkg:gem/inkmark#lib/inkmark/options.rb:508
+  # pkg:gem/inkmark#lib/inkmark/options.rb:553
   def dup_with_nested(source); end
 
   # Duplicate this instance, deep-copying the internal values hash so the
   # clone is fully independent from the original.
   #
-  # pkg:gem/inkmark#lib/inkmark/options.rb:462
+  # pkg:gem/inkmark#lib/inkmark/options.rb:495
   def initialize_copy(orig); end
 
   # Delegate to the class-method validators so both +[]=+ (instance)
   # and {.native_hash_from} (class-level fast path) share one source
   # of truth for validation rules and error messages.
   #
-  # pkg:gem/inkmark#lib/inkmark/options.rb:517
+  # pkg:gem/inkmark#lib/inkmark/options.rb:562
   def validate_key!(key); end
 
-  # pkg:gem/inkmark#lib/inkmark/options.rb:518
+  # pkg:gem/inkmark#lib/inkmark/options.rb:563
   def validate_value!(key, value); end
 
   class << self
-    # pkg:gem/inkmark#lib/inkmark/options.rb:647
+    # pkg:gem/inkmark#lib/inkmark/options.rb:708
     def native_hash_from(overrides); end
 
     # Build a frozen defaults hash for a nested schema from its +default+
     # entries.
     #
-    # pkg:gem/inkmark#lib/inkmark/options.rb:69
+    # pkg:gem/inkmark#lib/inkmark/options.rb:75
     def schema_defaults(schema); end
 
     private
 
-    # pkg:gem/inkmark#lib/inkmark/options.rb:611
+    # pkg:gem/inkmark#lib/inkmark/options.rb:669
     def default_types_for(key); end
 
-    # pkg:gem/inkmark#lib/inkmark/options.rb:564
+    # pkg:gem/inkmark#lib/inkmark/options.rb:622
     def validate_extract_hash!(hash); end
 
-    # pkg:gem/inkmark#lib/inkmark/options.rb:547
+    # pkg:gem/inkmark#lib/inkmark/options.rb:605
     def validate_key!(key); end
 
-    # pkg:gem/inkmark#lib/inkmark/options.rb:593
+    # pkg:gem/inkmark#lib/inkmark/options.rb:651
     def validate_nested_hash!(key, hash); end
 
-    # pkg:gem/inkmark#lib/inkmark/options.rb:579
+    # pkg:gem/inkmark#lib/inkmark/options.rb:637
     def validate_toc_hash!(hash); end
 
-    # pkg:gem/inkmark#lib/inkmark/options.rb:552
+    # pkg:gem/inkmark#lib/inkmark/options.rb:610
     def validate_value!(key, value); end
   end
 end
@@ -1383,48 +1446,54 @@ end
 # element-policy groups (+headings+, +images+, +links+) hold their own
 # default hashes built from {NESTED_SCHEMAS}.
 #
-# pkg:gem/inkmark#lib/inkmark/options.rb:76
+# pkg:gem/inkmark#lib/inkmark/options.rb:82
 Inkmark::Options::DEFAULTS = T.let(T.unsafe(nil), Hash)
 
 # Preset applied by {#initialize} when the caller doesn't pass
 # +preset:+. +:gfm+ matches {DEFAULTS}, so the default constructor
 # is equivalent to "CommonMark + core GFM, nothing else".
 #
-# pkg:gem/inkmark#lib/inkmark/options.rb:299
+# pkg:gem/inkmark#lib/inkmark/options.rb:305
 Inkmark::Options::DEFAULT_PRESET = T.let(T.unsafe(nil), Symbol)
 
 # Element kinds accepted inside +extract: { ... }+. Mirrors the match
 # arms in Rust +stats::to_extracts_hash+—changing one means changing
 # the other.
 #
-# pkg:gem/inkmark#lib/inkmark/options.rb:213
+# pkg:gem/inkmark#lib/inkmark/options.rb:219
 Inkmark::Options::EXTRACT_KINDS = T.let(T.unsafe(nil), Array)
 
 # Per-element-policy schemas. Each entry is +{ default:, types: }+; the
 # validators use +types+ for type checking and +default+ to seed fresh
 # nested hashes. Keep in sync with {NESTED_TO_FLAT}.
 #
-# pkg:gem/inkmark#lib/inkmark/options.rb:25
+# Every constant in this class is frozen all the way down, not just
+# at the top level: a non-main Ractor may only read constants whose
+# whole object graph is frozen (+Ractor.shareable?+), so the inner
+# Hashes and Arrays are frozen explicitly and the larger nested
+# tables go through +Ractor.make_shareable+.
+#
+# pkg:gem/inkmark#lib/inkmark/options.rb:31
 Inkmark::Options::HEADINGS_SCHEMA = T.let(T.unsafe(nil), Hash)
 
-# pkg:gem/inkmark#lib/inkmark/options.rb:30
+# pkg:gem/inkmark#lib/inkmark/options.rb:36
 Inkmark::Options::IMAGES_SCHEMA = T.let(T.unsafe(nil), Hash)
 
-# pkg:gem/inkmark#lib/inkmark/options.rb:36
+# pkg:gem/inkmark#lib/inkmark/options.rb:42
 Inkmark::Options::LINKS_SCHEMA = T.let(T.unsafe(nil), Hash)
 
 # Registry of nested hash options => their schemas. Iterated by the
 # validator and native-hash flattener to keep the three element-policy
 # groupings uniform.
 #
-# pkg:gem/inkmark#lib/inkmark/options.rb:46
+# pkg:gem/inkmark#lib/inkmark/options.rb:52
 Inkmark::Options::NESTED_SCHEMAS = T.let(T.unsafe(nil), Hash)
 
 # Map from +(parent, child)+ user-facing keys to the flat key name the
 # Rust side reads. Used by {#to_native_hash} / {#to_native_hash_frozen}
 # to serialize the user-shaped hash into the FFI wire format.
 #
-# pkg:gem/inkmark#lib/inkmark/options.rb:55
+# pkg:gem/inkmark#lib/inkmark/options.rb:61
 Inkmark::Options::NESTED_TO_FLAT = T.let(T.unsafe(nil), Hash)
 
 # Named bundles of option settings. Pass +preset: :name+ in the
@@ -1447,7 +1516,7 @@ Inkmark::Options::NESTED_TO_FLAT = T.let(T.unsafe(nil), Hash)
 #   the caller fully trusts (internal team-authored docs). The
 #   caller is fully responsible for sanitizing output.
 #
-# pkg:gem/inkmark#lib/inkmark/options.rb:240
+# pkg:gem/inkmark#lib/inkmark/options.rb:246
 Inkmark::Options::PRESETS = T.let(T.unsafe(nil), Hash)
 
 # Precomputed flat Rust-facing hash per preset. Built once at load
@@ -1457,9 +1526,10 @@ Inkmark::Options::PRESETS = T.let(T.unsafe(nil), Hash)
 # +options: { preset: :name }+ call pattern, which would otherwise
 # build a fresh +Options+ instance (seed defaults, 6–14 +[]=+
 # with validation, +build_native_hash+) on every call. The cached
-# hashes are frozen and safe to share across threads.
+# hashes are deeply frozen and safe to share across threads and
+# Ractors.
 #
-# pkg:gem/inkmark#lib/inkmark/options.rb:628
+# pkg:gem/inkmark#lib/inkmark/options.rb:687
 Inkmark::Options::PRESETS_NATIVE_HASH = T.let(T.unsafe(nil), Hash)
 
 # Per-key class allowlist. Keys absent from this hash inherit their
@@ -1469,7 +1539,7 @@ Inkmark::Options::PRESETS_NATIVE_HASH = T.let(T.unsafe(nil), Hash)
 # the accepted type set (nil-default-but-Array-when-set, polymorphic
 # +toc+, nested-hash element-policy groups).
 #
-# pkg:gem/inkmark#lib/inkmark/options.rb:202
+# pkg:gem/inkmark#lib/inkmark/options.rb:208
 Inkmark::Options::TYPES = T.let(T.unsafe(nil), Hash)
 
 # A rendered table of contents, carrying both Markdown and HTML

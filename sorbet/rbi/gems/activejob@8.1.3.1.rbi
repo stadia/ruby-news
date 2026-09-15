@@ -185,10 +185,10 @@ class ActiveJob::Base
   include ::ActiveJob::Logging
   include ::ActiveJob::ExecutionState
   include ::ActiveRecord::Railties::JobRuntime
-  include ::ActiveJob::ConcurrencyControls
   include ::ActiveJob::Querying
   include ::ActiveJob::Executing
   include ::ActiveJob::Failed
+  include ::ActiveJob::ConcurrencyControls
   include ::ActiveJob::TestHelper::TestQueueAdapter
   extend ::ActiveJob::Core::ClassMethods
   extend ::ActiveJob::QueueAdapter::ClassMethods
@@ -201,9 +201,9 @@ class ActiveJob::Base
   extend ::ActiveSupport::DescendantsTracker
   extend ::ActiveJob::Callbacks::ClassMethods
   extend ::ActiveJob::Exceptions::ClassMethods
-  extend ::ActiveJob::ConcurrencyControls::ClassMethods
   extend ::ActiveJob::Querying::ClassMethods
   extend ::ActiveJob::Executing::ClassMethods
+  extend ::ActiveJob::ConcurrencyControls::ClassMethods
   extend ::ActiveJob::TestHelper::TestQueueAdapter::ClassMethods
 
   # pkg:gem/activejob#lib/active_job/base.rb:70
@@ -226,6 +226,12 @@ class ActiveJob::Base
 
   # pkg:gem/activejob#lib/active_job/base.rb:70
   def _run_perform_callbacks!(&block); end
+
+  # pkg:gem/activejob#lib/active_job/base.rb:76
+  def _sentry; end
+
+  # pkg:gem/activejob#lib/active_job/base.rb:76
+  def _sentry=(_arg0); end
 
   # pkg:gem/activejob#lib/active_job/base.rb:71
   def after_discard_procs; end

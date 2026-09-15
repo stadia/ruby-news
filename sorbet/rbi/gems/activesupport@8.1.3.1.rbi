@@ -6370,94 +6370,6 @@ class ActiveSupport::EventReporter
   end
 end
 
-# Allows you to "listen" to changes in a file system.
-# The evented file updater does not hit disk when checking for updates.
-# Instead, it uses platform-specific file system events to trigger a change
-# in state.
-#
-# The file checker takes an array of files to watch or a hash specifying directories
-# and file extensions to watch. It also takes a block that is called when
-# EventedFileUpdateChecker#execute is run or when EventedFileUpdateChecker#execute_if_updated
-# is run and there have been changes to the file system.
-#
-# Example:
-#
-#     checker = ActiveSupport::EventedFileUpdateChecker.new(["/tmp/foo"]) { puts "changed" }
-#     checker.updated?
-#     # => false
-#     checker.execute_if_updated
-#     # => nil
-#
-#     FileUtils.touch("/tmp/foo")
-#
-#     checker.updated?
-#     # => true
-#     checker.execute_if_updated
-#     # => "changed"
-#
-# pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:35
-class ActiveSupport::EventedFileUpdateChecker
-  # pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:36
-  def initialize(files, dirs = T.unsafe(nil), &block); end
-
-  # pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:59
-  def execute; end
-
-  # pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:64
-  def execute_if_updated; end
-
-  # pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:46
-  def inspect; end
-
-  # pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:50
-  def updated?; end
-end
-
-# pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:72
-class ActiveSupport::EventedFileUpdateChecker::Core
-  # pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:75
-  def initialize(files, dirs); end
-
-  # pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:146
-  def changed(modified, added, removed); end
-
-  # pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:180
-  def common_path(paths); end
-
-  # pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:174
-  def directories_to_watch; end
-
-  # pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:73
-  def files; end
-
-  # pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:102
-  def finalizer; end
-
-  # pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:140
-  def normalize_dirs!; end
-
-  # pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:131
-  def restart; end
-
-  # pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:136
-  def restart?; end
-
-  # pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:115
-  def start; end
-
-  # pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:127
-  def stop; end
-
-  # pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:109
-  def thread_safely; end
-
-  # pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:73
-  def updated; end
-
-  # pkg:gem/activesupport#lib/active_support/evented_file_update_checker.rb:152
-  def watching?(file); end
-end
-
 # pkg:gem/activesupport#lib/active_support/execution_context.rb:4
 module ActiveSupport::ExecutionContext
   class << self
@@ -12271,13 +12183,6 @@ module ActiveSupport::SecurityUtils
     # pkg:gem/activesupport#lib/active_support/security_utils.rb:25
     def fixed_length_secure_compare(a, b); end
 
-    # Secure string comparison for strings of variable length.
-    #
-    # While a timing attack would not be able to discern the content of
-    # a secret compared via secure_compare, it is possible to determine
-    # the secret length. This should be considered when using secure_compare
-    # to compare weak, short secrets to user input.
-    #
     # pkg:gem/activesupport#lib/active_support/security_utils.rb:36
     def secure_compare(a, b); end
   end
@@ -17050,73 +16955,9 @@ module ERB::Util
   def xml_name_escape(name); end
 
   class << self
-    # A utility method for escaping HTML without affecting existing escaped entities.
-    #
-    #   html_escape_once('1 < 2 &amp; 3')
-    #   # => "1 &lt; 2 &amp; 3"
-    #
-    #   html_escape_once('&lt;&lt; Accept & Checkout')
-    #   # => "&lt;&lt; Accept &amp; Checkout"
-    #
     # pkg:gem/activesupport#lib/active_support/core_ext/erb/util.rb:67
     def html_escape_once(s); end
 
-    # A utility method for escaping HTML entities in JSON strings. Specifically, the
-    # &, > and < characters are replaced with their equivalent unicode escaped form -
-    # \u0026, \u003e, and \u003c. The Unicode sequences \u2028 and \u2029 are also
-    # escaped as they are treated as newline characters in some JavaScript engines.
-    # These sequences have identical meaning as the original characters inside the
-    # context of a JSON string, so assuming the input is a valid and well-formed
-    # JSON value, the output will have equivalent meaning when parsed:
-    #
-    #   json = JSON.generate({ name: "</script><script>alert('PWNED!!!')</script>"})
-    #   # => "{\"name\":\"</script><script>alert('PWNED!!!')</script>\"}"
-    #
-    #   json_escape(json)
-    #   # => "{\"name\":\"\\u003C/script\\u003E\\u003Cscript\\u003Ealert('PWNED!!!')\\u003C/script\\u003E\"}"
-    #
-    #   JSON.parse(json) == JSON.parse(json_escape(json))
-    #   # => true
-    #
-    # The intended use case for this method is to escape JSON strings before including
-    # them inside a script tag to avoid XSS vulnerability:
-    #
-    #   <script>
-    #     var currentUser = <%= raw json_escape(current_user.to_json) %>;
-    #   </script>
-    #
-    # It is necessary to +raw+ the result of +json_escape+, so that quotation marks
-    # don't get converted to <tt>&quot;</tt> entities. +json_escape+ doesn't
-    # automatically flag the result as HTML safe, since the raw value is unsafe to
-    # use inside HTML attributes.
-    #
-    # If your JSON is being used downstream for insertion into the DOM, be aware of
-    # whether or not it is being inserted via <tt>html()</tt>. Most jQuery plugins do this.
-    # If that is the case, be sure to +html_escape+ or +sanitize+ any user-generated
-    # content returned by your JSON.
-    #
-    # If you need to output JSON elsewhere in your HTML, you can just do something
-    # like this, as any unsafe characters (including quotation marks) will be
-    # automatically escaped for you:
-    #
-    #   <div data-user-info="<%= current_user.to_json %>">...</div>
-    #
-    # WARNING: this helper only works with valid JSON. Using this on non-JSON values
-    # will open up serious XSS vulnerabilities. For example, if you replace the
-    # +current_user.to_json+ in the example above with user input instead, the browser
-    # will happily <tt>eval()</tt> that string as JavaScript.
-    #
-    # The escaping performed in this method is identical to those performed in the
-    # Active Support JSON encoder when +ActiveSupport.escape_html_entities_in_json+ is
-    # set to true. Because this transformation is idempotent, this helper can be
-    # applied even if +ActiveSupport.escape_html_entities_in_json+ is already true.
-    #
-    # Therefore, when you are unsure if +ActiveSupport.escape_html_entities_in_json+
-    # is enabled, or if you are unsure where your JSON string originated from, it
-    # is recommended that you always apply this helper (other libraries, such as the
-    # JSON gem, do not provide this kind of protection by default; also some gems
-    # might override +to_json+ to bypass Active Support's encoder).
-    #
     # pkg:gem/activesupport#lib/active_support/core_ext/erb/util.rb:134
     def json_escape(s); end
 
@@ -17129,13 +16970,6 @@ module ERB::Util
     # pkg:gem/activesupport#lib/active_support/core_ext/erb/util.rb:10
     def unwrapped_html_escape(s); end
 
-    # A utility method for escaping XML names of tags and names of attributes.
-    #
-    #   xml_name_escape('1 < 2 & 3')
-    #   # => "1___2___3"
-    #
-    # It follows the requirements of the specification: https://www.w3.org/TR/REC-xml/#NT-Name
-    #
     # pkg:gem/activesupport#lib/active_support/core_ext/erb/util.rb:157
     def xml_name_escape(name); end
   end

@@ -5,24 +5,165 @@
 # Please instead update this file by running `bin/tapioca gem resend`.
 
 
+module ActionMailbox; end
+module ActionMailbox::Ingresses; end
+module ActionMailbox::Ingresses::Resend; end
+
+class ActionMailbox::Ingresses::Resend::InboundEmailsController < ::ActionMailbox::BaseController
+  def create; end
+
+  private
+
+  def _layout(lookup_context, formats, keys); end
+  def _layout_from_proc; end
+  def authenticate; end
+  def authenticated?; end
+  def email_id; end
+  def email_received_event?; end
+  def event; end
+  def raw_email; end
+  def signing_secret; end
+  def verified_signature?; end
+
+  class << self
+    private
+
+    def __class_attr___callbacks; end
+    def __class_attr___callbacks=(new_value); end
+    def __class_attr__wrapper_options; end
+    def __class_attr__wrapper_options=(new_value); end
+    def __class_attr_config; end
+    def __class_attr_config=(new_value); end
+    def __class_attr_helpers_path; end
+    def __class_attr_helpers_path=(new_value); end
+    def __class_attr_middleware_stack; end
+    def __class_attr_middleware_stack=(new_value); end
+  end
+end
+
 # Main Resend module
 #
 # pkg:gem/resend#lib/resend/version.rb:3
 module Resend
   class << self
-    # pkg:gem/resend#lib/resend.rb:51
+    # pkg:gem/resend#lib/resend.rb:52
     def api_key; end
 
-    # pkg:gem/resend#lib/resend.rb:51
+    # pkg:gem/resend#lib/resend.rb:52
     def api_key=(_arg0); end
 
-    # pkg:gem/resend#lib/resend.rb:57
+    # pkg:gem/resend#lib/resend.rb:58
     def config; end
 
-    # pkg:gem/resend#lib/resend.rb:53
+    # pkg:gem/resend#lib/resend.rb:54
     def configure; end
   end
 end
+
+# pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:6
+module Resend::ActionMailbox; end
+
+# Rails engine that routes Resend's +email.received+ webhooks to the
+# Action Mailbox ingress controller.
+#
+# pkg:gem/resend#lib/resend/action_mailbox/engine.rb:9
+class Resend::ActionMailbox::Engine < ::Rails::Engine; end
+
+# Rebuilds the full RFC 822 source of a received email so it can be ingested
+# by Action Mailbox.
+#
+# Resend's +email.received+ webhook only carries metadata, so the message is
+# fetched from the Received Emails API. When the API exposes a raw message
+# download it is used as-is; otherwise the message is reconstructed as a
+# Mail::Message from its parts, downloading each attachment through the
+# attachments API.
+#
+# pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:15
+class Resend::ActionMailbox::MessageBuilder
+  # @param email_id [String] The ID of the received email
+  #
+  # pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:25
+  def initialize(email_id); end
+
+  # @return [String] the full RFC 822 source of the received email
+  #
+  # pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:30
+  def raw_email; end
+
+  private
+
+  # pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:110
+  def add_attachment(mail, meta); end
+
+  # pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:106
+  def add_attachments(mail); end
+
+  # pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:89
+  def add_bodies(mail); end
+
+  # pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:157
+  def blank?(value); end
+
+  # pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:102
+  def build_part(mime_type, content); end
+
+  # pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:62
+  def copy_envelope(mail); end
+
+  # pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:54
+  def copy_headers(mail); end
+
+  # Preserve the addresses this email was received for (e.g. through a
+  # forwarding rule) so Action Mailbox can route on them.
+  #
+  # pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:85
+  def copy_received_for(mail); end
+
+  # pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:122
+  def decorate_attachment(part, meta); end
+
+  # pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:135
+  def download(url); end
+
+  # pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:36
+  def email; end
+
+  # Mail omits Bcc when serializing a message by default, but Action Mailbox
+  # needs it to route the email.
+  #
+  # pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:78
+  def expose_bcc(mail); end
+
+  # Nested objects come back from the API with string keys, but hand-built
+  # hashes (tests, console usage) often use symbols. Accept both.
+  #
+  # pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:149
+  def fetch(hash, key); end
+
+  # pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:131
+  def normalize_content_id(content_id); end
+
+  # pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:153
+  def presence(value); end
+
+  # pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:40
+  def raw_download; end
+
+  # pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:45
+  def rebuild_message; end
+end
+
+# Envelope fields that are set from the API response when the original
+# header of the same name is not available.
+#
+# pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:22
+Resend::ActionMailbox::MessageBuilder::ENVELOPE_FIELDS = T.let(T.unsafe(nil), Array)
+
+# Headers that describe the reconstructed MIME structure and therefore
+# cannot be copied verbatim from the original message.
+#
+# pkg:gem/resend#lib/resend/action_mailbox/message_builder.rb:18
+Resend::ActionMailbox::MessageBuilder::STRUCTURAL_HEADERS = T.let(T.unsafe(nil), Array)
 
 # api keys api wrapper
 #
@@ -53,7 +194,7 @@ end
 
 # @deprecated Use Segments instead
 #
-# pkg:gem/resend#lib/resend.rb:61
+# pkg:gem/resend#lib/resend.rb:62
 Resend::Audiences = Resend::Segments
 
 # automations api wrapper
@@ -171,9 +312,15 @@ module Resend::Broadcasts
     # pkg:gem/resend#lib/resend/broadcasts.rb:13
     def create(params = T.unsafe(nil)); end
 
+    # https://resend.com/docs/api-reference/broadcasts/duplicate-broadcast
+    # @note Creates a new draft with the same content as the source, named after it with " (copy)" appended.
+    #
+    # pkg:gem/resend#lib/resend/broadcasts.rb:57
+    def duplicate(broadcast_id = T.unsafe(nil)); end
+
     # https://resend.com/docs/api-reference/broadcasts/get-broadcast
     #
-    # pkg:gem/resend#lib/resend/broadcasts.rb:62
+    # pkg:gem/resend#lib/resend/broadcasts.rb:69
     def get(broadcast_id = T.unsafe(nil)); end
 
     # https://resend.com/docs/api-reference/broadcasts/list-broadcasts
@@ -193,12 +340,12 @@ module Resend::Broadcasts
     # @option params [String] :after the cursor for pagination (optional)
     # @option params [String] :before the cursor for pagination (optional)
     #
-    # pkg:gem/resend#lib/resend/broadcasts.rb:78
+    # pkg:gem/resend#lib/resend/broadcasts.rb:85
     def recipients(broadcast_id = T.unsafe(nil), params = T.unsafe(nil)); end
 
     # https://resend.com/docs/api-reference/broadcasts/delete-broadcast
     #
-    # pkg:gem/resend#lib/resend/broadcasts.rb:56
+    # pkg:gem/resend#lib/resend/broadcasts.rb:63
     def remove(broadcast_id = T.unsafe(nil)); end
 
     # https://resend.com/docs/api-reference/broadcasts/send-broadcast
@@ -365,12 +512,15 @@ module Resend::Contacts
     # @example List contacts with pagination
     #   Resend::Contacts.list(limit: 10)
     #
+    # @example List contacts scoped to a segment
+    #   Resend::Contacts.list(segment_id: "seg_456", limit: 10)
+    #
     # @example List contacts scoped to an audience
     #   Resend::Contacts.list(audience_id: "aud_456", limit: 10)
     #
     # https://resend.com/docs/api-reference/contacts/list-contacts
     #
-    # pkg:gem/resend#lib/resend/contacts.rb:65
+    # pkg:gem/resend#lib/resend/contacts.rb:68
     def list(params = T.unsafe(nil)); end
 
     # Remove a contact
@@ -387,7 +537,7 @@ module Resend::Contacts
     #
     # https://resend.com/docs/api-reference/contacts/delete-contact
     #
-    # pkg:gem/resend#lib/resend/contacts.rb:89
+    # pkg:gem/resend#lib/resend/contacts.rb:97
     def remove(params = T.unsafe(nil)); end
 
     # Update a contact
@@ -395,7 +545,7 @@ module Resend::Contacts
     # @param params [Hash] the contact params
     # https://resend.com/docs/api-reference/contacts/update-contact
     #
-    # pkg:gem/resend#lib/resend/contacts.rb:107
+    # pkg:gem/resend#lib/resend/contacts.rb:115
     def update(params); end
   end
 end
@@ -1716,7 +1866,7 @@ module Resend::Webhooks
     #     after: "atmpt_123"
     #   )
     #
-    # pkg:gem/resend#lib/resend/webhooks.rb:140
+    # pkg:gem/resend#lib/resend/webhooks.rb:156
     def list_event_attempts(webhook_id, event_id, params = T.unsafe(nil)); end
 
     # Retrieve webhook events
@@ -1746,8 +1896,37 @@ module Resend::Webhooks
     # @example
     #   Resend::Webhooks.remove("4dd369bc-aa82-4ff3-97de-514ae3000ee0")
     #
-    # pkg:gem/resend#lib/resend/webhooks.rb:177
+    # pkg:gem/resend#lib/resend/webhooks.rb:208
     def remove(webhook_id = T.unsafe(nil)); end
+
+    # Replay a webhook event
+    #
+    # Queues one more delivery of the event to the webhook. Manual replays do not schedule automatic retries.
+    #
+    # @param webhook_id [String] The webhook ID
+    # @param event_id [String] The webhook event ID
+    #
+    # @return [Hash] The replayed webhook event id and object type
+    #
+    # @example
+    #   Resend::Webhooks.replay_event("4dd369bc-aa82-4ff3-97de-514ae3000ee0", "msg_123")
+    #
+    # pkg:gem/resend#lib/resend/webhooks.rb:131
+    def replay_event(webhook_id, event_id); end
+
+    # Rotate the signing secret of a webhook
+    #
+    # Generates a new signing secret for the webhook. The previous secret keeps working for 24 hours.
+    #
+    # @param webhook_id [String] The webhook ID
+    #
+    # @return [Hash] The webhook object containing id, object type, and the new signing_secret
+    #
+    # @example
+    #   Resend::Webhooks.rotate_signing_secret("4dd369bc-aa82-4ff3-97de-514ae3000ee0")
+    #
+    # pkg:gem/resend#lib/resend/webhooks.rb:195
+    def rotate_signing_secret(webhook_id); end
 
     # Update an existing webhook configuration
     #
@@ -1767,7 +1946,7 @@ module Resend::Webhooks
     #     status: "enabled"
     #   )
     #
-    # pkg:gem/resend#lib/resend/webhooks.rb:163
+    # pkg:gem/resend#lib/resend/webhooks.rb:179
     def update(params = T.unsafe(nil)); end
 
     # Verify a webhook payload using HMAC-SHA256 signature validation
@@ -1793,19 +1972,19 @@ module Resend::Webhooks
     #     webhook_secret: "whsec_1234567890abcdez"
     #   )
     #
-    # pkg:gem/resend#lib/resend/webhooks.rb:204
+    # pkg:gem/resend#lib/resend/webhooks.rb:235
     def verify(params = T.unsafe(nil)); end
 
     private
 
     # Decode the signing secret (strip whsec_ prefix and base64 decode)
     #
-    # pkg:gem/resend#lib/resend/webhooks.rb:257
+    # pkg:gem/resend#lib/resend/webhooks.rb:288
     def decode_secret(webhook_secret); end
 
     # Generate HMAC-SHA256 signature and return it as base64
     #
-    # pkg:gem/resend#lib/resend/webhooks.rb:279
+    # pkg:gem/resend#lib/resend/webhooks.rb:310
     def generate_signature(secret, content); end
 
     # Constant-time string comparison to prevent timing attacks
@@ -1813,37 +1992,37 @@ module Resend::Webhooks
     # Note: We implement this manually for Ruby 2.7 compatibility.
     # Ruby 3.0+ could use OpenSSL.fixed_length_secure_compare instead.
     #
-    # pkg:gem/resend#lib/resend/webhooks.rb:288
+    # pkg:gem/resend#lib/resend/webhooks.rb:319
     def secure_compare(str_a, str_b); end
 
     # Validate required headers are present
     #
-    # pkg:gem/resend#lib/resend/webhooks.rb:239
+    # pkg:gem/resend#lib/resend/webhooks.rb:270
     def validate_headers(headers); end
 
     # Validate payload is present
     #
-    # pkg:gem/resend#lib/resend/webhooks.rb:229
+    # pkg:gem/resend#lib/resend/webhooks.rb:260
     def validate_payload(payload); end
 
     # Validate required parameters
     #
-    # pkg:gem/resend#lib/resend/webhooks.rb:222
+    # pkg:gem/resend#lib/resend/webhooks.rb:253
     def validate_required_params(payload, headers, webhook_secret); end
 
     # Validate timestamp to prevent replay attacks
     #
-    # pkg:gem/resend#lib/resend/webhooks.rb:246
+    # pkg:gem/resend#lib/resend/webhooks.rb:277
     def validate_timestamp(timestamp_header); end
 
     # Validate webhook secret is present
     #
-    # pkg:gem/resend#lib/resend/webhooks.rb:234
+    # pkg:gem/resend#lib/resend/webhooks.rb:265
     def validate_webhook_secret(webhook_secret); end
 
     # Verify signature using constant-time comparison
     #
-    # pkg:gem/resend#lib/resend/webhooks.rb:265
+    # pkg:gem/resend#lib/resend/webhooks.rb:296
     def verify_signature(signature_header, expected_signature); end
   end
 end

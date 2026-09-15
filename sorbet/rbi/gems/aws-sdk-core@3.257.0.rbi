@@ -11956,12 +11956,21 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   #
   #   `[{"ProviderArn":"arn:aws:iam::aws:contextProvider/IdentityCenter","ContextAssertion":"trusted-context-assertion"}]`
   #
+  # @option params [Integer] :minimum_session_token_size
+  #   The minimum size, in bytes, of the session token that STS issues for
+  #   the request. STS increases the session token to at least this size,
+  #   regardless of its actual content. The value must not exceed 4,096
+  #   bytes. When set to 0 or not specified, the session token size is
+  #   unchanged.
+  #
   # @return [Types::AssumeRoleResponse] Returns a {Seahorse::Client::Response response} object which responds to the following methods:
   #
   #   * {Types::AssumeRoleResponse#credentials #credentials} => Types::Credentials
   #   * {Types::AssumeRoleResponse#assumed_role_user #assumed_role_user} => Types::AssumedRoleUser
   #   * {Types::AssumeRoleResponse#packed_policy_size #packed_policy_size} => Integer
   #   * {Types::AssumeRoleResponse#source_identity #source_identity} => String
+  #   * {Types::AssumeRoleResponse#session_token_utilization #session_token_utilization} => Integer
+  #   * {Types::AssumeRoleResponse#session_token_size #session_token_size} => Integer
   #
   #
   # @example Example: To assume a role
@@ -12035,6 +12044,7 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   #         context_assertion: "contextAssertionType",
   #       },
   #     ],
+  #     minimum_session_token_size: 1,
   #   })
   #
   # @example Response structure
@@ -12047,13 +12057,15 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   #   resp.assumed_role_user.arn #=> String
   #   resp.packed_policy_size #=> Integer
   #   resp.source_identity #=> String
+  #   resp.session_token_utilization #=> Integer
+  #   resp.session_token_size #=> Integer
   #
   # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumeRole AWS API Documentation
   #
   # @overload assume_role(params = {})
   # @param [Hash] params ({})
   #
-  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:977
+  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:989
   def assume_role(params = T.unsafe(nil), options = T.unsafe(nil)); end
 
   # Returns a set of temporary security credentials for users who have
@@ -12334,6 +12346,13 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   #   [1]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use.html#id_roles_use_view-role-max-session
   #   [2]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_enable-console-custom-url.html
   #
+  # @option params [Integer] :minimum_session_token_size
+  #   The minimum size, in bytes, of the session token that STS issues for
+  #   the request. STS increases the session token to at least this size,
+  #   regardless of its actual content. The value must not exceed 4,096
+  #   bytes. When set to 0 or not specified, the session token size is
+  #   unchanged.
+  #
   # @return [Types::AssumeRoleWithSAMLResponse] Returns a {Seahorse::Client::Response response} object which responds to the following methods:
   #
   #   * {Types::AssumeRoleWithSAMLResponse#credentials #credentials} => Types::Credentials
@@ -12345,6 +12364,8 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   #   * {Types::AssumeRoleWithSAMLResponse#audience #audience} => String
   #   * {Types::AssumeRoleWithSAMLResponse#name_qualifier #name_qualifier} => String
   #   * {Types::AssumeRoleWithSAMLResponse#source_identity #source_identity} => String
+  #   * {Types::AssumeRoleWithSAMLResponse#session_token_utilization #session_token_utilization} => Integer
+  #   * {Types::AssumeRoleWithSAMLResponse#session_token_size #session_token_size} => Integer
   #
   #
   # @example Example: To assume a role using a SAML assertion
@@ -12389,6 +12410,7 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   #     ],
   #     policy: "sessionPolicyDocumentType",
   #     duration_seconds: 1,
+  #     minimum_session_token_size: 1,
   #   })
   #
   # @example Response structure
@@ -12406,13 +12428,15 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   #   resp.audience #=> String
   #   resp.name_qualifier #=> String
   #   resp.source_identity #=> String
+  #   resp.session_token_utilization #=> Integer
+  #   resp.session_token_size #=> Integer
   #
   # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumeRoleWithSAML AWS API Documentation
   #
   # @overload assume_role_with_saml(params = {})
   # @param [Hash] params ({})
   #
-  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:1337
+  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:1361
   def assume_role_with_saml(params = T.unsafe(nil), options = T.unsafe(nil)); end
 
   # Returns a set of temporary security credentials for users who have
@@ -12738,6 +12762,13 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   #   [1]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use.html#id_roles_use_view-role-max-session
   #   [2]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_enable-console-custom-url.html
   #
+  # @option params [Integer] :minimum_session_token_size
+  #   The minimum size, in bytes, of the session token that STS issues for
+  #   the request. STS increases the session token to at least this size,
+  #   regardless of its actual content. The value must not exceed 4,096
+  #   bytes. When set to 0 or not specified, the session token size is
+  #   unchanged.
+  #
   # @return [Types::AssumeRoleWithWebIdentityResponse] Returns a {Seahorse::Client::Response response} object which responds to the following methods:
   #
   #   * {Types::AssumeRoleWithWebIdentityResponse#credentials #credentials} => Types::Credentials
@@ -12747,6 +12778,8 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   #   * {Types::AssumeRoleWithWebIdentityResponse#provider #provider} => String
   #   * {Types::AssumeRoleWithWebIdentityResponse#audience #audience} => String
   #   * {Types::AssumeRoleWithWebIdentityResponse#source_identity #source_identity} => String
+  #   * {Types::AssumeRoleWithWebIdentityResponse#session_token_utilization #session_token_utilization} => Integer
+  #   * {Types::AssumeRoleWithWebIdentityResponse#session_token_size #session_token_size} => Integer
   #
   #
   # @example Example: To assume a role as an OpenID Connect-federated user
@@ -12792,6 +12825,7 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   #     ],
   #     policy: "sessionPolicyDocumentType",
   #     duration_seconds: 1,
+  #     minimum_session_token_size: 1,
   #   })
   #
   # @example Response structure
@@ -12807,13 +12841,15 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   #   resp.provider #=> String
   #   resp.audience #=> String
   #   resp.source_identity #=> String
+  #   resp.session_token_utilization #=> Integer
+  #   resp.session_token_size #=> Integer
   #
   # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumeRoleWithWebIdentity AWS API Documentation
   #
   # @overload assume_role_with_web_identity(params = {})
   # @param [Hash] params ({})
   #
-  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:1739
+  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:1775
   def assume_role_with_web_identity(params = T.unsafe(nil), options = T.unsafe(nil)); end
 
   # Returns a set of short term credentials you can use to perform
@@ -12887,10 +12923,19 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   #
   #   By default, the value is set to `900` seconds.
   #
+  # @option params [Integer] :minimum_session_token_size
+  #   The minimum size, in bytes, of the session token that STS issues for
+  #   the request. STS increases the session token to at least this size,
+  #   regardless of its actual content. The value must not exceed 4,096
+  #   bytes. When set to 0 or not specified, the session token size is
+  #   unchanged.
+  #
   # @return [Types::AssumeRootResponse] Returns a {Seahorse::Client::Response response} object which responds to the following methods:
   #
   #   * {Types::AssumeRootResponse#credentials #credentials} => Types::Credentials
   #   * {Types::AssumeRootResponse#source_identity #source_identity} => String
+  #   * {Types::AssumeRootResponse#session_token_utilization #session_token_utilization} => Integer
+  #   * {Types::AssumeRootResponse#session_token_size #session_token_size} => Integer
   #
   #
   # @example Example: To launch a privileged session
@@ -12925,6 +12970,7 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   #       arn: "arnType",
   #     },
   #     duration_seconds: 1,
+  #     minimum_session_token_size: 1,
   #   })
   #
   # @example Response structure
@@ -12934,19 +12980,21 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   #   resp.credentials.session_token #=> String
   #   resp.credentials.expiration #=> Time
   #   resp.source_identity #=> String
+  #   resp.session_token_utilization #=> Integer
+  #   resp.session_token_size #=> Integer
   #
   # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumeRoot AWS API Documentation
   #
   # @overload assume_root(params = {})
   # @param [Hash] params ({})
   #
-  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:1867
+  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:1915
   def assume_root(params = T.unsafe(nil), options = T.unsafe(nil)); end
 
   # @param params ({})
   # @api private
   #
-  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:2712
+  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:2789
   def build_request(operation_name, params = T.unsafe(nil)); end
 
   # Decodes additional information about the authorization status of a
@@ -13026,7 +13074,7 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   # @overload decode_authorization_message(params = {})
   # @param [Hash] params ({})
   #
-  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:1948
+  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:1996
   def decode_authorization_message(params = T.unsafe(nil), options = T.unsafe(nil)); end
 
   # Returns the account identifier for the specified access key ID.
@@ -13086,7 +13134,7 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   # @overload get_access_key_info(params = {})
   # @param [Hash] params ({})
   #
-  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:2009
+  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:2057
   def get_access_key_info(params = T.unsafe(nil), options = T.unsafe(nil)); end
 
   # Returns details about the IAM user or role whose credentials are used
@@ -13169,7 +13217,7 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   # @overload get_caller_identity(params = {})
   # @param [Hash] params ({})
   #
-  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:2093
+  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:2141
   def get_caller_identity(params = T.unsafe(nil), options = T.unsafe(nil)); end
 
   # Exchanges a trade-in token for temporary Amazon Web Services
@@ -13208,7 +13256,7 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   # @overload get_delegated_access_token(params = {})
   # @param [Hash] params ({})
   #
-  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:2133
+  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:2181
   def get_delegated_access_token(params = T.unsafe(nil), options = T.unsafe(nil)); end
 
   # Returns a set of temporary security credentials (consisting of an
@@ -13481,11 +13529,20 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   #   [1]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_session-tags.html
   #   [2]: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-limits.html#reference_iam-limits-entity-length
   #
+  # @option params [Integer] :minimum_session_token_size
+  #   The minimum size, in bytes, of the session token that STS issues for
+  #   the request. STS increases the session token to at least this size,
+  #   regardless of its actual content. The value must not exceed 4,096
+  #   bytes. When set to 0 or not specified, the session token size is
+  #   unchanged.
+  #
   # @return [Types::GetFederationTokenResponse] Returns a {Seahorse::Client::Response response} object which responds to the following methods:
   #
   #   * {Types::GetFederationTokenResponse#credentials #credentials} => Types::Credentials
   #   * {Types::GetFederationTokenResponse#federated_user #federated_user} => Types::FederatedUser
   #   * {Types::GetFederationTokenResponse#packed_policy_size #packed_policy_size} => Integer
+  #   * {Types::GetFederationTokenResponse#session_token_utilization #session_token_utilization} => Integer
+  #   * {Types::GetFederationTokenResponse#session_token_size #session_token_size} => Integer
   #
   #
   # @example Example: To get temporary credentials for a role by using GetFederationToken
@@ -13538,6 +13595,7 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   #         value: "tagValueType", # required
   #       },
   #     ],
+  #     minimum_session_token_size: 1,
   #   })
   #
   # @example Response structure
@@ -13549,13 +13607,15 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   #   resp.federated_user.federated_user_id #=> String
   #   resp.federated_user.arn #=> String
   #   resp.packed_policy_size #=> Integer
+  #   resp.session_token_utilization #=> Integer
+  #   resp.session_token_size #=> Integer
   #
   # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/GetFederationToken AWS API Documentation
   #
   # @overload get_federation_token(params = {})
   # @param [Hash] params ({})
   #
-  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:2481
+  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:2541
   def get_federation_token(params = T.unsafe(nil), options = T.unsafe(nil)); end
 
   # Returns a set of temporary credentials for an Amazon Web Services
@@ -13668,9 +13728,18 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   #   The format for this parameter, as described by its regex pattern, is a
   #   sequence of six numeric digits.
   #
+  # @option params [Integer] :minimum_session_token_size
+  #   The minimum size, in bytes, of the session token that STS issues for
+  #   the request. STS increases the session token to at least this size,
+  #   regardless of its actual content. The value must not exceed 4,096
+  #   bytes. When set to 0 or not specified, the session token size is
+  #   unchanged.
+  #
   # @return [Types::GetSessionTokenResponse] Returns a {Seahorse::Client::Response response} object which responds to the following methods:
   #
   #   * {Types::GetSessionTokenResponse#credentials #credentials} => Types::Credentials
+  #   * {Types::GetSessionTokenResponse#session_token_utilization #session_token_utilization} => Integer
+  #   * {Types::GetSessionTokenResponse#session_token_size #session_token_size} => Integer
   #
   #
   # @example Example: To get temporary credentials for an IAM user or an AWS account
@@ -13697,6 +13766,7 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   #     duration_seconds: 1,
   #     serial_number: "serialNumberType",
   #     token_code: "tokenCodeType",
+  #     minimum_session_token_size: 1,
   #   })
   #
   # @example Response structure
@@ -13705,13 +13775,15 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   #   resp.credentials.secret_access_key #=> String
   #   resp.credentials.session_token #=> String
   #   resp.credentials.expiration #=> Time
+  #   resp.session_token_utilization #=> Integer
+  #   resp.session_token_size #=> Integer
   #
   # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/GetSessionToken AWS API Documentation
   #
   # @overload get_session_token(params = {})
   # @param [Hash] params ({})
   #
-  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:2638
+  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:2710
   def get_session_token(params = T.unsafe(nil), options = T.unsafe(nil)); end
 
   # Returns a signed JSON Web Token (JWT) that represents the calling
@@ -13720,6 +13792,11 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   # token is signed by Amazon Web Services STS and can be publicly
   # verified using the verification keys published at the issuer's JWKS
   # endpoint.
+  #
+  # <note markdown="1"> The `GetWebIdentityToken` API is not available on the STS Global
+  # endpoint.
+  #
+  #  </note>
   #
   # @option params [required, Array<String>] :audience
   #   The intended recipient of the web identity token. This value populates
@@ -13775,24 +13852,24 @@ class Aws::STS::Client < ::Seahorse::Client::Base
   # @overload get_web_identity_token(params = {})
   # @param [Hash] params ({})
   #
-  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:2703
+  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:2780
   def get_web_identity_token(params = T.unsafe(nil), options = T.unsafe(nil)); end
 
   # @api private
   # @deprecated
   #
-  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:2732
+  # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:2809
   def waiter_names; end
 
   class << self
     # @api private
     #
-    # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:2742
+    # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:2819
     def errors_module; end
 
     # @api private
     #
-    # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:2739
+    # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client.rb:2816
     def identifier; end
   end
 end
@@ -13806,7 +13883,7 @@ end
 
 # @api private
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client_api.rb:312
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client_api.rb:333
 Aws::STS::ClientApi::API = T.let(T.unsafe(nil), Seahorse::Model::Api)
 
 # pkg:gem/aws-sdk-core#lib/aws-sdk-sts/client_api.rb:17
@@ -14697,14 +14774,22 @@ module Aws::STS::Types; end
 #   `[{"ProviderArn":"arn:aws:iam::aws:contextProvider/IdentityCenter","ContextAssertion":"trusted-context-assertion"}]`
 #   @return [Array<Types::ProvidedContext>]
 #
+# @!attribute [rw] minimum_session_token_size
+#   The minimum size, in bytes, of the session token that STS issues for
+#   the request. STS increases the session token to at least this size,
+#   regardless of its actual content. The value must not exceed 4,096
+#   bytes. When set to 0 or not specified, the session token size is
+#   unchanged.
+#   @return [Integer]
+#
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumeRoleRequest AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:320
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:328
 class Aws::STS::Types::AssumeRoleRequest < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:333
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:342
 Aws::STS::Types::AssumeRoleRequest::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # Contains the response to a successful AssumeRole request, including
@@ -14762,14 +14847,24 @@ Aws::STS::Types::AssumeRoleRequest::SENSITIVE = T.let(T.unsafe(nil), Array)
 #   [1]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_control-access_monitor.html
 #   @return [String]
 #
+# @!attribute [rw] session_token_utilization
+#   The percentage (0-100) of the maximum allowed session token size
+#   that the returned session token consumes.
+#   @return [Integer]
+#
+# @!attribute [rw] session_token_size
+#   The size, in bytes, of the session token returned in the Credentials
+#   for this response.
+#   @return [Integer]
+#
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumeRoleResponse AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:394
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:413
 class Aws::STS::Types::AssumeRoleResponse < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:399
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:420
 Aws::STS::Types::AssumeRoleResponse::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # @!attribute [rw] role_arn
@@ -14903,14 +14998,22 @@ Aws::STS::Types::AssumeRoleResponse::SENSITIVE = T.let(T.unsafe(nil), Array)
 #   [2]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_enable-console-custom-url.html
 #   @return [Integer]
 #
+# @!attribute [rw] minimum_session_token_size
+#   The minimum size, in bytes, of the session token that STS issues for
+#   the request. STS increases the session token to at least this size,
+#   regardless of its actual content. The value must not exceed 4,096
+#   bytes. When set to 0 or not specified, the session token size is
+#   unchanged.
+#   @return [Integer]
+#
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumeRoleWithSAMLRequest AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:536
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:565
 class Aws::STS::Types::AssumeRoleWithSAMLRequest < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:543
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:573
 Aws::STS::Types::AssumeRoleWithSAMLRequest::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # Contains the response to a successful AssumeRoleWithSAML request,
@@ -15016,14 +15119,24 @@ Aws::STS::Types::AssumeRoleWithSAMLRequest::SENSITIVE = T.let(T.unsafe(nil), Arr
 #   [3]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_control-access_monitor.html
 #   @return [String]
 #
+# @!attribute [rw] session_token_utilization
+#   The percentage (0-100) of the maximum allowed session token size
+#   that the returned session token consumes.
+#   @return [Integer]
+#
+# @!attribute [rw] session_token_size
+#   The size, in bytes, of the session token returned in the Credentials
+#   for this response.
+#   @return [Integer]
+#
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumeRoleWithSAMLResponse AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:652
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:692
 class Aws::STS::Types::AssumeRoleWithSAMLResponse < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:662
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:704
 Aws::STS::Types::AssumeRoleWithSAMLResponse::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # @!attribute [rw] role_arn
@@ -15203,14 +15316,22 @@ Aws::STS::Types::AssumeRoleWithSAMLResponse::SENSITIVE = T.let(T.unsafe(nil), Ar
 #   [2]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_enable-console-custom-url.html
 #   @return [Integer]
 #
+# @!attribute [rw] minimum_session_token_size
+#   The minimum size, in bytes, of the session token that STS issues for
+#   the request. STS increases the session token to at least this size,
+#   regardless of its actual content. The value must not exceed 4,096
+#   bytes. When set to 0 or not specified, the session token size is
+#   unchanged.
+#   @return [Integer]
+#
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumeRoleWithWebIdentityRequest AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:845
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:895
 class Aws::STS::Types::AssumeRoleWithWebIdentityRequest < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:853
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:904
 Aws::STS::Types::AssumeRoleWithWebIdentityRequest::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # Contains the response to a successful AssumeRoleWithWebIdentity
@@ -15300,14 +15421,24 @@ Aws::STS::Types::AssumeRoleWithWebIdentityRequest::SENSITIVE = T.let(T.unsafe(ni
 #   [3]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_control-access_monitor.html
 #   @return [String]
 #
+# @!attribute [rw] session_token_utilization
+#   The percentage (0-100) of the maximum allowed session token size
+#   that the returned session token consumes.
+#   @return [Integer]
+#
+# @!attribute [rw] session_token_size
+#   The size, in bytes, of the session token returned in the Credentials
+#   for this response.
+#   @return [Integer]
+#
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumeRoleWithWebIdentityResponse AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:946
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1007
 class Aws::STS::Types::AssumeRoleWithWebIdentityResponse < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:954
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1017
 Aws::STS::Types::AssumeRoleWithWebIdentityResponse::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # @!attribute [rw] target_principal
@@ -15347,14 +15478,22 @@ Aws::STS::Types::AssumeRoleWithWebIdentityResponse::SENSITIVE = T.let(T.unsafe(n
 #   By default, the value is set to `900` seconds.
 #   @return [Integer]
 #
+# @!attribute [rw] minimum_session_token_size
+#   The minimum size, in bytes, of the session token that STS issues for
+#   the request. STS increases the session token to at least this size,
+#   regardless of its actual content. The value must not exceed 4,096
+#   bytes. When set to 0 or not specified, the session token size is
+#   unchanged.
+#   @return [Integer]
+#
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumeRootRequest AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:997
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1068
 class Aws::STS::Types::AssumeRootRequest < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1001
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1073
 Aws::STS::Types::AssumeRootRequest::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # @!attribute [rw] credentials
@@ -15387,14 +15526,24 @@ Aws::STS::Types::AssumeRootRequest::SENSITIVE = T.let(T.unsafe(nil), Array)
 #   [1]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_control-access_monitor.html
 #   @return [String]
 #
+# @!attribute [rw] session_token_utilization
+#   The percentage (0-100) of the maximum allowed session token size
+#   that the returned session token consumes.
+#   @return [Integer]
+#
+# @!attribute [rw] session_token_size
+#   The size, in bytes, of the session token returned in the Credentials
+#   for this response.
+#   @return [Integer]
+#
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumeRootResponse AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1037
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1119
 class Aws::STS::Types::AssumeRootResponse < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1040
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1124
 Aws::STS::Types::AssumeRootResponse::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # The identifiers for the temporary security credentials that the
@@ -15419,12 +15568,12 @@ Aws::STS::Types::AssumeRootResponse::SENSITIVE = T.let(T.unsafe(nil), Array)
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumedRoleUser AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1066
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1150
 class Aws::STS::Types::AssumedRoleUser < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1069
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1153
 Aws::STS::Types::AssumedRoleUser::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # Amazon Web Services credentials for API authentication.
@@ -15449,12 +15598,12 @@ Aws::STS::Types::AssumedRoleUser::SENSITIVE = T.let(T.unsafe(nil), Array)
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/Credentials AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1095
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1179
 class Aws::STS::Types::Credentials < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1100
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1184
 Aws::STS::Types::Credentials::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # @!attribute [rw] encoded_message
@@ -15463,12 +15612,12 @@ Aws::STS::Types::Credentials::SENSITIVE = T.let(T.unsafe(nil), Array)
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/DecodeAuthorizationMessageRequest AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1110
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1194
 class Aws::STS::Types::DecodeAuthorizationMessageRequest < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1112
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1196
 Aws::STS::Types::DecodeAuthorizationMessageRequest::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # A document that contains additional information about the
@@ -15481,12 +15630,12 @@ Aws::STS::Types::DecodeAuthorizationMessageRequest::SENSITIVE = T.let(T.unsafe(n
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/DecodeAuthorizationMessageResponse AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1126
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1210
 class Aws::STS::Types::DecodeAuthorizationMessageResponse < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1128
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1212
 Aws::STS::Types::DecodeAuthorizationMessageResponse::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # The web identity token that was passed is expired or is not valid. Get
@@ -15498,12 +15647,12 @@ Aws::STS::Types::DecodeAuthorizationMessageResponse::SENSITIVE = T.let(T.unsafe(
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/ExpiredTokenException AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1141
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1225
 class Aws::STS::Types::ExpiredTokenException < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1143
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1227
 Aws::STS::Types::ExpiredTokenException::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # The trade-in token provided in the request has expired and can no
@@ -15515,12 +15664,12 @@ Aws::STS::Types::ExpiredTokenException::SENSITIVE = T.let(T.unsafe(nil), Array)
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/ExpiredTradeInTokenException AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1156
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1240
 class Aws::STS::Types::ExpiredTradeInTokenException < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1158
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1242
 Aws::STS::Types::ExpiredTradeInTokenException::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # Identifiers for the federated user that is associated with the
@@ -15543,12 +15692,12 @@ Aws::STS::Types::ExpiredTradeInTokenException::SENSITIVE = T.let(T.unsafe(nil), 
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/FederatedUser AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1182
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1266
 class Aws::STS::Types::FederatedUser < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1185
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1269
 Aws::STS::Types::FederatedUser::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # @!attribute [rw] access_key_id
@@ -15561,12 +15710,12 @@ Aws::STS::Types::FederatedUser::SENSITIVE = T.let(T.unsafe(nil), Array)
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/GetAccessKeyInfoRequest AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1199
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1283
 class Aws::STS::Types::GetAccessKeyInfoRequest < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1201
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1285
 Aws::STS::Types::GetAccessKeyInfoRequest::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # @!attribute [rw] account
@@ -15575,19 +15724,19 @@ Aws::STS::Types::GetAccessKeyInfoRequest::SENSITIVE = T.let(T.unsafe(nil), Array
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/GetAccessKeyInfoResponse AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1211
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1295
 class Aws::STS::Types::GetAccessKeyInfoResponse < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1213
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1297
 Aws::STS::Types::GetAccessKeyInfoResponse::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # @api private
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/GetCallerIdentityRequest AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1221
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1305
 class Aws::STS::Types::GetCallerIdentityRequest < ::Aws::EmptyStructure; end
 
 # Contains the response to a successful GetCallerIdentity request,
@@ -15616,12 +15765,12 @@ class Aws::STS::Types::GetCallerIdentityRequest < ::Aws::EmptyStructure; end
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/GetCallerIdentityResponse AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1249
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1333
 class Aws::STS::Types::GetCallerIdentityResponse < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1253
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1337
 Aws::STS::Types::GetCallerIdentityResponse::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # @!attribute [rw] trade_in_token
@@ -15631,12 +15780,12 @@ Aws::STS::Types::GetCallerIdentityResponse::SENSITIVE = T.let(T.unsafe(nil), Arr
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/GetDelegatedAccessTokenRequest AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1264
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1348
 class Aws::STS::Types::GetDelegatedAccessTokenRequest < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1266
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1350
 Aws::STS::Types::GetDelegatedAccessTokenRequest::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # @!attribute [rw] credentials
@@ -15659,12 +15808,12 @@ Aws::STS::Types::GetDelegatedAccessTokenRequest::SENSITIVE = T.let(T.unsafe(nil)
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/GetDelegatedAccessTokenResponse AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1290
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1374
 class Aws::STS::Types::GetDelegatedAccessTokenResponse < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1294
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1378
 Aws::STS::Types::GetDelegatedAccessTokenResponse::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # @!attribute [rw] name
@@ -15828,14 +15977,22 @@ Aws::STS::Types::GetDelegatedAccessTokenResponse::SENSITIVE = T.let(T.unsafe(nil
 #   [2]: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-limits.html#reference_iam-limits-entity-length
 #   @return [Array<Types::Tag>]
 #
+# @!attribute [rw] minimum_session_token_size
+#   The minimum size, in bytes, of the session token that STS issues for
+#   the request. STS increases the session token to at least this size,
+#   regardless of its actual content. The value must not exceed 4,096
+#   bytes. When set to 0 or not specified, the session token size is
+#   unchanged.
+#   @return [Integer]
+#
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/GetFederationTokenRequest AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1461
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1553
 class Aws::STS::Types::GetFederationTokenRequest < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1467
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1560
 Aws::STS::Types::GetFederationTokenRequest::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # Contains the response to a successful GetFederationToken request,
@@ -15867,14 +16024,24 @@ Aws::STS::Types::GetFederationTokenRequest::SENSITIVE = T.let(T.unsafe(nil), Arr
 #   means the policies and tags exceeded the allowed space.
 #   @return [Integer]
 #
+# @!attribute [rw] session_token_utilization
+#   The percentage (0-100) of the maximum allowed session token size
+#   that the returned session token consumes.
+#   @return [Integer]
+#
+# @!attribute [rw] session_token_size
+#   The size, in bytes, of the session token returned in the Credentials
+#   for this response.
+#   @return [Integer]
+#
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/GetFederationTokenResponse AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1502
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1605
 class Aws::STS::Types::GetFederationTokenResponse < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1506
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1611
 Aws::STS::Types::GetFederationTokenResponse::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # @!attribute [rw] duration_seconds
@@ -15915,14 +16082,22 @@ Aws::STS::Types::GetFederationTokenResponse::SENSITIVE = T.let(T.unsafe(nil), Ar
 #   a sequence of six numeric digits.
 #   @return [String]
 #
+# @!attribute [rw] minimum_session_token_size
+#   The minimum size, in bytes, of the session token that STS issues for
+#   the request. STS increases the session token to at least this size,
+#   regardless of its actual content. The value must not exceed 4,096
+#   bytes. When set to 0 or not specified, the session token size is
+#   unchanged.
+#   @return [Integer]
+#
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/GetSessionTokenRequest AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1550
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1663
 class Aws::STS::Types::GetSessionTokenRequest < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1554
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1668
 Aws::STS::Types::GetSessionTokenRequest::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # Contains the response to a successful GetSessionToken request,
@@ -15940,14 +16115,24 @@ Aws::STS::Types::GetSessionTokenRequest::SENSITIVE = T.let(T.unsafe(nil), Array)
 #    </note>
 #   @return [Types::Credentials]
 #
+# @!attribute [rw] session_token_utilization
+#   The percentage (0-100) of the maximum allowed session token size
+#   that the returned session token consumes.
+#   @return [Integer]
+#
+# @!attribute [rw] session_token_size
+#   The size, in bytes, of the session token returned in the Credentials
+#   for this response.
+#   @return [Integer]
+#
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/GetSessionTokenResponse AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1575
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1699
 class Aws::STS::Types::GetSessionTokenResponse < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1577
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1703
 Aws::STS::Types::GetSessionTokenResponse::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # @!attribute [rw] audience
@@ -15981,12 +16166,12 @@ Aws::STS::Types::GetSessionTokenResponse::SENSITIVE = T.let(T.unsafe(nil), Array
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/GetWebIdentityTokenRequest AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1612
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1738
 class Aws::STS::Types::GetWebIdentityTokenRequest < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1617
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1743
 Aws::STS::Types::GetWebIdentityTokenRequest::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # @!attribute [rw] web_identity_token
@@ -16009,12 +16194,12 @@ Aws::STS::Types::GetWebIdentityTokenRequest::SENSITIVE = T.let(T.unsafe(nil), Ar
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/GetWebIdentityTokenResponse AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1641
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1767
 class Aws::STS::Types::GetWebIdentityTokenResponse < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1644
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1770
 Aws::STS::Types::GetWebIdentityTokenResponse::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # The request could not be fulfilled because the identity provider (IDP)
@@ -16029,12 +16214,12 @@ Aws::STS::Types::GetWebIdentityTokenResponse::SENSITIVE = T.let(T.unsafe(nil), A
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/IDPCommunicationErrorException AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1660
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1786
 class Aws::STS::Types::IDPCommunicationErrorException < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1662
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1788
 Aws::STS::Types::IDPCommunicationErrorException::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # The identity provider (IdP) reported that authentication failed. This
@@ -16049,12 +16234,12 @@ Aws::STS::Types::IDPCommunicationErrorException::SENSITIVE = T.let(T.unsafe(nil)
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/IDPRejectedClaimException AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1678
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1804
 class Aws::STS::Types::IDPRejectedClaimException < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1680
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1806
 Aws::STS::Types::IDPRejectedClaimException::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # The error returned if the message passed to
@@ -16067,12 +16252,12 @@ Aws::STS::Types::IDPRejectedClaimException::SENSITIVE = T.let(T.unsafe(nil), Arr
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/InvalidAuthorizationMessageException AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1694
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1820
 class Aws::STS::Types::InvalidAuthorizationMessageException < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1696
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1822
 Aws::STS::Types::InvalidAuthorizationMessageException::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # The web identity token that was passed could not be validated by
@@ -16084,12 +16269,12 @@ Aws::STS::Types::InvalidAuthorizationMessageException::SENSITIVE = T.let(T.unsaf
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/InvalidIdentityTokenException AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1709
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1835
 class Aws::STS::Types::InvalidIdentityTokenException < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1711
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1837
 Aws::STS::Types::InvalidIdentityTokenException::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # The requested token payload size exceeds the maximum allowed size.
@@ -16101,12 +16286,12 @@ Aws::STS::Types::InvalidIdentityTokenException::SENSITIVE = T.let(T.unsafe(nil),
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/JWTPayloadSizeExceededException AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1724
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1850
 class Aws::STS::Types::JWTPayloadSizeExceededException < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1726
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1852
 Aws::STS::Types::JWTPayloadSizeExceededException::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # The request was rejected because the policy document was malformed.
@@ -16117,12 +16302,12 @@ Aws::STS::Types::JWTPayloadSizeExceededException::SENSITIVE = T.let(T.unsafe(nil
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/MalformedPolicyDocumentException AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1738
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1864
 class Aws::STS::Types::MalformedPolicyDocumentException < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1740
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1866
 Aws::STS::Types::MalformedPolicyDocumentException::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # The outbound web identity federation feature is not enabled for this
@@ -16134,12 +16319,12 @@ Aws::STS::Types::MalformedPolicyDocumentException::SENSITIVE = T.let(T.unsafe(ni
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/OutboundWebIdentityFederationDisabledException AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1753
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1879
 class Aws::STS::Types::OutboundWebIdentityFederationDisabledException < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1755
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1881
 Aws::STS::Types::OutboundWebIdentityFederationDisabledException::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # The request was rejected because the total packed size of the session
@@ -16165,12 +16350,12 @@ Aws::STS::Types::OutboundWebIdentityFederationDisabledException::SENSITIVE = T.l
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/PackedPolicyTooLargeException AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1782
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1908
 class Aws::STS::Types::PackedPolicyTooLargeException < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1784
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1910
 Aws::STS::Types::PackedPolicyTooLargeException::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # A reference to the IAM managed policy that is passed as a session
@@ -16189,12 +16374,12 @@ Aws::STS::Types::PackedPolicyTooLargeException::SENSITIVE = T.let(T.unsafe(nil),
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/PolicyDescriptorType AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1804
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1930
 class Aws::STS::Types::PolicyDescriptorType < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1806
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1932
 Aws::STS::Types::PolicyDescriptorType::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # Contains information about the provided context. This includes the
@@ -16214,12 +16399,12 @@ Aws::STS::Types::PolicyDescriptorType::SENSITIVE = T.let(T.unsafe(nil), Array)
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/ProvidedContext AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1827
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1953
 class Aws::STS::Types::ProvidedContext < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1830
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1956
 Aws::STS::Types::ProvidedContext::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # STS is not activated in the requested region for the account that is
@@ -16237,12 +16422,12 @@ Aws::STS::Types::ProvidedContext::SENSITIVE = T.let(T.unsafe(nil), Array)
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/RegionDisabledException AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1849
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1975
 class Aws::STS::Types::RegionDisabledException < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1851
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1977
 Aws::STS::Types::RegionDisabledException::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # The requested token duration would extend the session beyond its
@@ -16255,12 +16440,12 @@ Aws::STS::Types::RegionDisabledException::SENSITIVE = T.let(T.unsafe(nil), Array
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/SessionDurationEscalationException AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1865
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1991
 class Aws::STS::Types::SessionDurationEscalationException < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1867
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1993
 Aws::STS::Types::SessionDurationEscalationException::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # You can pass custom key-value pair attributes when you assume a role
@@ -16299,12 +16484,12 @@ Aws::STS::Types::SessionDurationEscalationException::SENSITIVE = T.let(T.unsafe(
 #
 # @see http://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/Tag AWS API Documentation
 #
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1907
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:2033
 class Aws::STS::Types::Tag < ::Struct
   include ::Aws::Structure
 end
 
-# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:1910
+# pkg:gem/aws-sdk-core#lib/aws-sdk-sts/types.rb:2036
 Aws::STS::Types::Tag::SENSITIVE = T.let(T.unsafe(nil), Array)
 
 # @api private
@@ -20232,7 +20417,7 @@ module Aws::Util
     # @param [String] value
     # @return [Time]
     #
-    # pkg:gem/aws-sdk-core#lib/aws-sdk-core/util.rb:96
+    # pkg:gem/aws-sdk-core#lib/aws-sdk-core/util.rb:120
     def deserialize_time(value); end
 
     # pkg:gem/aws-sdk-core#lib/aws-sdk-core/util.rb:50
@@ -20240,6 +20425,28 @@ module Aws::Util
 
     # pkg:gem/aws-sdk-core#lib/aws-sdk-core/util.rb:58
     def monotonic_seconds; end
+
+    # Serializes a {Time} to the Smithy `date-time` format: an RFC 3339
+    # (ISO 8601) string with optional millisecond precision and no UTC
+    # offset. Fractional seconds are included only when present, and
+    # sub-millisecond precision is truncated to milliseconds.
+    # @see https://smithy.io/2.0/spec/protocol-traits.html#timestamp-formats
+    # @param [Time] value
+    # @return [String]
+    #
+    # pkg:gem/aws-sdk-core#lib/aws-sdk-core/util.rb:114
+    def serialize_date_time(value); end
+
+    # Serializes a {Time} to the Smithy `epoch-seconds` format: seconds
+    # since the Unix epoch with optional millisecond precision. Whole-second
+    # values are returned as an Integer so the wire format is unchanged for
+    # the common case; sub-millisecond precision is truncated to milliseconds.
+    # @see https://smithy.io/2.0/spec/protocol-traits.html#timestamp-formats
+    # @param [Time] value
+    # @return [Integer, Float]
+    #
+    # pkg:gem/aws-sdk-core#lib/aws-sdk-core/util.rb:101
+    def serialize_epoch_seconds(value); end
 
     # @param [Number] input
     # @return [Number, String] The serialized number

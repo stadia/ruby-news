@@ -1171,7 +1171,7 @@ class Devise::ConfirmationsController < ::DeviseController
   private
 
   def _layout(lookup_context, formats, keys); end
-  def _layout_from_proc; end
+  def _layout_from_proc(controller); end
 
   class << self
     private
@@ -3879,7 +3879,7 @@ class Devise::OmniauthCallbacksController < ::DeviseController
   private
 
   def _layout(lookup_context, formats, keys); end
-  def _layout_from_proc; end
+  def _layout_from_proc(controller); end
 
   class << self
     private
@@ -4120,7 +4120,7 @@ class Devise::PasswordsController < ::DeviseController
   private
 
   def _layout(lookup_context, formats, keys); end
-  def _layout_from_proc; end
+  def _layout_from_proc(controller); end
 
   class << self
     private
@@ -4166,7 +4166,7 @@ class Devise::RegistrationsController < ::DeviseController
   private
 
   def _layout(lookup_context, formats, keys); end
-  def _layout_from_proc; end
+  def _layout_from_proc(controller); end
   def set_flash_message_for_update(resource, prev_unconfirmed_email); end
   def update_needs_confirmation?(resource, previous); end
 
@@ -4210,7 +4210,7 @@ class Devise::SessionsController < ::DeviseController
   private
 
   def _layout(lookup_context, formats, keys); end
-  def _layout_from_proc; end
+  def _layout_from_proc(controller); end
   def all_signed_out?; end
   def respond_to_on_destroy(non_navigational_status: T.unsafe(nil)); end
   def verify_signed_out_user; end
@@ -4634,7 +4634,7 @@ class Devise::UnlocksController < ::DeviseController
   private
 
   def _layout(lookup_context, formats, keys); end
-  def _layout_from_proc; end
+  def _layout_from_proc(controller); end
 
   class << self
     private
@@ -4685,7 +4685,7 @@ class DeviseController < ::ApplicationController
   private
 
   def _layout(lookup_context, formats, keys); end
-  def _layout_from_proc; end
+  def _layout_from_proc(controller); end
 
   class << self
     def internal_methods; end

@@ -4,7 +4,7 @@
 
 require "ruby_llm/schema"
 
-class ArticleSchema < RubyLLM::Schema
+class ArticleSchema < Schematist::Schema
   string :title_ko, description: "원문 제목의 의미를 살린 자연스러운 한국어 제목"
 
   array :summary_key, of: :string, description: "가장 중요한 내용 순으로 정렬된 핵심 요약 3개 (각 60자 이상)"

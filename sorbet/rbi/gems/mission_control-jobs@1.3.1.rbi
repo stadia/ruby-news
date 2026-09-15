@@ -117,16 +117,28 @@ end
 #
 # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:6
 class ActiveJob::JobProxy < ::ActiveJob::Base
-  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:13
+  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:16
   def initialize(job_data); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:34
+  # Defined here rather than on ActiveJob::Base so it can't clash with
+  # adapters that put their own batch_id on jobs, like Solid Queue.
+  #
+  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:14
+  def batch_id; end
+
+  # Defined here rather than on ActiveJob::Base so it can't clash with
+  # adapters that put their own batch_id on jobs, like Solid Queue.
+  #
+  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:14
+  def batch_id=(_arg0); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:37
   def blocked?; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:29
+  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:32
   def duration; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:34
+  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:37
   def failed?; end
 
   # Raw data with the sensitive user data filtered out.
@@ -139,25 +151,25 @@ class ActiveJob::JobProxy < ::ActiveJob::Base
   # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:11
   def filtered_raw_data=(_arg0); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:34
+  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:37
   def finished?; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:34
+  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:37
   def in_progress?; end
 
   # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:9
   def job_class_name; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:34
+  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:37
   def pending?; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:25
+  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:28
   def perform_now; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:34
+  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:37
   def scheduled?; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:19
+  # pkg:gem/mission_control-jobs#lib/active_job/job_proxy.rb:22
   def serialize; end
 end
 
@@ -198,10 +210,13 @@ class ActiveJob::JobsRelation
   # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:31
   def [](*_arg0, **_arg1, &_arg2); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:76
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:29
+  def batch_id; end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:82
   def blocked; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:80
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:86
   def blocked?; end
 
   # Returns the number of jobs in the relation.
@@ -209,7 +224,7 @@ class ActiveJob::JobsRelation
   # When filtering jobs, if the adapter doesn't support the filter(s)
   # directly, this will load all the jobs in memory to filter them.
   #
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:99
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:105
   def count; end
 
   # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:29
@@ -217,12 +232,12 @@ class ActiveJob::JobsRelation
 
   # Discard all the jobs in the relation.
   #
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:148
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:154
   def discard_all; end
 
   # Discard the provided job.
   #
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:154
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:160
   def discard_job(job); end
 
   # Dispatch the provided job.
@@ -230,57 +245,60 @@ class ActiveJob::JobsRelation
   # This operation is only valid for blocked or scheduled jobs. It will
   # raise an error +ActiveJob::Errors::InvalidOperation+ otherwise.
   #
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:162
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:168
   def dispatch_job(job); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:124
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:130
   def each(&block); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:110
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:116
   def empty?; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:76
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:29
+  def enqueued_at; end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:82
   def failed; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:80
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:86
   def failed?; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:216
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:222
   def filtering_needed?; end
 
   # Find a job by id.
   #
   # Returns nil when not found.
   #
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:171
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:177
   def find_by_id(job_id); end
 
   # Find a job by id.
   #
   # Raises +ActiveJob::Errors::JobNotFoundError+ when not found.
   #
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:178
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:184
   def find_by_id!(job_id); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:76
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:82
   def finished; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:80
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:86
   def finished?; end
 
   # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:29
   def finished_at; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:195
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:201
   def in_batches(of: T.unsafe(nil), order: T.unsafe(nil), &block); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:76
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:82
   def in_progress; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:80
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:86
   def in_progress?; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:122
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:128
   def inspect; end
 
   # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:29
@@ -288,24 +306,24 @@ class ActiveJob::JobsRelation
 
   # Returns an array of jobs class names in the first +from_first+ jobs.
   #
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:183
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:189
   def job_class_names(from_first: T.unsafe(nil)); end
 
   # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:31
   def last(*_arg0, **_arg1, &_arg2); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:107
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:113
   def length; end
 
   # Sets the max number of jobs to fetch in the query.
   #
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:91
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:97
   def limit(limit); end
 
   # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:29
   def limit_value; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:212
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:218
   def limit_value_provided?; end
 
   # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:32
@@ -313,19 +331,19 @@ class ActiveJob::JobsRelation
 
   # Sets an offset for the jobs-fetching query. The first position is 0.
   #
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:86
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:92
   def offset(offset); end
 
   # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:29
   def offset_value; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:208
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:214
   def paginated?; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:76
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:82
   def pending; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:80
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:86
   def pending?; end
 
   # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:29
@@ -334,7 +352,7 @@ class ActiveJob::JobsRelation
   # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:29
   def recurring_task_id; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:187
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:193
   def reload; end
 
   # Retry all the jobs in the queue.
@@ -342,7 +360,7 @@ class ActiveJob::JobsRelation
   # This operation is only valid for sets of failed jobs. It will
   # raise an error +ActiveJob::Errors::InvalidOperation+ otherwise.
   #
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:132
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:138
   def retry_all; end
 
   # Retry the provided job.
@@ -350,25 +368,28 @@ class ActiveJob::JobsRelation
   # This operation is only valid for sets of failed jobs. It will
   # raise an error +ActiveJob::Errors::InvalidOperation+ otherwise.
   #
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:142
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:148
   def retry_job(job); end
 
   # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:31
   def reverse(*_arg0, **_arg1, &_arg2); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:76
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:82
   def scheduled; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:80
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:86
   def scheduled?; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:108
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:29
+  def scheduled_at; end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:114
   def size; end
 
   # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:29
   def status; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:114
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:120
   def to_s; end
 
   # Returns a +ActiveJob::JobsRelation+ with the configured filtering options.
@@ -382,12 +403,15 @@ class ActiveJob::JobsRelation
   # * <tt>:queue_name</tt> - To only include the jobs in the provided queue.
   # * <tt>:worker_id</tt> - To only include the jobs processed by the provided worker.
   # * <tt>:recurring_task_id</tt> - To only include the jobs corresponding to runs of a recurring task.
+  # * <tt>:batch_id</tt> - To only include the jobs belonging to a given batch.
   # * <tt>:finished_at</tt> - (Range) To only include the jobs finished between the provided range
+  # * <tt>:scheduled_at</tt> - (Range) To only include the jobs scheduled between the provided range
+  # * <tt>:enqueued_at</tt> - (Range) To only include the jobs enqueued between the provided range
   #
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:55
-  def where(job_class_name: T.unsafe(nil), queue_name: T.unsafe(nil), worker_id: T.unsafe(nil), recurring_task_id: T.unsafe(nil), finished_at: T.unsafe(nil)); end
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:58
+  def where(job_class_name: T.unsafe(nil), queue_name: T.unsafe(nil), worker_id: T.unsafe(nil), recurring_task_id: T.unsafe(nil), batch_id: T.unsafe(nil), finished_at: T.unsafe(nil), scheduled_at: T.unsafe(nil), enqueued_at: T.unsafe(nil)); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:67
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:73
   def with_status(status); end
 
   # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:29
@@ -395,78 +419,90 @@ class ActiveJob::JobsRelation
 
   private
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:229
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:228
+  def batch_id=(_arg0); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:235
   def clone_with(**properties); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:282
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:228
+  def enqueued_at=(_arg0); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:296
   def ensure_failed_status; end
 
   # Filtering for not natively supported filters is performed in memory
   #
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:270
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:276
   def filter(jobs); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:278
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:292
   def filters; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:222
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:228
   def finished_at=(_arg0); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:290
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:304
   def in_ascending_batches(of:); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:302
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:316
   def in_descending_batches(of:); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:222
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:228
   def job_class_name=(_arg0); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:222
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:228
   def limit_value=(_arg0); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:241
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:247
   def load_jobs; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:265
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:271
   def loaded?; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:221
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:227
   def loaded_jobs; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:222
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:228
   def offset_value=(_arg0); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:249
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:255
   def perform_each; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:237
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:243
   def query_count; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:221
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:227
   def queue_adapter; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:222
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:228
   def queue_name=(_arg0); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:222
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:228
   def recurring_task_id=(_arg0); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:274
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:284
+  def satisfies_filter?(filter_value, job_value); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:280
   def satisfy_filter?(job); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:224
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:228
+  def scheduled_at=(_arg0); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:230
   def set_defaults; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:222
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:228
   def status=(_arg0); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:286
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:300
   def validate_looping_in_batches_is_possible; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:315
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:329
   def wait_batch_delay; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:222
+  # pkg:gem/mission_control-jobs#lib/active_job/jobs_relation.rb:228
   def worker_id=(_arg0); end
 end
 
@@ -743,82 +779,92 @@ class ActiveJob::QueueAdapters::ResqueExt::ResqueJobs
 
   private
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:246
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:255
   def clear_failed_queue; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:238
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:247
   def count_fetched_jobs; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:187
-  def deserialize_resque_job(resque_job_hash, index); end
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:196
+  def deserialize_resque_job(resque_job_hash, position); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:220
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:229
   def direct_jobs_count; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:301
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:315
   def discard_all_in_batches; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:287
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:301
   def discard_all_one_by_one; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:295
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:309
   def discard_jobs(jobs); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:211
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:220
   def execution_error_from_resque_job(resque_job_hash); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:207
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:216
   def extract_args_hash(raw_data); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:234
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:243
   def failed_jobs_count; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:176
+  # Failed jobs are listed newest first, but Resque stores them oldest first,
+  # so read them from the end of the list, keeping their positions in it.
+  #
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:179
   def fetch_failed_resque_jobs; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:180
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:187
   def fetch_queue_resque_jobs; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:168
+  # Returns pairs of raw Resque job and its position in the Redis list
+  #
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:169
   def fetch_resque_jobs; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:199
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:208
   def filter_raw_data_arguments(raw_data); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:309
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:323
   def handle_resque_job_error(job, error); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:256
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:270
   def in_transactional_jobs_batches(jobs); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:305
+  # Removing a job shifts the ones after it in the list, so operate from the end
+  #
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:266
+  def jobs_by_descending_position(jobs); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:319
   def jobs_by_id; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:224
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:233
   def pending_jobs_count; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:242
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:251
   def queue_redis_key; end
 
   # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:156
   def redis; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:277
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:291
   def requeue(job); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:272
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:286
   def resque_requeue_and_discard(job); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:268
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:282
   def retry_all_in_batches; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:250
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:259
   def retry_jobs(jobs); end
 
   # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:164
   def targeting_all_jobs?; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:264
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/resque_ext.rb:278
   def use_batches?; end
 end
 
@@ -834,6 +880,7 @@ ActiveJob::QueueAdapters::ResqueExt::ResqueJobs::SENTINEL = T.let(T.unsafe(nil),
 # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:1
 module ActiveJob::QueueAdapters::SolidQueueExt
   include ::MissionControl::Jobs::Adapter
+  include ::ActiveJob::QueueAdapters::SolidQueueExt::Batches
   include ::ActiveJob::QueueAdapters::SolidQueueExt::Workers
   include ::ActiveJob::QueueAdapters::SolidQueueExt::RecurringTasks
 
@@ -853,7 +900,7 @@ module ActiveJob::QueueAdapters::SolidQueueExt
   def fetch_jobs(jobs_relation); end
 
   # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:78
-  def find_job(job_id, *_arg1); end
+  def find_job(job_id, jobs_relation); end
 
   # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:48
   def jobs_count(jobs_relation); end
@@ -890,13 +937,13 @@ module ActiveJob::QueueAdapters::SolidQueueExt
   # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:97
   def deserialize_and_proxy_solid_queue_job(solid_queue_job, job_status = T.unsafe(nil)); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:139
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:140
   def dispatch_immediately(job); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:125
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:126
   def execution_error_from_solid_queue_job(solid_queue_job); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:115
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:116
   def filter_raw_data_arguments(raw_data); end
 
   # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:85
@@ -908,8 +955,55 @@ module ActiveJob::QueueAdapters::SolidQueueExt
   # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:89
   def find_solid_queue_job!(job_id, jobs_relation); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:121
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:122
   def status_from_solid_queue_job(solid_queue_job); end
+end
+
+# pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext/batches.rb:1
+module ActiveJob::QueueAdapters::SolidQueueExt::Batches
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext/batches.rb:17
+  def count_batches(batches_relation); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext/batches.rb:8
+  def fetch_batches(batches_relation); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext/batches.rb:23
+  def find_batch(batch_id); end
+
+  # Batches shipped in Solid Queue 1.7 as an optional migration, so the
+  # constant existing doesn't mean the tables do.
+  #
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext/batches.rb:4
+  def supports_batches?; end
+
+  private
+
+  # Finished batches froze their counters on the row at finalize time, so
+  # only live batches pay for job counting — a page of history runs no
+  # count queries at all.
+  #
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext/batches.rb:42
+  def attributes_for_batches(batches, job_statuses_to_count:); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext/batches.rb:68
+  def batch_attributes_from_solid_queue_batch(batch, job_counts); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext/batches.rb:30
+  def batches_scope(status); end
+
+  # One grouped count per status covers every batch given, so a page costs the
+  # same number of queries as a single batch:
+  #
+  #   { failed: { 12 => 1 }, outstanding: { 12 => 4, 13 => 9 } }
+  #
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext/batches.rb:55
+  def job_counts_for(batches, job_statuses_to_count); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext/batches.rb:107
+  def job_execution_classes; end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext/batches.rb:101
+  def progress_percentage(total_jobs, outstanding_jobs); end
 end
 
 # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext/recurring_tasks.rb:1
@@ -938,123 +1032,155 @@ module ActiveJob::QueueAdapters::SolidQueueExt::RecurringTasks
   def recurring_task_last_enqueued_at(task_keys); end
 end
 
-# pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:150
+# pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:151
 class ActiveJob::QueueAdapters::SolidQueueExt::SolidQueueJobs
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:160
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:161
   def initialize(jobs_relation); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:168
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:190
+  def batch_id(*_arg0, **_arg1, &_arg2); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:169
   def count; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:189
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:190
   def default_page_size(*_arg0, **_arg1, &_arg2); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:178
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:179
   def discard_all; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:172
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:190
+  def enqueued_at(*_arg0, **_arg1, &_arg2); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:173
   def find_job(active_job_id); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:189
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:190
   def finished_at(*_arg0, **_arg1, &_arg2); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:189
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:190
   def job_class_name(*_arg0, **_arg1, &_arg2); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:164
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:165
   def jobs; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:189
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:190
   def limit_value(*_arg0, **_arg1, &_arg2); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:189
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:190
   def limit_value_provided?(*_arg0, **_arg1, &_arg2); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:189
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:190
   def offset_value(*_arg0, **_arg1, &_arg2); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:189
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:190
   def queue_name(*_arg0, **_arg1, &_arg2); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:189
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:190
   def recurring_task_id(*_arg0, **_arg1, &_arg2); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:182
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:183
   def retry_all; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:189
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:190
+  def scheduled_at(*_arg0, **_arg1, &_arg2); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:190
   def worker_id(*_arg0, **_arg1, &_arg2); end
 
   private
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:229
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:237
   def direct_count; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:239
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:247
   def execution_class_by_status; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:192
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:193
   def executions; end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:267
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:293
+  def filter_executions_by_batch(executions); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:275
   def filter_executions_by_class(executions); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:271
+  # Jobs are created when enqueued
+  #
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:324
+  def filter_executions_by_enqueued_at(executions); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:279
   def filter_executions_by_process_id(executions); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:253
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:261
   def filter_executions_by_queue(executions); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:281
-  def filter_executions_by_task_key(executions); end
-
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:285
-  def filter_jobs_by_class(jobs); end
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:309
+  def filter_executions_by_scheduled_at(executions); end
 
   # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:289
-  def filter_jobs_by_finished_at(jobs); end
-
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:263
-  def filter_jobs_by_queue(jobs); end
-
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:203
-  def finished_jobs; end
-
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:249
-  def include_execution_association(executions); end
-
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:233
-  def internally_limited_count; end
-
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:187
-  def jobs_relation; end
-
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:293
-  def limit(executions_or_jobs); end
-
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:305
-  def matches_queue_name?(job); end
-
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:225
-  def matches_relation_filters?(job); end
-
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:301
-  def matches_status?(job); end
+  def filter_executions_by_task_key(executions); end
 
   # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:297
+  def filter_jobs_by_batch(jobs); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:301
+  def filter_jobs_by_class(jobs); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:328
+  def filter_jobs_by_enqueued_at(jobs); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:305
+  def filter_jobs_by_finished_at(jobs); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:271
+  def filter_jobs_by_queue(jobs); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:319
+  def filter_jobs_by_scheduled_at(jobs); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:207
+  def finished_jobs; end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:257
+  def include_execution_association(executions); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:241
+  def internally_limited_count; end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:188
+  def jobs_relation; end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:332
+  def limit(executions_or_jobs); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:348
+  def matches_batch?(job); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:344
+  def matches_queue_name?(job); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:233
+  def matches_relation_filters?(job); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:340
+  def matches_status?(job); end
+
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:336
   def offset(executions_or_jobs); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:216
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:223
   def order_executions(executions); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:212
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:219
   def order_finished_jobs(jobs); end
 
-  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:309
+  # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:352
   def solid_queue_status; end
 end
 
-# pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:151
+# pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext.rb:152
 ActiveJob::QueueAdapters::SolidQueueExt::SolidQueueJobs::STATUS_MAP = T.let(T.unsafe(nil), Hash)
 
 # pkg:gem/mission_control-jobs#lib/active_job/queue_adapters/solid_queue_ext/workers.rb:1
@@ -1343,25 +1469,63 @@ module MissionControl::Jobs::Adapter
   # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:2
   def activating(&block); end
 
-  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:98
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:147
   def clear_queue(queue_name); end
 
-  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:136
+  # Returns the total number of batches, narrowed by the relation's +status+
+  #
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:118
+  def count_batches(batches_relation); end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:185
   def discard_all_jobs(jobs_relation); end
 
-  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:140
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:189
   def discard_job(job, jobs_relation); end
 
-  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:144
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:193
   def dispatch_job(job, jobs_relation); end
 
   # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:28
   def exposes_workers?; end
 
-  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:124
+  # Returns an array with the requested page of batches, newest first, honoring
+  # the relation's +offset_value+ and +limit_value+. The relation's +status+
+  # narrows the list to +:finished+, +:unfinished+ or +:failed+ batches when
+  # present. Each batch is represented as a hash with these attributes:
+  #   {
+  #     id: 123,
+  #     description: "Nightly imports",
+  #     status: :enqueued,
+  #     total_jobs: 100,
+  #     completed_jobs: 60,
+  #     failed_jobs: 2,
+  #     pending_jobs: 20,
+  #     in_progress_jobs: 10,
+  #     blocked_jobs: 5,
+  #     scheduled_jobs: 3,
+  #     progress_percentage: 62.0,
+  #     metadata: { user_id: 123 },
+  #     enqueued_at: Fri, 26 Jan 2024 20:31:09.652174000 UTC +00:00,
+  #     finished_at: nil
+  #   }
+  #
+  # The listing renders progress and failures only, so adapters may leave the
+  # +pending_jobs+, +in_progress_jobs+, +blocked_jobs+ and +scheduled_jobs+
+  # breakdown to +find_batch+ rather than counting it for every batch listed.
+  #
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:111
+  def fetch_batches(batches_relation); end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:173
   def fetch_jobs(jobs_relation); end
 
-  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:148
+  # Returns a batch represented by a hash as indicated above
+  #
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:125
+  def find_batch(batch_id); end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:197
   def find_job(job_id, *_arg1); end
 
   # Returns a recurring task represented by a hash as indicated above
@@ -1374,16 +1538,16 @@ module MissionControl::Jobs::Adapter
   # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:76
   def find_worker(worker_id); end
 
-  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:120
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:169
   def jobs_count(jobs_relation); end
 
-  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:102
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:151
   def pause_queue(queue_name); end
 
-  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:114
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:163
   def queue_paused?(queue_name); end
 
-  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:94
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:143
   def queue_size(queue_name); end
 
   # Returns an array with the list of queues. Each queue is represented as a hash
@@ -1394,7 +1558,7 @@ module MissionControl::Jobs::Adapter
   #     active: true
   #   }
   #
-  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:90
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:139
   def queues; end
 
   # Returns an array with the list of recurring tasks. Each task is represented as a hash
@@ -1410,13 +1574,13 @@ module MissionControl::Jobs::Adapter
   # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:45
   def recurring_tasks; end
 
-  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:108
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:157
   def resume_queue(queue_name); end
 
-  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:128
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:177
   def retry_all_jobs(jobs_relation); end
 
-  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:132
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:181
   def retry_job(job, jobs_relation); end
 
   # List of filters supported natively. Non-supported filters are done in memory.
@@ -1426,6 +1590,9 @@ module MissionControl::Jobs::Adapter
 
   # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:10
   def supported_job_statuses; end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:83
+  def supports_batches?; end
 
   # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:15
   def supports_job_filter?(jobs_relation, filter); end
@@ -1455,7 +1622,7 @@ module MissionControl::Jobs::Adapter
 
   private
 
-  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:153
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/adapter.rb:202
   def raise_incompatible_adapter_error_from(method_name); end
 end
 
@@ -1464,6 +1631,7 @@ module MissionControl::Jobs::AdapterFeatures
 
   private
 
+  def batches_supported?; end
   def queue_pausing_supported?; end
   def recurring_tasks_supported?; end
   def supported_job_statuses; end
@@ -1563,6 +1731,7 @@ module MissionControl::Jobs::ApplicationController::HelperMethods
   include ::MissionControl::Jobs::ApplicationHelper
 
   def active_filters?(*_arg0, **_arg1, &_arg2); end
+  def batches_supported?(*_arg0, **_arg1, &_arg2); end
   def jobs_filter_param(*_arg0, **_arg1, &_arg2); end
   def queue_pausing_supported?(*_arg0, **_arg1, &_arg2); end
   def recurring_tasks_supported?(*_arg0, **_arg1, &_arg2); end
@@ -1685,6 +1854,264 @@ module MissionControl::Jobs::BasicAuthentication
   def http_basic_authentication_credentials; end
   def http_basic_authentication_enabled?; end
 end
+
+class MissionControl::Jobs::Batch
+  include ::ActiveModel::Validations
+  include ::ActiveSupport::Callbacks
+  include ::ActiveModel::Validations::HelperMethods
+  include ::ActiveModel::Conversion
+  include ::ActiveModel::ForbiddenAttributesProtection
+  include ::ActiveModel::AttributeAssignment
+  include ::ActiveModel::API
+  include ::ActiveModel::Access
+  include ::ActiveModel::Model
+  extend ::ActiveModel::Validations::ClassMethods
+  extend ::ActiveModel::Naming
+  extend ::ActiveModel::Callbacks
+  extend ::ActiveSupport::Callbacks::ClassMethods
+  extend ::ActiveSupport::DescendantsTracker
+  extend ::ActiveModel::Translation
+  extend ::ActiveModel::Validations::HelperMethods
+  extend ::ActiveModel::Conversion::ClassMethods
+
+  def initialize(queue_adapter: T.unsafe(nil), **kwargs); end
+
+  def __callbacks; end
+  def _run_validate_callbacks; end
+  def _run_validate_callbacks!(&block); end
+  def _validate_callbacks; end
+  def _validators; end
+  def _validators?; end
+  def blocked_jobs; end
+  def blocked_jobs=(_arg0); end
+  def completed_jobs; end
+  def completed_jobs=(_arg0); end
+  def description; end
+  def description=(_arg0); end
+  def enqueued_at; end
+  def enqueued_at=(_arg0); end
+  def failed?; end
+  def failed_jobs; end
+  def failed_jobs=(_arg0); end
+  def finished?; end
+  def finished_at; end
+  def finished_at=(_arg0); end
+  def id; end
+  def id=(_arg0); end
+  def in_progress_jobs; end
+  def in_progress_jobs=(_arg0); end
+  def job_counts; end
+  def jobs; end
+  def metadata; end
+  def metadata=(_arg0); end
+  def model_name(&_arg0); end
+  def param_delimiter=(_arg0); end
+  def pending_jobs; end
+  def pending_jobs=(_arg0); end
+  def progress_percentage; end
+  def progress_percentage=(_arg0); end
+  def scheduled_jobs; end
+  def scheduled_jobs=(_arg0); end
+  def status; end
+  def status=(_arg0); end
+  def total_jobs; end
+  def total_jobs=(_arg0); end
+
+  private
+
+  def queue_adapter; end
+
+  class << self
+    def __callbacks; end
+    def __callbacks=(value); end
+    def _validate_callbacks; end
+    def _validate_callbacks=(value); end
+    def _validators; end
+    def _validators=(value); end
+    def _validators?; end
+    def param_delimiter; end
+    def param_delimiter=(value); end
+    def param_delimiter?; end
+
+    private
+
+    def __class_attr___callbacks; end
+    def __class_attr___callbacks=(new_value); end
+    def __class_attr__validators; end
+    def __class_attr__validators=(new_value); end
+    def __class_attr_param_delimiter; end
+    def __class_attr_param_delimiter=(new_value); end
+  end
+end
+
+class MissionControl::Jobs::BatchesController < ::MissionControl::Jobs::ApplicationController
+  def index; end
+  def show; end
+
+  private
+
+  def _layout(lookup_context, formats, keys); end
+  def batches; end
+  def batches_filter_param; end
+  def batches_status; end
+  def default_jobs_status; end
+  def ensure_supported_batches; end
+  def jobs_status; end
+  def set_batch; end
+
+  class << self
+    private
+
+    def __class_attr___callbacks; end
+    def __class_attr___callbacks=(new_value); end
+    def __class_attr__helper_methods; end
+    def __class_attr__helper_methods=(new_value); end
+    def __class_attr__wrapper_options; end
+    def __class_attr__wrapper_options=(new_value); end
+    def __class_attr_config; end
+    def __class_attr_config=(new_value); end
+    def __class_attr_helpers_path; end
+    def __class_attr_helpers_path=(new_value); end
+    def __class_attr_middleware_stack; end
+    def __class_attr_middleware_stack=(new_value); end
+  end
+end
+
+MissionControl::Jobs::BatchesController::BATCHES_STATUSES = T.let(T.unsafe(nil), Array)
+
+module MissionControl::Jobs::BatchesController::HelperMethods
+  include ::Turbo::DriveHelper
+  include ::Turbo::FramesHelper
+  include ::Turbo::IncludesHelper
+  include ::Turbo::StreamsHelper
+  include ::ActionView::Helpers::CaptureHelper
+  include ::ActionView::Helpers::OutputSafetyHelper
+  include ::ActionView::Helpers::TagHelper
+  include ::Turbo::Streams::ActionHelper
+  include ::ActionText::ContentHelper
+  include ::ActionText::TagHelper
+  include ::Lexxy::TagHelper
+  include ::Importmap::ImportmapTagsHelper
+  include ::DeviseI18n::ViewHelpers
+  include ::ActionController::Base::HelperMethods
+  include ::MissionControl::Jobs::InterfaceHelper
+  include ::MissionControl::Jobs::NavigationHelper
+  include ::MissionControl::Jobs::JobsHelper
+  include ::MissionControl::Jobs::DatesHelper
+  include ::ActionDispatch::Routing::PolymorphicRoutes
+  include ::ActionDispatch::Routing::UrlFor
+  include ::Madmin::ApplicationHelper
+  include ::Madmin::NavHelper
+  include ::Madmin::SortHelper
+  include ::Madmin::BaseController::HelperMethods
+  include ::MissionControl::Jobs::ApplicationHelper
+  include ::MissionControl::Jobs::ApplicationController::HelperMethods
+
+  def batches_filter_param(*_arg0, **_arg1, &_arg2); end
+  def batches_status(*_arg0, **_arg1, &_arg2); end
+  def jobs_status(*_arg0, **_arg1, &_arg2); end
+end
+
+MissionControl::Jobs::BatchesController::UNFINISHED_JOB_STATUSES = T.let(T.unsafe(nil), Array)
+
+# A relation of batches.
+#
+# Relations are enumerable, so you can use +Enumerable+ methods on them.
+# Notice however that using these methods will imply loading all the relation
+# in memory, which could introduce performance concerns.
+#
+# pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:6
+class MissionControl::Jobs::BatchesRelation
+  include ::Enumerable
+
+  # When no limit value it defaults to "all batches"
+  #
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:16
+  def initialize(queue_adapter:, status: T.unsafe(nil)); end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:12
+  def [](*_arg0, **_arg1, &_arg2); end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:40
+  def count; end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:31
+  def each(&block); end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:48
+  def empty?; end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:12
+  def last(*_arg0, **_arg1, &_arg2); end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:52
+  def length; end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:27
+  def limit(limit); end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:10
+  def limit_value; end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:10
+  def limit_value=(_arg0); end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:23
+  def offset(offset); end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:10
+  def offset_value; end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:10
+  def offset_value=(_arg0); end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:35
+  def reload; end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:12
+  def reverse(*_arg0, **_arg1, &_arg2); end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:53
+  def size; end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:9
+  def status; end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:12
+  def to_s(*_arg0, **_arg1, &_arg2); end
+
+  private
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:61
+  def batches; end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:90
+  def clone_with(**properties); end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:82
+  def limit_value_provided?; end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:86
+  def loaded?; end
+
+  # How many batches a fetch would return. The adapter only counts the full
+  # set for a status, so the offset/limit window is applied arithmetically:
+  # given 100 batches, offset(30).limit(50) counts 50, and offset(90)
+  # counts 10.
+  #
+  # Given too many batches to count, +count_batches+ returns
+  # +Float::INFINITY+, which passes through the arithmetic untouched and
+  # tells +Page+ there are too many pages to link to the last one.
+  #
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:75
+  def query_count; end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:56
+  def set_defaults; end
+end
+
+# pkg:gem/mission_control-jobs#lib/mission_control/jobs/batches_relation.rb:14
+MissionControl::Jobs::BatchesRelation::ALL_BATCHES_LIMIT = T.let(T.unsafe(nil), Integer)
 
 class MissionControl::Jobs::BulkDiscardsController < ::MissionControl::Jobs::ApplicationController
   include ::MissionControl::Jobs::FailedJobsBulkOperations
@@ -2573,6 +3000,12 @@ module MissionControl::Jobs::HostRouteHelpers
   def rails_representation_url(*args); end
 
   # pkg:gem/mission_control-jobs#lib/mission_control/jobs/engine.rb:39
+  def rails_resend_inbound_emails_path(*args); end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/engine.rb:39
+  def rails_resend_inbound_emails_url(*args); end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/engine.rb:39
   def rails_sendgrid_inbound_emails_path(*args); end
 
   # pkg:gem/mission_control-jobs#lib/mission_control/jobs/engine.rb:39
@@ -2943,6 +3376,8 @@ end
 module MissionControl::Jobs::InterfaceHelper
   def blank_status_emoji(status); end
   def blank_status_notice(message); end
+  def label_for_batch_job_status(status); end
+  def modifier_for_batch_status(status); end
   def modifier_for_status(status); end
 end
 
@@ -2952,7 +3387,7 @@ module MissionControl::Jobs::JobFilters
   private
 
   def active_filters?; end
-  def finished_at_range_params; end
+  def date_range_params(attribute); end
   def jobs_filter_param; end
   def parse_with_time_zone(date); end
   def set_filters; end
@@ -3288,6 +3723,7 @@ end
 # pkg:gem/mission_control-jobs#lib/mission_control/jobs/server.rb:3
 class MissionControl::Jobs::Server
   include ::MissionControl::Jobs::IdentifiedByName
+  include ::MissionControl::Jobs::Server::Batches
   include ::MissionControl::Jobs::Server::Workers
   include ::MissionControl::Jobs::Server::RecurringTasks
   include ::MissionControl::Jobs::Server::Serializable
@@ -3316,6 +3752,15 @@ class MissionControl::Jobs::Server
 
   # pkg:gem/mission_control-jobs#lib/mission_control/jobs/server.rb:4
   def to_s; end
+end
+
+# pkg:gem/mission_control-jobs#lib/mission_control/jobs/server/batches.rb:1
+module MissionControl::Jobs::Server::Batches
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/server/batches.rb:2
+  def batches(status: T.unsafe(nil)); end
+
+  # pkg:gem/mission_control-jobs#lib/mission_control/jobs/server/batches.rb:6
+  def find_batch(batch_id); end
 end
 
 # pkg:gem/mission_control-jobs#lib/mission_control/jobs/server/recurring_tasks.rb:1

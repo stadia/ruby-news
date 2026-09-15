@@ -338,13 +338,6 @@ module Slack::Utils::Security
     # pkg:gem/slack-ruby-client#lib/slack/utils/security.rb:29
     def fixed_length_secure_compare(a, b); end
 
-    # Secure string comparison for strings of variable length.
-    #
-    # While a timing attack would not be able to discern the content of
-    # a secret compared via secure_compare, it is possible to determine
-    # the secret length. This should be considered when using secure_compare
-    # to compare weak, short secrets to user input.
-    #
     # pkg:gem/slack-ruby-client#lib/slack/utils/security.rb:40
     def secure_compare(a, b); end
   end

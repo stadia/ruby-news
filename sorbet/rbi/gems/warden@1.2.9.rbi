@@ -7,8 +7,6 @@
 
 # pkg:gem/warden#lib/warden/mixins/common.rb:3
 module Warden
-  extend ::Warden::Test::WardenHelpers
-
   class << self
     # Provides helper methods to warden for testing.
     #

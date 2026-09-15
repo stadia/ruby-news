@@ -92,6 +92,30 @@ module MessagePack
   end
 end
 
+# pkg:gem/msgpack#lib/msgpack/bigint.rb:4
+module MessagePack::Bigint
+  class << self
+    # pkg:gem/msgpack#lib/msgpack/bigint.rb:55
+    def from_msgpack_ext(data); end
+
+    # Ruby 2.7 and newer
+    # Starting from Ruby 2.7 we can address arbitrary bitranges inside an Integer with Integer#[]
+    # This allows to not allocate any Integer.
+    #
+    # pkg:gem/msgpack#lib/msgpack/bigint.rb:13
+    def to_msgpack_ext(bigint); end
+  end
+end
+
+# We split the bigint in 32bits chunks so that individual part fits into
+# a MRI immediate Integer.
+#
+# pkg:gem/msgpack#lib/msgpack/bigint.rb:7
+MessagePack::Bigint::CHUNK_BITLENGTH = T.let(T.unsafe(nil), Integer)
+
+# pkg:gem/msgpack#lib/msgpack/bigint.rb:8
+MessagePack::Bigint::FORMAT = T.let(T.unsafe(nil), String)
+
 # pkg:gem/msgpack#lib/msgpack.rb:7
 class MessagePack::Buffer
   # pkg:gem/msgpack#lib/msgpack.rb:7
@@ -196,7 +220,7 @@ class MessagePack::Factory
   # pkg:gem/msgpack#lib/msgpack.rb:7
   def initialize(*_arg0); end
 
-  # pkg:gem/msgpack#lib/msgpack/factory.rb:113
+  # pkg:gem/msgpack#lib/msgpack/factory.rb:117
   def dump(v, *rest); end
 
   # pkg:gem/msgpack#lib/msgpack.rb:7
@@ -205,16 +229,16 @@ class MessagePack::Factory
   # pkg:gem/msgpack#lib/msgpack.rb:7
   def freeze; end
 
-  # pkg:gem/msgpack#lib/msgpack/factory.rb:99
+  # pkg:gem/msgpack#lib/msgpack/factory.rb:103
   def load(src, param = T.unsafe(nil)); end
 
-  # pkg:gem/msgpack#lib/msgpack/factory.rb:118
+  # pkg:gem/msgpack#lib/msgpack/factory.rb:122
   def pack(v, *rest); end
 
   # pkg:gem/msgpack#lib/msgpack.rb:7
   def packer(*_arg0); end
 
-  # pkg:gem/msgpack#lib/msgpack/factory.rb:120
+  # pkg:gem/msgpack#lib/msgpack/factory.rb:124
   def pool(size = T.unsafe(nil), **options); end
 
   # see ext for other methods
@@ -224,13 +248,13 @@ class MessagePack::Factory
 
   # [ {type: id, class: Class(or nil), packer: arg, unpacker: arg}, ... ]
   #
-  # pkg:gem/msgpack#lib/msgpack/factory.rb:41
+  # pkg:gem/msgpack#lib/msgpack/factory.rb:45
   def registered_types(selector = T.unsafe(nil)); end
 
-  # pkg:gem/msgpack#lib/msgpack/factory.rb:86
+  # pkg:gem/msgpack#lib/msgpack/factory.rb:90
   def type_registered?(klass_or_type, selector = T.unsafe(nil)); end
 
-  # pkg:gem/msgpack#lib/msgpack/factory.rb:111
+  # pkg:gem/msgpack#lib/msgpack/factory.rb:115
   def unpack(src, param = T.unsafe(nil)); end
 
   # pkg:gem/msgpack#lib/msgpack.rb:7
@@ -245,30 +269,30 @@ class MessagePack::Factory
   def registered_types_internal; end
 end
 
-# pkg:gem/msgpack#lib/msgpack/factory.rb:128
+# pkg:gem/msgpack#lib/msgpack/factory.rb:132
 class MessagePack::Factory::Pool
-  # pkg:gem/msgpack#lib/msgpack/factory.rb:181
+  # pkg:gem/msgpack#lib/msgpack/factory.rb:185
   def initialize(factory, size, options = T.unsafe(nil)); end
 
-  # pkg:gem/msgpack#lib/msgpack/factory.rb:195
+  # pkg:gem/msgpack#lib/msgpack/factory.rb:199
   def dump(object); end
 
-  # pkg:gem/msgpack#lib/msgpack/factory.rb:188
+  # pkg:gem/msgpack#lib/msgpack/factory.rb:192
   def load(data); end
 
-  # pkg:gem/msgpack#lib/msgpack/factory.rb:206
+  # pkg:gem/msgpack#lib/msgpack/factory.rb:210
   def packer(&block); end
 
-  # pkg:gem/msgpack#lib/msgpack/factory.rb:202
+  # pkg:gem/msgpack#lib/msgpack/factory.rb:206
   def unpacker(&block); end
 end
 
-# pkg:gem/msgpack#lib/msgpack/factory.rb:130
+# pkg:gem/msgpack#lib/msgpack/factory.rb:134
 class MessagePack::Factory::Pool::MemberPool
-  # pkg:gem/msgpack#lib/msgpack/factory.rb:131
+  # pkg:gem/msgpack#lib/msgpack/factory.rb:135
   def initialize(size, &block); end
 
-  # pkg:gem/msgpack#lib/msgpack/factory.rb:137
+  # pkg:gem/msgpack#lib/msgpack/factory.rb:141
   def with; end
 end
 

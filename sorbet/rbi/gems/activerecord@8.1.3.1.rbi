@@ -8227,8 +8227,8 @@ class ActiveRecord::Base
   extend ::HairTrigger::Base
   extend ::Neighbor::Model
   extend ::SemanticLogger::Loggable::ClassMethods
-  extend ::RubyLLM::ActiveRecord::ActsAsLegacy::ClassMethods
   extend ::Devise::Models
+  extend ::RubyLLM::ActiveRecord::ActsAsLegacy::ClassMethods
   extend ::ActiveStorage::Attached::Model::ClassMethods
   extend ::ActiveStorage::Reflection::ActiveRecordExtensions::ClassMethods
   extend ::ActionText::Attribute::ClassMethods

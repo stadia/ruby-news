@@ -26,10 +26,6 @@ module BinData
     # pkg:gem/bindata#lib/bindata/trace.rb:45
     def trace_message; end
 
-    # Turn on trace information when reading a BinData object.
-    # If +block+ is given then the tracing only occurs for that block.
-    # This is useful for debugging a BinData declaration.
-    #
     # pkg:gem/bindata#lib/bindata/trace.rb:45
     def trace_reading(io = T.unsafe(nil)); end
   end

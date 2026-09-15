@@ -108,16 +108,6 @@ module OpenSSL
   def fips_mode=(_arg0); end
 
   class << self
-    # Returns a Digest subclass by _name_
-    #
-    #   require 'openssl'
-    #
-    #   OpenSSL::Digest("MD5")
-    #   # => OpenSSL::Digest::MD5
-    #
-    #   OpenSSL::Digest("Foo")
-    #   # => NameError: wrong constant name Foo
-    #
     # pkg:gem/openssl#lib/openssl/digest.rb:67
     def Digest(name); end
 

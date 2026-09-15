@@ -4002,9 +4002,6 @@ module RSpec::Core::FlatMap
   def flat_map(array, &block); end
 
   class << self
-    # for 1.8.7
-    # :nocov:
-    #
     # pkg:gem/rspec-core#lib/rspec/core/flat_map.rb:17
     def flat_map(array, &block); end
   end

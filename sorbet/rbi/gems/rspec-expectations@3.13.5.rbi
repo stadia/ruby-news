@@ -2539,16 +2539,6 @@ module RSpec::Matchers::BuiltIn::BaseMatcher::HashFormatting
   def improve_hash_formatting(inspect_string); end
 
   class << self
-    # `{ :a => 5, :b => 2 }.inspect` produces:
-    #
-    #     {:a=>5, :b=>2}
-    #
-    # ...but it looks much better as:
-    #
-    #     {:a => 5, :b => 2}
-    #
-    # This is idempotent and safe to run on a string multiple times.
-    #
     # pkg:gem/rspec-expectations#lib/rspec/matchers/built_in/base_matcher.rb:141
     def improve_hash_formatting(inspect_string); end
   end
@@ -2581,23 +2571,9 @@ module RSpec::Matchers::BuiltIn::BaseMatcher::StringEncodingFormatting
   def string_encoding_differs?; end
 
   class << self
-    # @api private
-    # Formats a String's encoding as a human readable string
-    # @param value [String]
-    # @return [String]
-    # @api private
-    # Formats a String's encoding as a human readable string
-    # @param _value [String]
-    # @return [nil] nil as the curent Ruby version does not support String encoding
-    # :nocov:
-    #
     # pkg:gem/rspec-expectations#lib/rspec/matchers/built_in/base_matcher.rb:186
     def format_encoding(value); end
 
-    # @api private
-    # @return [Boolean] False always as the curent Ruby version does not support String encoding
-    # :nocov:
-    #
     # pkg:gem/rspec-expectations#lib/rspec/matchers/built_in/base_matcher.rb:165
     def string_encoding_differs?; end
   end
@@ -5484,30 +5460,12 @@ module RSpec::Matchers::Composable
   def with_matchers_cloned(object); end
 
   class << self
-    # @api private
-    # We should enumerate arrays as long as they are not recursive.
-    #
     # pkg:gem/rspec-expectations#lib/rspec/matchers/composable.rb:154
     def should_enumerate?(item); end
 
-    # Transforms the given data structure (typically a hash or array)
-    # into a new data structure that, when `#inspect` is called on it,
-    # will provide descriptions of any contained matchers rather than
-    # the normal `#inspect` output.
-    #
-    # You are encouraged to use this in your custom matcher's
-    # `description`, `failure_message` or
-    # `failure_message_when_negated` implementation if you are
-    # supporting any arguments which may be a data structure
-    # containing matchers.
-    #
-    # @!visibility public
-    #
     # pkg:gem/rspec-expectations#lib/rspec/matchers/composable.rb:154
     def surface_descriptions_in(item); end
 
-    # @api private
-    #
     # pkg:gem/rspec-expectations#lib/rspec/matchers/composable.rb:154
     def unreadable_io?(object); end
   end

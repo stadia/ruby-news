@@ -4,7 +4,7 @@
 
 require "ruby_llm/schema"
 
-class ArticleJapaneseSchema < RubyLLM::Schema
+class ArticleJapaneseSchema < Schematist::Schema
   string :title_ja, description: "한국어 제목의 의미를 살린 자연스러운 일본어 제목"
 
   array :summary_key_ja, of: :string, description: "한국어 핵심 요약을 일본어로 번역한 항목 3개 (각 60자 이상)"

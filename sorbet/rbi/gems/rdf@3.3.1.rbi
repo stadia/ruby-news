@@ -12189,9 +12189,6 @@ class RDF::Util::Logger::IOWrapper
   def <=>(*args, **_arg1, &block); end
 
   # pkg:gem/rdf#lib/rdf/util/logger.rb:13
-  def MethodName(*_arg0, **_arg1, &_arg2); end
-
-  # pkg:gem/rdf#lib/rdf/util/logger.rb:13
   def __getobj__; end
 
   # pkg:gem/rdf#lib/rdf/util/logger.rb:13
@@ -12295,6 +12292,9 @@ class RDF::Util::Logger::IOWrapper
 
   # pkg:gem/rdf#lib/rdf/util/logger.rb:13
   def compact_blank(*_arg0, **_arg1, &_arg2); end
+
+  # pkg:gem/rdf#lib/rdf/util/logger.rb:13
+  def console_input_events(*_arg0, **_arg1, &_arg2); end
 
   # pkg:gem/rdf#lib/rdf/util/logger.rb:13
   def console_mode(*_arg0, **_arg1, &_arg2); end
@@ -12534,6 +12534,9 @@ class RDF::Util::Logger::IOWrapper
   def hash(*_arg0, **_arg1, &_arg2); end
 
   # pkg:gem/rdf#lib/rdf/util/logger.rb:13
+  def hide_cursor(*_arg0, **_arg1, &_arg2); end
+
+  # pkg:gem/rdf#lib/rdf/util/logger.rb:13
   def html_safe?(*_arg0, **_arg1, &_arg2); end
 
   # pkg:gem/rdf#lib/rdf/util/logger.rb:13
@@ -12559,6 +12562,9 @@ class RDF::Util::Logger::IOWrapper
 
   # pkg:gem/rdf#lib/rdf/util/logger.rb:13
   def inject(*_arg0, **_arg1, &_arg2); end
+
+  # pkg:gem/rdf#lib/rdf/util/logger.rb:13
+  def input_pending?(*_arg0, **_arg1, &_arg2); end
 
   # pkg:gem/rdf#lib/rdf/util/logger.rb:13
   def instance_values(*_arg0, **_arg1, &_arg2); end
@@ -12769,6 +12775,9 @@ class RDF::Util::Logger::IOWrapper
 
   # pkg:gem/rdf#lib/rdf/util/logger.rb:13
   def set_encoding_by_bom(*_arg0, **_arg1, &_arg2); end
+
+  # pkg:gem/rdf#lib/rdf/util/logger.rb:13
+  def show_cursor(*_arg0, **_arg1, &_arg2); end
 
   # pkg:gem/rdf#lib/rdf/util/logger.rb:13
   def slice_after(*_arg0, **_arg1, &_arg2); end

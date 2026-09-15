@@ -14,6 +14,9 @@ module PgQuery
     # pkg:gem/pg_query#lib/pg_query.rb:7
     def _raw_split_with_parser(_arg0); end
 
+    # pkg:gem/pg_query#lib/pg_query.rb:7
+    def _raw_summary(_arg0, _arg1); end
+
     # Reconstruct all of the parsed queries into their original form
     #
     # pkg:gem/pg_query#lib/pg_query/deparse.rb:16
@@ -58,6 +61,20 @@ module PgQuery
 
     # pkg:gem/pg_query#lib/pg_query/split.rb:11
     def split_with_parser(query); end
+
+    # Parses the given SQL statement and returns a summary of it.
+    #
+    # It is possible to gather the same information using PgQuery.parse and
+    # walking the parse tree, but summary does this work in C, and only sends
+    # the summarized information over protobuf. Avoiding sending the full parse
+    # tree over protobuf can be significantly faster for large queries.
+    #
+    # Note that truncation happens on the C side, and so the maximum length has
+    # to be passed in ahead of time. summary(query, truncate_limit: 100).truncated_query
+    # is the equivalent of parse(query).truncate(100).
+    #
+    # pkg:gem/pg_query#lib/pg_query/summary.rb:12
+    def summary(query, truncate_limit: T.unsafe(nil)); end
   end
 end
 
@@ -2662,7 +2679,7 @@ class PgQuery::ParserResult
   # pkg:gem/pg_query#lib/pg_query/parse.rb:100
   def load_objects!; end
 
-  # pkg:gem/pg_query#lib/pg_query/parse.rb:359
+  # pkg:gem/pg_query#lib/pg_query/parse.rb:377
   def statements_and_cte_names_for_with_clause(with_clause); end
 
   private
@@ -3486,6 +3503,90 @@ class PgQuery::SubPlan < ::Google::Protobuf::AbstractMessage; end
 
 # pkg:gem/pg_query#lib/pg_query/pg_query_pb.rb:37
 class PgQuery::SubscriptingRef < ::Google::Protobuf::AbstractMessage; end
+
+# Result of PgQuery.summary.
+#
+# Where possible this is API compatible with ParserResult, with these caveats:
+#
+# - tables_with_details omits the location, inh and relpersistence values that
+#   ParserResult reports, since the summary does not carry them
+# - filter_columns only covers the WHERE clause of SELECT statements, so unlike
+#   ParserResult#filter_columns it does not include JOIN conditions, or the WHERE
+#   clause of UPDATE/DELETE statements
+# - functions_with_details additionally returns the schema name and the bare
+#   function name, which ParserResult does not provide
+# - statement_types has no ParserResult equivalent, returns the statement types of
+#   the query, e.g. ["SelectStmt"]
+# - truncated_query is offered instead of ParserResult#truncate(max_length), since
+#   truncation has already happened when the result is returned - it returns nil if
+#   no truncate_limit was passed to PgQuery.summary
+#
+# The underlying protobuf message is available through #protobuf.
+#
+# pkg:gem/pg_query#lib/pg_query/summary.rb:48
+class PgQuery::SummaryParserResult
+  # pkg:gem/pg_query#lib/pg_query/summary.rb:51
+  def initialize(query, protobuf, warnings = T.unsafe(nil), truncate_limit = T.unsafe(nil)); end
+
+  # pkg:gem/pg_query#lib/pg_query/summary.rb:90
+  def aliases; end
+
+  # pkg:gem/pg_query#lib/pg_query/summary.rb:82
+  def call_functions; end
+
+  # pkg:gem/pg_query#lib/pg_query/summary.rb:86
+  def cte_names; end
+
+  # pkg:gem/pg_query#lib/pg_query/summary.rb:78
+  def ddl_functions; end
+
+  # pkg:gem/pg_query#lib/pg_query/summary.rb:70
+  def ddl_tables; end
+
+  # pkg:gem/pg_query#lib/pg_query/summary.rb:66
+  def dml_tables; end
+
+  # pkg:gem/pg_query#lib/pg_query/summary.rb:116
+  def filter_columns; end
+
+  # pkg:gem/pg_query#lib/pg_query/summary.rb:74
+  def functions; end
+
+  # pkg:gem/pg_query#lib/pg_query/summary.rb:105
+  def functions_with_details; end
+
+  # pkg:gem/pg_query#lib/pg_query/summary.rb:49
+  def protobuf; end
+
+  # pkg:gem/pg_query#lib/pg_query/summary.rb:49
+  def query; end
+
+  # pkg:gem/pg_query#lib/pg_query/summary.rb:62
+  def select_tables; end
+
+  # pkg:gem/pg_query#lib/pg_query/summary.rb:124
+  def statement_types; end
+
+  # pkg:gem/pg_query#lib/pg_query/summary.rb:58
+  def tables; end
+
+  # pkg:gem/pg_query#lib/pg_query/summary.rb:94
+  def tables_with_details; end
+
+  # pkg:gem/pg_query#lib/pg_query/summary.rb:128
+  def truncated_query; end
+
+  # pkg:gem/pg_query#lib/pg_query/summary.rb:49
+  def warnings; end
+
+  private
+
+  # pkg:gem/pg_query#lib/pg_query/summary.rb:141
+  def context_to_type(context); end
+end
+
+# pkg:gem/pg_query#lib/pg_query/summary.rb:134
+PgQuery::SummaryParserResult::CONTEXT_TYPES = T.let(T.unsafe(nil), Hash)
 
 # pkg:gem/pg_query#lib/pg_query/pg_query_pb.rb:286
 class PgQuery::SummaryResult < ::Google::Protobuf::AbstractMessage; end

@@ -10,6 +10,7 @@ module Process
   extend ::SQLite3::ForkSafety::CoreExt
   extend ::SemanticLogger::CoreExt::Process
   extend ::ActiveSupport::ForkTracker::CoreExt
+  extend ::Bundler::ConnectionPool::ForkTracker
 end
 
 # pkg:gem/sqlite3#lib/sqlite3.rb:4

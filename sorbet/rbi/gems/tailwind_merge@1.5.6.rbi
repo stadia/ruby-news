@@ -53,7 +53,7 @@ TailwindMerge::ClassGroupUtils::CLASS_PART_SEPARATOR = T.let(T.unsafe(nil), Stri
 module TailwindMerge::Config
   include ::TailwindMerge::Validators
 
-  # pkg:gem/tailwind_merge#lib/tailwind_merge/config.rb:2463
+  # pkg:gem/tailwind_merge#lib/tailwind_merge/config.rb:2464
   def merge_config(incoming_config); end
 
   class << self

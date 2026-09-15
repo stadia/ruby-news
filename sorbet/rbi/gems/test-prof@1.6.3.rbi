@@ -188,6 +188,7 @@ module Process
   extend ::SQLite3::ForkSafety::CoreExt
   extend ::SemanticLogger::CoreExt::Process
   extend ::ActiveSupport::ForkTracker::CoreExt
+  extend ::Bundler::ConnectionPool::ForkTracker
 
   class << self
     # pkg:gem/test-prof#lib/test_prof/core.rb:17

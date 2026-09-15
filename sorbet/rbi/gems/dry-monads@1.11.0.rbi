@@ -5,9 +5,6 @@
 # Please instead update this file by running `bin/tapioca gem dry-monads`.
 
 
-# Inspired by standard library implementation
-# for Time serialization/deserialization see (json/lib/json/add/time.rb)
-#
 # pkg:gem/dry-monads#lib/dry/monads/constants.rb:3
 module Dry; end
 
@@ -94,12 +91,12 @@ module Dry::Monads
     # @return [Module]
     # @api public
     #
-    # pkg:gem/dry-monads#lib/dry/monads.rb:71
+    # pkg:gem/dry-monads#lib/dry/monads.rb:70
     def [](*monads); end
 
     # @private
     #
-    # pkg:gem/dry-monads#lib/dry/monads.rb:34
+    # pkg:gem/dry-monads#lib/dry/monads.rb:33
     def included(base); end
 
     # @api private
@@ -1270,9 +1267,9 @@ class Dry::Monads::Maybe::Some < ::Dry::Monads::Maybe
   def initialize(value = T.unsafe(nil)); end
 
   # Accepts a block and runs it against the wrapped value.
-  # If the block returns a trurhy value the result is self,
+  # If the block returns a truthy value the result is self,
   # otherwise None. If no block is given, the value serves
-  # and its result.
+  # as its result.
   #
   # @param with [#call] positional block
   # @param block [Proc] block

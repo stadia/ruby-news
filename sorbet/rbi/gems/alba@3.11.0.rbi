@@ -392,11 +392,6 @@ module Alba::Deprecation
   def warn(message); end
 
   class << self
-    # Similar to {#warn} but prints caller as well
-    #
-    # @param message [String] main message to print
-    # @return void
-    #
     # pkg:gem/alba#lib/alba/deprecation.rb:15
     def warn(message); end
   end

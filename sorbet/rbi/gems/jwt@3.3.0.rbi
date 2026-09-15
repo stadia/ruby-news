@@ -112,8 +112,13 @@ end
 
 # The Base64DecodeError class is raised when there is an error decoding a Base64-encoded string.
 #
-# pkg:gem/jwt#lib/jwt/error.rb:50
-class JWT::Base64DecodeError < ::JWT::DecodeError; end
+# pkg:gem/jwt#lib/jwt/error.rb:24
+class JWT::Base64DecodeError < ::JWT::MalformedTokenError; end
+
+# The ClaimValidationError class is the base class for all claim validation errors.
+#
+# pkg:gem/jwt#lib/jwt/error.rb:44
+class JWT::ClaimValidationError < ::JWT::TokenError; end
 
 # JWT Claim verifications
 # https://datatracker.ietf.org/doc/html/rfc7519#section-4
@@ -158,7 +163,7 @@ module JWT::Claims
     # @param payload [Hash] the JWT payload.
     # @param options [Array] the options for verifying the claims.
     # @return [void]
-    # @raise [JWT::DecodeError] if any claim is invalid.
+    # @raise [JWT::ClaimValidationError] if any claim is invalid.
     #
     # pkg:gem/jwt#lib/jwt/claims.rb:45
     def verify_payload!(payload, *options); end
@@ -295,6 +300,13 @@ end
 #
 # pkg:gem/jwt#lib/jwt/claims/issued_at.rb:6
 class JWT::Claims::IssuedAt
+  # Initializes a new IssuedAt instance.
+  #
+  # @param leeway [Integer] the drift (in seconds) to allow between the clock of the issuer and the clock of the verifier. Default: 0.
+  #
+  # pkg:gem/jwt#lib/jwt/claims/issued_at.rb:10
+  def initialize(leeway: T.unsafe(nil)); end
+
   # Verifies the issued at claim ('iat') in the JWT token.
   #
   # @param context [Object] the context containing the JWT payload.
@@ -302,8 +314,13 @@ class JWT::Claims::IssuedAt
   # @raise [JWT::InvalidIatError] if the issued at claim is invalid.
   # @return [nil]
   #
-  # pkg:gem/jwt#lib/jwt/claims/issued_at.rb:13
+  # pkg:gem/jwt#lib/jwt/claims/issued_at.rb:20
   def verify!(context:, **_args); end
+
+  private
+
+  # pkg:gem/jwt#lib/jwt/claims/issued_at.rb:30
+  def leeway; end
 end
 
 # The Issuer class is responsible for validating the issuer claim ('iss') in a JWT token.
@@ -516,10 +533,10 @@ module JWT::Claims::Verifier
 
     private
 
-    # pkg:gem/jwt#lib/jwt/claims/verifier.rb:44
+    # pkg:gem/jwt#lib/jwt/claims/verifier.rb:46
     def iterate_verifiers(*options); end
 
-    # pkg:gem/jwt#lib/jwt/claims/verifier.rb:54
+    # pkg:gem/jwt#lib/jwt/claims/verifier.rb:56
     def verify_one!(context, verifier, options); end
   end
 end
@@ -658,7 +675,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -684,7 +701,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -710,7 +727,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -736,7 +753,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -762,7 +779,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -788,7 +805,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -814,7 +831,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -840,7 +857,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -871,7 +888,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -897,7 +914,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -923,7 +940,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -949,7 +966,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -975,7 +992,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -1001,7 +1018,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -1027,7 +1044,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -1053,7 +1070,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -1079,7 +1096,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -1105,7 +1122,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -1131,7 +1148,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -1157,7 +1174,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -1183,7 +1200,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -1209,7 +1226,7 @@ class JWT::Configuration::DecodeConfiguration
   # @!attribute [rw] verify_iss
   #   @return [Boolean] whether to verify the issuer claim.
   # @!attribute [rw] verify_iat
-  #   @return [Boolean] whether to verify the issued at claim.
+  #   @return [Boolean, Hash] whether to verify the issued at claim. A hash can be given to configure the claim, currently only `leeway` is supported.
   # @!attribute [rw] verify_jti
   #   @return [Boolean] whether to verify the JWT ID claim.
   # @!attribute [rw] verify_aud
@@ -1257,7 +1274,7 @@ class JWT::Decode
   # @param verify [Boolean] whether to verify the token's signature.
   # @param options [Hash] additional options for decoding and verification.
   # @param keyfinder [Proc] an optional key finder block to dynamically find the key for verification.
-  # @raise [JWT::DecodeError] if decoding or verification fails.
+  # @raise [JWT::Error] if decoding or verification fails.
   #
   # pkg:gem/jwt#lib/jwt/decode.rb:22
   def initialize(jwt, key, verify, options, &keyfinder); end
@@ -1316,10 +1333,14 @@ end
 # pkg:gem/jwt#lib/jwt/decode.rb:10
 JWT::Decode::ALGORITHM_KEYS = T.let(T.unsafe(nil), Array)
 
-# The DecodeError class is raised when there is an error decoding a JWT.
+# The historical grouping of every error that is not an encoding error. Every
+# error class below is a descendant, so `rescue JWT::DecodeError` keeps its
+# original meaning.
 #
-# pkg:gem/jwt#lib/jwt/error.rb:8
-class JWT::DecodeError < ::StandardError; end
+# @deprecated Use {JWT::Error}, {JWT::TokenError} or a more specific error class instead.
+#
+# pkg:gem/jwt#lib/jwt/error.rb:15
+class JWT::DecodeError < ::JWT::Error; end
 
 # The Encode class is responsible for encoding JWT tokens.
 #
@@ -1346,8 +1367,8 @@ end
 
 # The EncodeError class is raised when there is an error encoding a JWT.
 #
-# pkg:gem/jwt#lib/jwt/error.rb:5
-class JWT::EncodeError < ::StandardError; end
+# pkg:gem/jwt#lib/jwt/error.rb:8
+class JWT::EncodeError < ::JWT::Error; end
 
 # Represents an encoded JWT token
 #
@@ -1375,7 +1396,7 @@ class JWT::EncodedToken
   # @param options [Array<Symbol>, Hash] the claims to verify. By default, it checks the 'exp' claim.
   # @return [Array<Symbol>] the errors of the claims.
   #
-  # pkg:gem/jwt#lib/jwt/encoded_token.rb:168
+  # pkg:gem/jwt#lib/jwt/encoded_token.rb:180
   def claim_errors(*options); end
 
   # Returns the encoded header of the JWT token.
@@ -1385,19 +1406,21 @@ class JWT::EncodedToken
   # pkg:gem/jwt#lib/jwt/encoded_token.rb:61
   def encoded_header; end
 
-  # Sets or returns the encoded payload of the JWT token.
+  # Returns the encoded payload of the JWT token.
   #
   # @return [String] the encoded payload.
   #
   # pkg:gem/jwt#lib/jwt/encoded_token.rb:83
   def encoded_payload; end
 
-  # Sets or returns the encoded payload of the JWT token.
+  # Sets the encoded payload of the JWT token.
   #
-  # @return [String] the encoded payload.
+  # Resets the verification state, requiring the token to be verified again.
   #
-  # pkg:gem/jwt#lib/jwt/encoded_token.rb:83
-  def encoded_payload=(_arg0); end
+  # @param encoded_payload [String] the encoded payload.
+  #
+  # pkg:gem/jwt#lib/jwt/encoded_token.rb:90
+  def encoded_payload=(encoded_payload); end
 
   # Returns the encoded signature of the JWT token.
   #
@@ -1422,7 +1445,7 @@ class JWT::EncodedToken
   # Returns the payload of the JWT token. Access requires the signature and claims to have been verified.
   #
   # @return [Hash] the payload.
-  # @raise [JWT::DecodeError] if the signature has not been verified.
+  # @raise [JWT::TokenError] if the signature has not been verified.
   #
   # pkg:gem/jwt#lib/jwt/encoded_token.rb:67
   def payload; end
@@ -1438,10 +1461,10 @@ class JWT::EncodedToken
   #
   # @return [String] the signing input.
   #
-  # pkg:gem/jwt#lib/jwt/encoded_token.rb:88
+  # pkg:gem/jwt#lib/jwt/encoded_token.rb:99
   def signing_input; end
 
-  # pkg:gem/jwt#lib/jwt/encoded_token.rb:179
+  # pkg:gem/jwt#lib/jwt/encoded_token.rb:191
   def to_s; end
 
   # Returns the payload of the JWT token without requiring the signature to have been verified.
@@ -1454,14 +1477,14 @@ class JWT::EncodedToken
   # @param claims [Array<Symbol>, Hash] the claims to verify (see {#verify_claims!}).
   # @return [Boolean] true if the signature and claims are valid, false otherwise.
   #
-  # pkg:gem/jwt#lib/jwt/encoded_token.rb:114
+  # pkg:gem/jwt#lib/jwt/encoded_token.rb:125
   def valid?(signature:, claims: T.unsafe(nil)); end
 
   # Returns whether the claims of the token are valid.
   # @param options [Array<Symbol>, Hash] the claims to verify. By default, it checks the 'exp' claim.
   # @return [Boolean] whether the claims are valid.
   #
-  # pkg:gem/jwt#lib/jwt/encoded_token.rb:175
+  # pkg:gem/jwt#lib/jwt/encoded_token.rb:187
   def valid_claims?(*options); end
 
   # Checks if the signature of the JWT token is valid.
@@ -1471,7 +1494,7 @@ class JWT::EncodedToken
   # @param key_finder [#call] an object responding to `call` to find the key for verification.
   # @return [Boolean] true if the signature is valid, false otherwise.
   #
-  # pkg:gem/jwt#lib/jwt/encoded_token.rb:139
+  # pkg:gem/jwt#lib/jwt/encoded_token.rb:150
   def valid_signature?(algorithm: T.unsafe(nil), key: T.unsafe(nil), key_finder: T.unsafe(nil)); end
 
   # Verifies the token signature and claims.
@@ -1483,16 +1506,17 @@ class JWT::EncodedToken
   # @param signature [Hash] the parameters for signature verification (see {#verify_signature!}).
   # @param claims [Array<Symbol>, Hash] the claims to verify (see {#verify_claims!}).
   # @return [nil]
-  # @raise [JWT::DecodeError] if the signature or claim verification fails.
+  # @raise [JWT::Error] if the signature or claim verification fails.
   #
-  # pkg:gem/jwt#lib/jwt/encoded_token.rb:102
+  # pkg:gem/jwt#lib/jwt/encoded_token.rb:113
   def verify!(signature:, claims: T.unsafe(nil)); end
 
   # Verifies the claims of the token.
   # @param options [Array<Symbol>, Hash] the claims to verify. By default, it checks the 'exp' claim.
-  # @raise [JWT::DecodeError] if the claims are invalid.
+  # @raise [JWT::ClaimValidationError] if the claims are invalid.
+  # @raise [JWT::MalformedTokenError] if the payload cannot be decoded, which happens before any claim is validated.
   #
-  # pkg:gem/jwt#lib/jwt/encoded_token.rb:156
+  # pkg:gem/jwt#lib/jwt/encoded_token.rb:168
   def verify_claims!(*options); end
 
   # Verifies the signature of the JWT token.
@@ -1504,30 +1528,27 @@ class JWT::EncodedToken
   # @raise [JWT::VerificationError] if the signature verification fails.
   # @raise [ArgumentError] if neither key nor key_finder is provided, or if both are provided.
   #
-  # pkg:gem/jwt#lib/jwt/encoded_token.rb:127
+  # pkg:gem/jwt#lib/jwt/encoded_token.rb:138
   def verify_signature!(algorithm:, key: T.unsafe(nil), key_finder: T.unsafe(nil)); end
 
   private
 
-  # pkg:gem/jwt#lib/jwt/encoded_token.rb:183
+  # pkg:gem/jwt#lib/jwt/encoded_token.rb:195
   def claims_options(options); end
 
-  # pkg:gem/jwt#lib/jwt/encoded_token.rb:189
+  # pkg:gem/jwt#lib/jwt/encoded_token.rb:201
   def decode_payload; end
 
-  # pkg:gem/jwt#lib/jwt/encoded_token.rb:218
+  # pkg:gem/jwt#lib/jwt/encoded_token.rb:226
   def decoded_payload; end
 
-  # pkg:gem/jwt#lib/jwt/encoded_token.rb:212
+  # pkg:gem/jwt#lib/jwt/encoded_token.rb:220
   def parse(segment); end
 
-  # pkg:gem/jwt#lib/jwt/encoded_token.rb:204
+  # pkg:gem/jwt#lib/jwt/encoded_token.rb:216
   def parse_and_decode(segment); end
 
-  # pkg:gem/jwt#lib/jwt/encoded_token.rb:208
-  def parse_unencoded(segment); end
-
-  # pkg:gem/jwt#lib/jwt/encoded_token.rb:200
+  # pkg:gem/jwt#lib/jwt/encoded_token.rb:212
   def unencoded_payload?; end
 end
 
@@ -1553,55 +1574,60 @@ end
 # pkg:gem/jwt#lib/jwt/encoded_token.rb:17
 JWT::EncodedToken::DEFAULT_CLAIMS = T.let(T.unsafe(nil), Array)
 
-# The ExpiredSignature class is raised when the JWT signature has expired.
+# The base error class for all JWT errors.
 #
-# pkg:gem/jwt#lib/jwt/error.rb:14
-class JWT::ExpiredSignature < ::JWT::DecodeError; end
+# pkg:gem/jwt#lib/jwt/error.rb:5
+class JWT::Error < ::StandardError; end
 
-# The ImmatureSignature class is raised when the JWT signature is immature.
+# The ExpiredSignature class is raised when the JWT token has expired.
 #
-# pkg:gem/jwt#lib/jwt/error.rb:20
-class JWT::ImmatureSignature < ::JWT::DecodeError; end
+# pkg:gem/jwt#lib/jwt/error.rb:47
+class JWT::ExpiredSignature < ::JWT::ClaimValidationError; end
+
+# The ImmatureSignature class is raised when the JWT token is not yet valid (nbf).
+#
+# pkg:gem/jwt#lib/jwt/error.rb:50
+class JWT::ImmatureSignature < ::JWT::ClaimValidationError; end
 
 # The IncorrectAlgorithm class is raised when the JWT algorithm is incorrect.
 #
-# pkg:gem/jwt#lib/jwt/error.rb:17
-class JWT::IncorrectAlgorithm < ::JWT::DecodeError; end
+# pkg:gem/jwt#lib/jwt/error.rb:38
+class JWT::IncorrectAlgorithm < ::JWT::SignatureError; end
 
 # The InvalidAudError class is raised when the JWT audience (aud) claim is invalid.
 #
-# pkg:gem/jwt#lib/jwt/error.rb:32
-class JWT::InvalidAudError < ::JWT::DecodeError; end
+# pkg:gem/jwt#lib/jwt/error.rb:59
+class JWT::InvalidAudError < ::JWT::ClaimValidationError; end
 
 # The InvalidCritError class is raised when the JWT crit header is invalid.
 #
-# pkg:gem/jwt#lib/jwt/error.rb:38
-class JWT::InvalidCritError < ::JWT::DecodeError; end
+# pkg:gem/jwt#lib/jwt/error.rb:65
+class JWT::InvalidCritError < ::JWT::ClaimValidationError; end
 
 # The InvalidIatError class is raised when the JWT issued at (iat) claim is invalid.
 #
-# pkg:gem/jwt#lib/jwt/error.rb:29
-class JWT::InvalidIatError < ::JWT::DecodeError; end
+# pkg:gem/jwt#lib/jwt/error.rb:56
+class JWT::InvalidIatError < ::JWT::ClaimValidationError; end
 
 # The InvalidIssuerError class is raised when the JWT issuer is invalid.
 #
-# pkg:gem/jwt#lib/jwt/error.rb:23
-class JWT::InvalidIssuerError < ::JWT::DecodeError; end
+# pkg:gem/jwt#lib/jwt/error.rb:53
+class JWT::InvalidIssuerError < ::JWT::ClaimValidationError; end
 
 # The InvalidJtiError class is raised when the JWT ID (jti) claim is invalid.
 #
-# pkg:gem/jwt#lib/jwt/error.rb:41
-class JWT::InvalidJtiError < ::JWT::DecodeError; end
+# pkg:gem/jwt#lib/jwt/error.rb:68
+class JWT::InvalidJtiError < ::JWT::ClaimValidationError; end
 
 # The InvalidPayload class is raised when the JWT payload is invalid.
 #
-# pkg:gem/jwt#lib/jwt/error.rb:44
-class JWT::InvalidPayload < ::JWT::DecodeError; end
+# pkg:gem/jwt#lib/jwt/error.rb:71
+class JWT::InvalidPayload < ::JWT::ClaimValidationError; end
 
 # The InvalidSubError class is raised when the JWT subject (sub) claim is invalid.
 #
-# pkg:gem/jwt#lib/jwt/error.rb:35
-class JWT::InvalidSubError < ::JWT::DecodeError; end
+# pkg:gem/jwt#lib/jwt/error.rb:62
+class JWT::InvalidSubError < ::JWT::ClaimValidationError; end
 
 # @api private
 #
@@ -1673,35 +1699,41 @@ class JWT::JWA::Ecdsa
   # pkg:gem/jwt#lib/jwt/jwa/ecdsa.rb:14
   def sign(data:, signing_key:); end
 
-  # pkg:gem/jwt#lib/jwt/jwa/ecdsa.rb:26
+  # pkg:gem/jwt#lib/jwt/jwa/ecdsa.rb:24
   def verify(data:, signature:, verification_key:); end
 
   private
 
-  # pkg:gem/jwt#lib/jwt/jwa/ecdsa.rb:105
+  # pkg:gem/jwt#lib/jwt/jwa/ecdsa.rb:110
   def asn1_to_raw(signature, public_key); end
 
-  # pkg:gem/jwt#lib/jwt/jwa/ecdsa.rb:94
+  # pkg:gem/jwt#lib/jwt/jwa/ecdsa.rb:92
   def curve_by_name(name); end
 
-  # pkg:gem/jwt#lib/jwt/jwa/ecdsa.rb:92
+  # pkg:gem/jwt#lib/jwt/jwa/ecdsa.rb:90
   def digest; end
 
-  # pkg:gem/jwt#lib/jwt/jwa/ecdsa.rb:98
+  # pkg:gem/jwt#lib/jwt/jwa/ecdsa.rb:103
   def raw_to_asn1(signature, private_key); end
 
+  # Signing-side counterpart of {.curve_by_name}. An unsupported curve on the
+  # signing key is an encoding problem, so it raises a JWT::EncodeError.
+  #
+  # pkg:gem/jwt#lib/jwt/jwa/ecdsa.rb:98
+  def signing_key_algorithm(signing_key); end
+
   class << self
-    # pkg:gem/jwt#lib/jwt/jwa/ecdsa.rb:75
+    # pkg:gem/jwt#lib/jwt/jwa/ecdsa.rb:73
     def create_public_key_from_point(point); end
 
     # @api private
     #
-    # pkg:gem/jwt#lib/jwt/jwa/ecdsa.rb:68
+    # pkg:gem/jwt#lib/jwt/jwa/ecdsa.rb:66
     def curve_by_name(name); end
   end
 end
 
-# pkg:gem/jwt#lib/jwt/jwa/ecdsa.rb:40
+# pkg:gem/jwt#lib/jwt/jwa/ecdsa.rb:38
 JWT::JWA::Ecdsa::NAMED_CURVES = T.let(T.unsafe(nil), Hash)
 
 # Implementation of the HMAC family of algorithms
@@ -1717,19 +1749,19 @@ class JWT::JWA::Hmac
   # pkg:gem/jwt#lib/jwt/jwa/hmac.rb:23
   def sign(data:, signing_key:); end
 
-  # pkg:gem/jwt#lib/jwt/jwa/hmac.rb:30
+  # pkg:gem/jwt#lib/jwt/jwa/hmac.rb:29
   def verify(data:, signature:, verification_key:); end
 
   private
 
-  # pkg:gem/jwt#lib/jwt/jwa/hmac.rb:43
+  # pkg:gem/jwt#lib/jwt/jwa/hmac.rb:41
   def digest; end
 
+  # Yields a message for the first problem found with the key. The caller
+  # raises it, so signing and verification failures keep their own error class.
+  #
   # pkg:gem/jwt#lib/jwt/jwa/hmac.rb:45
-  def ensure_valid_key!(key); end
-
-  # pkg:gem/jwt#lib/jwt/jwa/hmac.rb:50
-  def validate_key_length!(key); end
+  def validate_key!(key); end
 end
 
 # Minimum key lengths for HMAC algorithms based on RFC 7518 Section 3.2.
@@ -1741,13 +1773,13 @@ JWT::JWA::Hmac::MIN_KEY_LENGTHS = T.let(T.unsafe(nil), Hash)
 
 # Copy of https://github.com/rails/rails/blob/v7.0.3.1/activesupport/lib/active_support/security_utils.rb
 #
-# pkg:gem/jwt#lib/jwt/jwa/hmac.rb:61
+# pkg:gem/jwt#lib/jwt/jwa/hmac.rb:57
 module JWT::JWA::Hmac::SecurityUtils
   private
 
   # :nocov:
   #
-  # pkg:gem/jwt#lib/jwt/jwa/hmac.rb:68
+  # pkg:gem/jwt#lib/jwt/jwa/hmac.rb:64
   def fixed_length_secure_compare(a, b); end
 
   # Secure string comparison for strings of variable length.
@@ -1757,23 +1789,14 @@ module JWT::JWA::Hmac::SecurityUtils
   # the secret length. This should be considered when using secure_compare
   # to compare weak, short secrets to user input.
   #
-  # pkg:gem/jwt#lib/jwt/jwa/hmac.rb:92
+  # pkg:gem/jwt#lib/jwt/jwa/hmac.rb:88
   def secure_compare(a, b); end
 
   class << self
-    # :nocov:
-    #
-    # pkg:gem/jwt#lib/jwt/jwa/hmac.rb:84
+    # pkg:gem/jwt#lib/jwt/jwa/hmac.rb:80
     def fixed_length_secure_compare(a, b); end
 
-    # Secure string comparison for strings of variable length.
-    #
-    # While a timing attack would not be able to discern the content of
-    # a secret compared via secure_compare, it is possible to determine
-    # the secret length. This should be considered when using secure_compare
-    # to compare weak, short secrets to user input.
-    #
-    # pkg:gem/jwt#lib/jwt/jwa/hmac.rb:95
+    # pkg:gem/jwt#lib/jwt/jwa/hmac.rb:91
     def secure_compare(a, b); end
   end
 end
@@ -1808,12 +1831,12 @@ class JWT::JWA::Ps
   # pkg:gem/jwt#lib/jwt/jwa/ps.rb:14
   def sign(data:, signing_key:); end
 
-  # pkg:gem/jwt#lib/jwt/jwa/ps.rb:21
+  # pkg:gem/jwt#lib/jwt/jwa/ps.rb:22
   def verify(data:, signature:, verification_key:); end
 
   private
 
-  # pkg:gem/jwt#lib/jwt/jwa/ps.rb:33
+  # pkg:gem/jwt#lib/jwt/jwa/ps.rb:36
   def digest_algorithm; end
 end
 
@@ -1830,12 +1853,12 @@ class JWT::JWA::Rsa
   # pkg:gem/jwt#lib/jwt/jwa/rsa.rb:14
   def sign(data:, signing_key:); end
 
-  # pkg:gem/jwt#lib/jwt/jwa/rsa.rb:21
+  # pkg:gem/jwt#lib/jwt/jwa/rsa.rb:22
   def verify(data:, signature:, verification_key:); end
 
   private
 
-  # pkg:gem/jwt#lib/jwt/jwa/rsa.rb:33
+  # pkg:gem/jwt#lib/jwt/jwa/rsa.rb:36
   def digest; end
 end
 
@@ -2386,6 +2409,20 @@ class JWT::JWK::Set
   #
   # pkg:gem/jwt#lib/jwt/jwk/set.rb:77
   def |(enum); end
+
+  private
+
+  # pkg:gem/jwt#lib/jwt/jwk/set.rb:83
+  def build_keys(keys, options); end
+
+  # pkg:gem/jwt#lib/jwt/jwk/set.rb:87
+  def build_supported_keys(keys, options); end
+
+  # Ensures a duplicated set owns its key collection. The keys themselves are
+  # intentionally shared; only the collection is copied.
+  #
+  # pkg:gem/jwt#lib/jwt/jwk/set.rb:28
+  def initialize_copy(other); end
 end
 
 # https://tools.ietf.org/html/rfc7638
@@ -2407,13 +2444,23 @@ end
 
 # The JWKError class is raised when there is an error with the JSON Web Key (JWK).
 #
-# pkg:gem/jwt#lib/jwt/error.rb:53
+# pkg:gem/jwt#lib/jwt/error.rb:77
 class JWT::JWKError < ::JWT::DecodeError; end
+
+# The MalformedTokenError class is raised when the token is structurally invalid.
+#
+# pkg:gem/jwt#lib/jwt/error.rb:21
+class JWT::MalformedTokenError < ::JWT::TokenError; end
 
 # The MissingRequiredClaim class is raised when a required claim is missing from the JWT.
 #
-# pkg:gem/jwt#lib/jwt/error.rb:47
-class JWT::MissingRequiredClaim < ::JWT::DecodeError; end
+# pkg:gem/jwt#lib/jwt/error.rb:74
+class JWT::MissingRequiredClaim < ::JWT::ClaimValidationError; end
+
+# The SignatureError class is the base class for signature and algorithm related errors.
+#
+# pkg:gem/jwt#lib/jwt/error.rb:27
+class JWT::SignatureError < ::JWT::TokenError; end
 
 # Represents a JWT token
 #
@@ -2442,7 +2489,7 @@ class JWT::Token
   # @param options [Array<Symbol>, Hash] the claims to verify.
   # @return [Array<Symbol>] the errors of the claims.
   #
-  # pkg:gem/jwt#lib/jwt/token.rb:115
+  # pkg:gem/jwt#lib/jwt/token.rb:116
   def claim_errors(*options); end
 
   # Detaches the payload according to https://datatracker.ietf.org/doc/html/rfc7515#appendix-F
@@ -2500,7 +2547,7 @@ class JWT::Token
   # @return [void]
   # @raise [JWT::EncodeError] if the token is already signed or other problems when signing
   #
-  # pkg:gem/jwt#lib/jwt/token.rb:94
+  # pkg:gem/jwt#lib/jwt/token.rb:95
   def sign!(key:, algorithm:); end
 
   # Returns the decoded signature of the JWT token.
@@ -2521,28 +2568,38 @@ class JWT::Token
   #
   # @return [String] the JWT token as a string.
   #
-  # pkg:gem/jwt#lib/jwt/token.rb:129
+  # pkg:gem/jwt#lib/jwt/token.rb:130
   def to_s; end
 
   # Returns whether the claims of the token are valid.
   # @param options [Array<Symbol>, Hash] the claims to verify.
   # @return [Boolean] whether the claims are valid.
   #
-  # pkg:gem/jwt#lib/jwt/token.rb:122
+  # pkg:gem/jwt#lib/jwt/token.rb:123
   def valid_claims?(*options); end
 
   # Verifies the claims of the token.
   # @param options [Array<Symbol>, Hash] the claims to verify.
-  # @raise [JWT::DecodeError] if the claims are invalid.
+  # @raise [JWT::ClaimValidationError] if the claims are invalid.
   #
-  # pkg:gem/jwt#lib/jwt/token.rb:108
+  # pkg:gem/jwt#lib/jwt/token.rb:109
   def verify_claims!(*options); end
 end
 
+# The TokenError class is the base class for all errors related to token processing.
+#
+# pkg:gem/jwt#lib/jwt/error.rb:18
+class JWT::TokenError < ::JWT::DecodeError; end
+
 # The UnsupportedEcdsaCurve class is raised when the ECDSA curve is unsupported.
 #
-# pkg:gem/jwt#lib/jwt/error.rb:26
+# pkg:gem/jwt#lib/jwt/error.rb:41
 class JWT::UnsupportedEcdsaCurve < ::JWT::IncorrectAlgorithm; end
+
+# Raised when a JWK uses a key type (kty) that this library does not support.
+#
+# pkg:gem/jwt#lib/jwt/error.rb:80
+class JWT::UnsupportedKeyType < ::JWT::JWKError; end
 
 # Version constants
 #
@@ -2564,10 +2621,17 @@ JWT::VERSION::STRING = T.let(T.unsafe(nil), String)
 # pkg:gem/jwt#lib/jwt/version.rb:19
 JWT::VERSION::TINY = T.let(T.unsafe(nil), Integer)
 
-# The VerificationError class is raised when there is an error verifying a JWT.
+# The VerificationError class is raised when the signature of a token does not
+# match the one calculated from the signing input.
 #
-# pkg:gem/jwt#lib/jwt/error.rb:11
-class JWT::VerificationError < ::JWT::DecodeError; end
+# pkg:gem/jwt#lib/jwt/error.rb:31
+class JWT::VerificationError < ::JWT::SignatureError; end
+
+# The VerificationKeyError class is raised when the key or algorithm given for
+# verification cannot be used, as opposed to a signature that does not match.
+#
+# pkg:gem/jwt#lib/jwt/error.rb:35
+class JWT::VerificationKeyError < ::JWT::VerificationError; end
 
 # If the x5c header certificate chain can be validated by trusted root
 # certificates, and none of the certificates are revoked, returns the public

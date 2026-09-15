@@ -115,33 +115,39 @@ class PgSearch::Configuration::Association
   # pkg:gem/pg_search#lib/pg_search/configuration/association.rb:10
   def initialize(model, name, column_names); end
 
+  # pkg:gem/pg_search#lib/pg_search/configuration/association.rb:22
+  def arel_table; end
+
   # pkg:gem/pg_search#lib/pg_search/configuration/association.rb:8
   def columns; end
 
-  # pkg:gem/pg_search#lib/pg_search/configuration/association.rb:22
-  def join(primary_key); end
-
-  # pkg:gem/pg_search#lib/pg_search/configuration/association.rb:26
+  # pkg:gem/pg_search#lib/pg_search/configuration/association.rb:39
   def subselect_alias; end
 
   # pkg:gem/pg_search#lib/pg_search/configuration/association.rb:18
   def table_name; end
 
+  # Builds an outer join retaining association-scope binds.
+  #
+  # Arguments
+  #
+  # +primary_key+:: An Arel expression or trusted SQL String identifying the
+  #                 model's primary-key column, not a record's key value.
+  #
+  # Returns a composable outer join to the search subquery.
+  #
+  # pkg:gem/pg_search#lib/pg_search/configuration/association.rb:32
+  def to_arel(primary_key); end
+
   private
 
-  # pkg:gem/pg_search#lib/pg_search/configuration/association.rb:52
+  # pkg:gem/pg_search#lib/pg_search/configuration/association.rb:45
   def relation(primary_key); end
 
-  # pkg:gem/pg_search#lib/pg_search/configuration/association.rb:32
+  # pkg:gem/pg_search#lib/pg_search/configuration/association.rb:54
   def selects; end
 
-  # pkg:gem/pg_search#lib/pg_search/configuration/association.rb:46
-  def selects_for_multiple_association; end
-
-  # pkg:gem/pg_search#lib/pg_search/configuration/association.rb:40
-  def selects_for_singular_association; end
-
-  # pkg:gem/pg_search#lib/pg_search/configuration/association.rb:58
+  # pkg:gem/pg_search#lib/pg_search/configuration/association.rb:72
   def singular_association?; end
 end
 
@@ -150,28 +156,37 @@ class PgSearch::Configuration::Column
   # pkg:gem/pg_search#lib/pg_search/configuration/column.rb:10
   def initialize(column_name, weight, model); end
 
-  # pkg:gem/pg_search#lib/pg_search/configuration/column.rb:18
-  def full_name; end
-
   # pkg:gem/pg_search#lib/pg_search/configuration/column.rb:8
   def name; end
 
-  # pkg:gem/pg_search#lib/pg_search/configuration/column.rb:24
-  def to_sql; end
+  # Physical source-column attribute, or the supplied trusted SQL literal.
+  # Foreign columns refer to the association table, not the search alias.
+  #
+  # pkg:gem/pg_search#lib/pg_search/configuration/column.rb:19
+  def source_attribute; end
+
+  # Composable search expression cast to text, with NULL mapped to "".
+  # Foreign columns use their derived search alias rather than the source.
+  #
+  # pkg:gem/pg_search#lib/pg_search/configuration/column.rb:27
+  def to_arel; end
 
   # pkg:gem/pg_search#lib/pg_search/configuration/column.rb:8
   def weight; end
 
   private
 
-  # pkg:gem/pg_search#lib/pg_search/configuration/column.rb:34
-  def column_name; end
+  # pkg:gem/pg_search#lib/pg_search/configuration/column.rb:31
+  def attribute; end
 
-  # pkg:gem/pg_search#lib/pg_search/configuration/column.rb:38
-  def expression; end
+  # pkg:gem/pg_search#lib/pg_search/configuration/column.rb:37
+  def cast_to_text(node); end
 
-  # pkg:gem/pg_search#lib/pg_search/configuration/column.rb:30
-  def table_name; end
+  # pkg:gem/pg_search#lib/pg_search/configuration/column.rb:41
+  def coalesce_to_blank_string(node); end
+
+  # pkg:gem/pg_search#lib/pg_search/configuration/column.rb:45
+  def source_table; end
 end
 
 # pkg:gem/pg_search#lib/pg_search/configuration/foreign_column.rb:7
@@ -188,10 +203,10 @@ class PgSearch::Configuration::ForeignColumn < ::PgSearch::Configuration::Column
   private
 
   # pkg:gem/pg_search#lib/pg_search/configuration/foreign_column.rb:21
-  def expression; end
+  def attribute; end
 
   # pkg:gem/pg_search#lib/pg_search/configuration/foreign_column.rb:25
-  def table_name; end
+  def source_table; end
 end
 
 # standard:disable Lint/UselessConstantScoping
@@ -277,7 +292,10 @@ end
 # pkg:gem/pg_search#lib/pg_search/document.rb:6
 module PgSearch::Document::GeneratedAttributeMethods; end
 
-# pkg:gem/pg_search#lib/pg_search/features/feature.rb:7
+# Search features provide conditions and rank as composable Arel expressions,
+# not SQL Strings. TSearch also provides a highlight expression for selection.
+#
+# pkg:gem/pg_search#lib/pg_search/features/feature.rb:6
 module PgSearch::Features; end
 
 # pkg:gem/pg_search#lib/pg_search/features/dmetaphone.rb:7
@@ -305,53 +323,47 @@ class PgSearch::Features::DMetaphone::Normalizer
   def initialize(normalizer_to_wrap); end
 
   # pkg:gem/pg_search#lib/pg_search/features/dmetaphone.rb:28
-  def add_normalization(original_sql); end
+  def add_normalization(expression); end
 
   private
 
-  # pkg:gem/pg_search#lib/pg_search/features/dmetaphone.rb:41
+  # pkg:gem/pg_search#lib/pg_search/features/dmetaphone.rb:37
   def normalizer_to_wrap; end
 end
 
-# pkg:gem/pg_search#lib/pg_search/features/feature.rb:8
+# pkg:gem/pg_search#lib/pg_search/features/feature.rb:7
 class PgSearch::Features::Feature
-  # pkg:gem/pg_search#lib/pg_search/features/feature.rb:15
+  # pkg:gem/pg_search#lib/pg_search/features/feature.rb:12
   def initialize(query, options, all_columns, model, normalizer); end
-
-  # pkg:gem/pg_search#lib/pg_search/features/feature.rb:13
-  def connection(*_arg0, **_arg1, &_arg2); end
-
-  # pkg:gem/pg_search#lib/pg_search/features/feature.rb:13
-  def quoted_table_name(*_arg0, **_arg1, &_arg2); end
 
   private
 
-  # pkg:gem/pg_search#lib/pg_search/features/feature.rb:25
+  # pkg:gem/pg_search#lib/pg_search/features/feature.rb:22
   def all_columns; end
 
-  # pkg:gem/pg_search#lib/pg_search/features/feature.rb:31
+  # pkg:gem/pg_search#lib/pg_search/features/feature.rb:35
   def columns; end
 
-  # pkg:gem/pg_search#lib/pg_search/features/feature.rb:27
+  # pkg:gem/pg_search#lib/pg_search/features/feature.rb:24
   def document; end
 
-  # pkg:gem/pg_search#lib/pg_search/features/feature.rb:25
+  # pkg:gem/pg_search#lib/pg_search/features/feature.rb:22
   def model; end
 
-  # pkg:gem/pg_search#lib/pg_search/features/feature.rb:41
+  # pkg:gem/pg_search#lib/pg_search/features/feature.rb:45
   def normalize(expression); end
 
-  # pkg:gem/pg_search#lib/pg_search/features/feature.rb:25
+  # pkg:gem/pg_search#lib/pg_search/features/feature.rb:22
   def normalizer; end
 
-  # pkg:gem/pg_search#lib/pg_search/features/feature.rb:25
+  # pkg:gem/pg_search#lib/pg_search/features/feature.rb:22
   def options; end
 
-  # pkg:gem/pg_search#lib/pg_search/features/feature.rb:25
+  # pkg:gem/pg_search#lib/pg_search/features/feature.rb:22
   def query; end
 
   class << self
-    # pkg:gem/pg_search#lib/pg_search/features/feature.rb:9
+    # pkg:gem/pg_search#lib/pg_search/features/feature.rb:8
     def valid_options; end
   end
 end
@@ -369,19 +381,16 @@ class PgSearch::Features::TSearch < ::PgSearch::Features::Feature
 
   private
 
-  # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:176
-  def arel_wrap(sql_string); end
-
-  # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:188
+  # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:179
   def column_to_tsvector(search_column); end
 
-  # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:180
+  # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:171
   def columns_to_use; end
 
   # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:57
   def deprecated_headline_options; end
 
-  # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:172
+  # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:167
   def dictionary; end
 
   # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:47
@@ -397,7 +406,7 @@ class PgSearch::Features::TSearch < ::PgSearch::Features::Feature
   #   32 divides the rank by itself + 1
   # The integer option controls several behaviors, so it is a bit mask: you can specify one or more behaviors
   #
-  # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:160
+  # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:155
   def normalization; end
 
   # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:29
@@ -409,21 +418,21 @@ class PgSearch::Features::TSearch < ::PgSearch::Features::Feature
   # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:38
   def ts_headline_options; end
 
-  # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:133
+  # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:131
   def tsdocument; end
 
-  # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:164
+  # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:159
   def tsearch_rank; end
 
-  # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:125
+  # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:123
   def tsquery; end
 
   # After this, the SQL expression evaluates to a string containing the term surrounded by single-quotes.
   # If :prefix is true, then the term will have :* appended to the end.
   # If :negated is true, then the term will have ! prepended to the front.
   #
-  # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:111
-  def tsquery_expression(term_sql, negated:, prefix:); end
+  # pkg:gem/pg_search#lib/pg_search/features/tsearch.rb:109
+  def tsquery_expression(term_node, negated:, prefix:); end
 
   # standard:disable Lint/UselessConstantScoping
   #
@@ -449,19 +458,19 @@ class PgSearch::Features::Trigram < ::PgSearch::Features::Feature
 
   private
 
-  # pkg:gem/pg_search#lib/pg_search/features/trigram.rb:44
+  # pkg:gem/pg_search#lib/pg_search/features/trigram.rb:38
   def infix_operator; end
 
-  # pkg:gem/pg_search#lib/pg_search/features/trigram.rb:62
+  # pkg:gem/pg_search#lib/pg_search/features/trigram.rb:49
   def normalized_document; end
 
-  # pkg:gem/pg_search#lib/pg_search/features/trigram.rb:66
+  # pkg:gem/pg_search#lib/pg_search/features/trigram.rb:53
   def normalized_query; end
 
-  # pkg:gem/pg_search#lib/pg_search/features/trigram.rb:52
+  # pkg:gem/pg_search#lib/pg_search/features/trigram.rb:42
   def similarity; end
 
-  # pkg:gem/pg_search#lib/pg_search/features/trigram.rb:36
+  # pkg:gem/pg_search#lib/pg_search/features/trigram.rb:34
   def similarity_function; end
 
   # pkg:gem/pg_search#lib/pg_search/features/trigram.rb:32
@@ -521,64 +530,59 @@ end
 
 # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:5
 class PgSearch::Multisearch::Rebuilder
-  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:6
+  # Arguments
+  #
+  # +model+:: Active Record model configured for multisearch.
+  # +time_source+:: Clock returning a timestamp for bulk inserts. Defaults to
+  #                 +Time.method(:now)+ and is called once per bulk rebuild so
+  #                 +created_at+ and +updated_at+ share a timestamp.
+  #
+  # Raises
+  #
+  # ModelNotMultisearchable:: If +model+ is not configured for multisearch.
+  #
+  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:16
   def initialize(model, time_source = T.unsafe(nil)); end
 
-  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:13
+  # Populates search documents without first clearing existing documents.
+  # Uses the model's rebuild_pg_search_documents override when available;
+  # otherwise updates records individually for conditions, dynamic content,
+  # or additional attributes, and bulk-inserts for plain column content.
+  #
+  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:27
   def rebuild; end
 
   private
 
-  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:36
+  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:51
   def additional_attributes?; end
 
-  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:97
-  def base_model_name; end
+  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:102
+  def apply_sti_condition(select_manager, src_table); end
 
-  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:89
+  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:100
   def columns; end
 
-  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:27
+  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:41
   def conditional?; end
 
-  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:40
+  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:55
   def connection; end
 
-  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:83
-  def content_expressions; end
+  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:89
+  def content_expression; end
 
-  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:109
-  def current_time; end
-
-  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:105
-  def documents_table; end
-
-  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:31
+  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:46
   def dynamic?; end
 
-  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:25
+  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:59
+  def insert_manager; end
+
+  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:39
   def model; end
 
-  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:93
-  def model_name; end
-
-  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:101
-  def model_table; end
-
-  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:44
-  def primary_key; end
-
-  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:62
+  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:57
   def rebuild_sql; end
-
-  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:48
-  def rebuild_sql_template; end
-
-  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:79
-  def replacements; end
-
-  # pkg:gem/pg_search#lib/pg_search/multisearch/rebuilder.rb:68
-  def sti_clause; end
 end
 
 # pkg:gem/pg_search#lib/pg_search/multisearchable.rb:6
@@ -606,19 +610,41 @@ end
 
 # pkg:gem/pg_search#lib/pg_search/normalizer.rb:4
 class PgSearch::Normalizer
-  # pkg:gem/pg_search#lib/pg_search/normalizer.rb:5
+  # Arguments
+  #
+  # +config+:: Search configuration whose ignore list controls accent
+  #            normalization.
+  #
+  # pkg:gem/pg_search#lib/pg_search/normalizer.rb:9
   def initialize(config); end
 
-  # pkg:gem/pg_search#lib/pg_search/normalizer.rb:11
-  def add_normalization(sql_expression); end
+  # Applies configured accent normalization, preserving the input expression
+  # without an unaccent wrapper when accents are not ignored.
+  #
+  # Arguments
+  #
+  # +expression+:: An Arel node, attribute, or trusted SQL String. A String is
+  #                an SQL expression, not a value to quote.
+  #
+  # Returns a composable Arel expression.
+  #
+  # Raises
+  #
+  # TypeError:: If +expression+ is not an Arel node, attribute, or String.
+  #
+  # pkg:gem/pg_search#lib/pg_search/normalizer.rb:28
+  def add_normalization(expression); end
 
   private
 
-  # pkg:gem/pg_search#lib/pg_search/normalizer.rb:37
+  # pkg:gem/pg_search#lib/pg_search/normalizer.rb:45
   def config; end
+
+  # pkg:gem/pg_search#lib/pg_search/normalizer.rb:47
+  def to_node(expression); end
 end
 
-# pkg:gem/pg_search#lib/pg_search/normalizer.rb:9
+# pkg:gem/pg_search#lib/pg_search/normalizer.rb:13
 PgSearch::Normalizer::DISALLOWED_CHARACTERS = T.let(T.unsafe(nil), String)
 
 # pkg:gem/pg_search#lib/pg_search.rb:64
@@ -636,84 +662,69 @@ end
 # pkg:gem/pg_search#lib/pg_search/railtie.rb:4
 class PgSearch::Railtie < ::Rails::Railtie; end
 
-# pkg:gem/pg_search#lib/pg_search/scope_options.rb:6
+# pkg:gem/pg_search#lib/pg_search/scope_options.rb:4
 class PgSearch::ScopeOptions
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:9
+  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:7
   def initialize(config); end
 
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:15
+  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:13
   def apply(scope); end
 
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:7
+  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:5
   def config; end
 
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:80
-  def connection(*_arg0, **_arg1, &_arg2); end
-
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:7
+  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:5
   def feature_options; end
 
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:7
+  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:5
   def model; end
-
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:80
-  def quoted_table_name(*_arg0, **_arg1, &_arg2); end
 
   private
 
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:93
+  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:89
   def conditions; end
 
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:143
+  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:120
   def feature_for(feature_name); end
 
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:176
+  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:152
   def include_table_aliasing_for_rank(scope); end
 
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:108
-  def or_node(expressions); end
-
-  # :nocov:
-  # standard:enable Lint/DuplicateMethods
-  #
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:121
+  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:98
   def order_within_rank; end
 
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:125
+  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:106
   def primary_key; end
 
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:160
+  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:137
   def rank; end
 
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:166
-  def rank_join(rank_table_alias); end
+  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:145
+  def rank_join(rank_subquery); end
 
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:82
+  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:78
   def subquery; end
 
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:129
+  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:110
   def subquery_join; end
 end
 
-# pkg:gem/pg_search#lib/pg_search/scope_options.rb:137
+# pkg:gem/pg_search#lib/pg_search/scope_options.rb:114
 PgSearch::ScopeOptions::FEATURE_CLASSES = T.let(T.unsafe(nil), Hash)
 
-# pkg:gem/pg_search#lib/pg_search/scope_options.rb:58
+# pkg:gem/pg_search#lib/pg_search/scope_options.rb:56
 module PgSearch::ScopeOptions::PgSearchRankTableAliasing
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:59
+  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:57
   def pg_search_rank_table_alias(include_counter: T.unsafe(nil)); end
 
   private
 
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:71
+  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:69
   def increment_counter; end
 end
 
 # pkg:gem/pg_search#lib/pg_search/scope_options.rb:26
 module PgSearch::ScopeOptions::WithPgSearchHighlight
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:45
-  def highlight; end
-
   # pkg:gem/pg_search#lib/pg_search/scope_options.rb:35
   def tsearch; end
 
@@ -726,9 +737,9 @@ module PgSearch::ScopeOptions::WithPgSearchHighlight
   end
 end
 
-# pkg:gem/pg_search#lib/pg_search/scope_options.rb:50
+# pkg:gem/pg_search#lib/pg_search/scope_options.rb:46
 module PgSearch::ScopeOptions::WithPgSearchRank
-  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:51
+  # pkg:gem/pg_search#lib/pg_search/scope_options.rb:47
   def with_pg_search_rank; end
 end
 
