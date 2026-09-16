@@ -169,7 +169,6 @@ ActiveJob::Arguments::WITH_INDIFFERENT_ACCESS_KEY = T.let(T.unsafe(nil), String)
 #
 # pkg:gem/activejob#lib/active_job/base.rb:63
 class ActiveJob::Base
-  include ::Sentry::Rails::ActiveJobExtensions
   include ::ActiveJob::Core
   include ::ActiveJob::QueueAdapter
   include ::ActiveJob::QueueName
@@ -227,11 +226,6 @@ class ActiveJob::Base
   # pkg:gem/activejob#lib/active_job/base.rb:70
   def _run_perform_callbacks!(&block); end
 
-  # pkg:gem/activejob#lib/active_job/base.rb:76
-  def _sentry; end
-
-  # pkg:gem/activejob#lib/active_job/base.rb:76
-  def _sentry=(_arg0); end
 
   # pkg:gem/activejob#lib/active_job/base.rb:71
   def after_discard_procs; end

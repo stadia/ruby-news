@@ -1390,7 +1390,6 @@ module ActiveStorage::Blobs; end
 class ActiveStorage::Blobs::ProxyController < ::ActiveStorage::BaseController
   include ::ActiveStorage::SetBlob
   include ::ActionController::Live
-  include ::Sentry::Rails::Overrides::StreamingReporter
   include ::ActiveStorage::Streaming
   include ::ActiveStorage::DisableSession
   extend ::ActionController::Live::ClassMethods
@@ -2106,7 +2105,6 @@ end
 
 class ActiveStorage::Representations::ProxyController < ::ActiveStorage::Representations::BaseController
   include ::ActionController::Live
-  include ::Sentry::Rails::Overrides::StreamingReporter
   include ::ActiveStorage::Streaming
   include ::ActiveStorage::DisableSession
   extend ::ActionController::Live::ClassMethods

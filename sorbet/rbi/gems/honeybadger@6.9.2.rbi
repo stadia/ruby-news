@@ -41,67 +41,67 @@ module Honeybadger
   extend ::Honeybadger
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:39
-  def add_breadcrumb(*_arg0, **_arg1, &_arg2); end
+  def add_breadcrumb(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:38
-  def backtrace_filter(*_arg0, **_arg1, &_arg2); end
+  def backtrace_filter(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:40
-  def breadcrumbs(*_arg0, **_arg1, &_arg2); end
+  def breadcrumbs(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:28
-  def check_in(*_arg0, **_arg1, &_arg2); end
+  def check_in(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:41
-  def clear!(*_arg0, **_arg1, &_arg2); end
+  def clear!(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:44
-  def collect(*_arg0, **_arg1, &_arg2); end
+  def collect(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:58
-  def config(*_arg0, **_arg1, &_arg2); end
+  def config(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:31
-  def configure(*_arg0, **_arg1, &_arg2); end
+  def configure(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:29
-  def context(*_arg0, **_arg1, &_arg2); end
+  def context(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:51
-  def decrement_counter(*_arg0, **_arg1, &_arg2); end
+  def decrement_counter(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:43
-  def event(*_arg0, **_arg1, &_arg2); end
+  def event(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:30
-  def event_context(*_arg0, **_arg1, &_arg2); end
+  def event_context(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:36
-  def exception_filter(*_arg0, **_arg1, &_arg2); end
+  def exception_filter(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:37
-  def exception_fingerprint(*_arg0, **_arg1, &_arg2); end
+  def exception_fingerprint(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:34
-  def flush(*_arg0, **_arg1, &_arg2); end
+  def flush(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:49
-  def gauge(*_arg0, **_arg1, &_arg2); end
+  def gauge(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:32
-  def get_context(*_arg0, **_arg1, &_arg2); end
+  def get_context(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:33
-  def get_event_context(*_arg0, **_arg1, &_arg2); end
+  def get_event_context(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:48
-  def histogram(*_arg0, **_arg1, &_arg2); end
+  def histogram(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:50
-  def increment_counter(*_arg0, **_arg1, &_arg2); end
+  def increment_counter(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:59
-  def init!(*_arg0, **_arg1, &_arg2); end
+  def init!(*, **, &); end
 
   # @api private
   #
@@ -109,7 +109,7 @@ module Honeybadger
   def install_at_exit_callback; end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:46
-  def instrumentation(*_arg0, **_arg1, &_arg2); end
+  def instrumentation(*, **, &); end
 
   # @api private
   #
@@ -124,7 +124,7 @@ module Honeybadger
   def notify(exception_or_opts = T.unsafe(nil), **opts); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:45
-  def registry(*_arg0, **_arg1, &_arg2); end
+  def registry(*, **, &); end
 
   # @deprecated
   #
@@ -132,16 +132,16 @@ module Honeybadger
   def start(config = T.unsafe(nil)); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:35
-  def stop(*_arg0, **_arg1, &_arg2); end
+  def stop(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:47
-  def time(*_arg0, **_arg1, &_arg2); end
+  def time(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:42
-  def track_deployment(*_arg0, **_arg1, &_arg2); end
+  def track_deployment(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/singleton.rb:60
-  def with_rack_env(*_arg0, **_arg1, &_arg2); end
+  def with_rack_env(*, **, &); end
 
   private
 
@@ -151,31 +151,31 @@ module Honeybadger
   def ignored_exception?(exception); end
 end
 
-# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:73
+# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:76
 class Honeybadger::ActionControllerCacheSubscriber < ::Honeybadger::RailsSubscriber
-  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:74
+  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:77
   def format_payload(_name, payload); end
 end
 
-# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:67
+# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:70
 class Honeybadger::ActionControllerSubscriber < ::Honeybadger::RailsSubscriber
-  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:68
+  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:71
   def format_payload(_name, payload); end
 end
 
-# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:186
+# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:189
 class Honeybadger::ActionMailerSubscriber < ::Honeybadger::RailsSubscriber
-  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:187
+  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:190
   def format_payload(_name, payload); end
 end
 
-# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:105
+# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:108
 class Honeybadger::ActionViewSubscriber < ::Honeybadger::RailsSubscriber
-  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:108
+  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:111
   def format_payload(_name, payload); end
 end
 
-# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:106
+# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:109
 Honeybadger::ActionViewSubscriber::PROJECT_ROOT = T.let(T.unsafe(nil), String)
 
 # pkg:gem/honeybadger#lib/honeybadger/plugins/active_agent.rb:26
@@ -184,42 +184,42 @@ class Honeybadger::ActiveAgentSubscriber < ::Honeybadger::NotificationSubscriber
   def format_payload(name, payload); end
 end
 
-# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:131
+# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:134
 class Honeybadger::ActiveJobSubscriber < ::Honeybadger::RailsSubscriber
-  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:156
+  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:159
   def format_payload(name, payload); end
 
-  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:132
+  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:135
   def record(name, payload); end
 
-  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:137
+  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:140
   def record_metrics(name, payload); end
 end
 
-# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:116
+# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:119
 class Honeybadger::ActiveRecordSubscriber < ::Honeybadger::RailsSubscriber
-  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:117
+  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:120
   def format_payload(_name, payload); end
 
-  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:125
+  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:128
   def process?(name, payload); end
 end
 
-# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:202
+# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:205
 class Honeybadger::ActiveStorageSubscriber < ::Honeybadger::RailsSubscriber; end
 
-# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:87
+# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:90
 class Honeybadger::ActiveSupportCacheMultiSubscriber < ::Honeybadger::RailsSubscriber
-  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:94
+  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:97
   def expand_cache_keys_from_payload(data); end
 
-  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:88
+  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:91
   def format_payload(_name, payload); end
 end
 
-# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:80
+# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:83
 class Honeybadger::ActiveSupportCacheSubscriber < ::Honeybadger::RailsSubscriber
-  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:81
+  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:84
   def format_payload(_name, payload); end
 end
 
@@ -288,10 +288,10 @@ class Honeybadger::Agent
   def add_breadcrumb(message, metadata: T.unsafe(nil), category: T.unsafe(nil)); end
 
   # pkg:gem/honeybadger#lib/honeybadger/agent.rb:600
-  def backend(*_arg0, **_arg1, &_arg2); end
+  def backend(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/agent.rb:577
-  def backtrace_filter(*_arg0, **_arg1, &_arg2); end
+  def backtrace_filter(*, **, &); end
 
   # @api private
   # Direct access to the Breadcrumbs::Collector instance
@@ -328,7 +328,7 @@ class Honeybadger::Agent
   def config; end
 
   # pkg:gem/honeybadger#lib/honeybadger/agent.rb:529
-  def configure(*_arg0, **_arg1, &_arg2); end
+  def configure(*, **, &); end
 
   # Save global context for the current request.
   #
@@ -372,7 +372,7 @@ class Honeybadger::Agent
   def context(context = T.unsafe(nil), &block); end
 
   # pkg:gem/honeybadger#lib/honeybadger/agent.rb:625
-  def decrement_counter(*_arg0, **_arg1, &_arg2); end
+  def decrement_counter(*, **, &); end
 
   # Sends event to events backend
   #
@@ -432,10 +432,10 @@ class Honeybadger::Agent
   def events_worker; end
 
   # pkg:gem/honeybadger#lib/honeybadger/agent.rb:548
-  def exception_filter(*_arg0, **_arg1, &_arg2); end
+  def exception_filter(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/agent.rb:563
-  def exception_fingerprint(*_arg0, **_arg1, &_arg2); end
+  def exception_fingerprint(*, **, &); end
 
   # Flushes all data from workers before returning. This is most useful in
   # tests when using the test backend, where normally the asynchronous nature
@@ -471,7 +471,7 @@ class Honeybadger::Agent
   def flush; end
 
   # pkg:gem/honeybadger#lib/honeybadger/agent.rb:615
-  def gauge(*_arg0, **_arg1, &_arg2); end
+  def gauge(*, **, &); end
 
   # Get global context for the current request.
   #
@@ -496,13 +496,13 @@ class Honeybadger::Agent
   def get_event_context; end
 
   # pkg:gem/honeybadger#lib/honeybadger/agent.rb:610
-  def histogram(*_arg0, **_arg1, &_arg2); end
+  def histogram(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/agent.rb:620
-  def increment_counter(*_arg0, **_arg1, &_arg2); end
+  def increment_counter(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/agent.rb:595
-  def init!(*_arg0, **_arg1, &_arg2); end
+  def init!(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/agent.rb:627
   def instrumentation; end
@@ -580,7 +580,7 @@ class Honeybadger::Agent
   def stop_insights(force = T.unsafe(nil)); end
 
   # pkg:gem/honeybadger#lib/honeybadger/agent.rb:605
-  def time(*_arg0, **_arg1, &_arg2); end
+  def time(*, **, &); end
 
   # Track a new deployment
   #
@@ -1140,7 +1140,7 @@ class Honeybadger::Breadcrumbs::ActiveSupport
 
     private
 
-    # pkg:gem/honeybadger#lib/honeybadger/breadcrumbs/active_support.rb:108
+    # pkg:gem/honeybadger#lib/honeybadger/breadcrumbs/active_support.rb:109
     def active_record_connection_db_config; end
   end
 end
@@ -1264,7 +1264,7 @@ class Honeybadger::Breadcrumbs::Collector
   def add!(breadcrumb); end
 
   # pkg:gem/honeybadger#lib/honeybadger/breadcrumbs/collector.rb:15
-  def clear!(*_arg0, **_arg1, &_arg2); end
+  def clear!(*, **, &); end
 
   # @api private
   # Removes the prevous breadcrumb from the buffer if the supplied
@@ -1274,13 +1274,13 @@ class Honeybadger::Breadcrumbs::Collector
   def drop_previous_breadcrumb_if; end
 
   # pkg:gem/honeybadger#lib/honeybadger/breadcrumbs/collector.rb:19
-  def each(*_arg0, **_arg1, &_arg2); end
+  def each(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/breadcrumbs/collector.rb:27
-  def previous(*_arg0, **_arg1, &_arg2); end
+  def previous(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/breadcrumbs/collector.rb:23
-  def to_a(*_arg0, **_arg1, &_arg2); end
+  def to_a(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/breadcrumbs/collector.rb:62
   def to_h; end
@@ -1639,7 +1639,7 @@ class Honeybadger::Config::Boolean; end
 # pkg:gem/honeybadger#lib/honeybadger/config.rb:23
 class Honeybadger::Config::ConfigError < ::StandardError; end
 
-# pkg:gem/honeybadger#lib/honeybadger/config/defaults.rb:596
+# pkg:gem/honeybadger#lib/honeybadger/config/defaults.rb:601
 Honeybadger::Config::DEFAULTS = T.let(T.unsafe(nil), Hash)
 
 # pkg:gem/honeybadger#lib/honeybadger/config/defaults.rb:58
@@ -1945,10 +1945,10 @@ class Honeybadger::Event
   def initialize(event_type_or_payload, payload = T.unsafe(nil)); end
 
   # pkg:gem/honeybadger#lib/honeybadger/event.rb:18
-  def [](*_arg0, **_arg1, &_arg2); end
+  def [](*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/event.rb:18
-  def []=(*_arg0, **_arg1, &_arg2); end
+  def []=(*, **, &); end
 
   # @api private
   # Template used to create JSON payload.
@@ -1959,10 +1959,10 @@ class Honeybadger::Event
   def as_json(*args); end
 
   # pkg:gem/honeybadger#lib/honeybadger/event.rb:18
-  def delete(*_arg0, **_arg1, &_arg2); end
+  def delete(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/event.rb:18
-  def dig(*_arg0, **_arg1, &_arg2); end
+  def dig(*, **, &); end
 
   # The event_type of the event
   #
@@ -2007,7 +2007,7 @@ class Honeybadger::EventsWorker
   def initialize(config); end
 
   # pkg:gem/honeybadger#lib/honeybadger/events_worker.rb:117
-  def backend(*_arg0, **_arg1, &_arg2); end
+  def backend(*, **, &); end
 
   # Blocks until queue is processed up to this point in time.
   #
@@ -2515,19 +2515,19 @@ class Honeybadger::Logging::StandardLogger < ::Honeybadger::Logging::Base
   def add(severity, msg, progname = T.unsafe(nil)); end
 
   # pkg:gem/honeybadger#lib/honeybadger/logging.rb:102
-  def debug?(*_arg0, **_arg1, &_arg2); end
+  def debug?(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/logging.rb:102
-  def error?(*_arg0, **_arg1, &_arg2); end
+  def error?(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/logging.rb:102
-  def info?(*_arg0, **_arg1, &_arg2); end
+  def info?(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/logging.rb:102
-  def level(*_arg0, **_arg1, &_arg2); end
+  def level(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/logging.rb:102
-  def warn?(*_arg0, **_arg1, &_arg2); end
+  def warn?(*, **, &); end
 end
 
 # @api private
@@ -3175,16 +3175,16 @@ class Honeybadger::NotificationSubscriber
   # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:12
   def finish(name, id, payload); end
 
-  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:37
+  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:40
   def format_payload(name, payload); end
 
-  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:33
+  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:36
   def process?(name, payload); end
 
-  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:25
+  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:28
   def record(name, payload); end
 
-  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:29
+  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:32
   def record_metrics(name, payload); end
 
   # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:8
@@ -3446,7 +3446,7 @@ class Honeybadger::Plugin::Execution
   def call; end
 
   # pkg:gem/honeybadger#lib/honeybadger/plugin.rb:127
-  def logger(*_arg0, **_arg1, &_arg2); end
+  def logger(*, **, &); end
 
   private
 
@@ -3616,7 +3616,7 @@ class Honeybadger::Plugins::RailsBreadcrumbs
 
     # @api private
     #
-    # pkg:gem/honeybadger#lib/honeybadger/plugins/breadcrumbs.rb:106
+    # pkg:gem/honeybadger#lib/honeybadger/plugins/breadcrumbs.rb:109
     def subscribe_to_notification(name, notification_config); end
   end
 end
@@ -3755,10 +3755,10 @@ class Honeybadger::Rack::ErrorNotifier
   def call(env); end
 
   # pkg:gem/honeybadger#lib/honeybadger/rack/error_notifier.rb:52
-  def config(*_arg0, **_arg1, &_arg2); end
+  def config(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/rack/error_notifier.rb:53
-  def logger(*_arg0, **_arg1, &_arg2); end
+  def logger(*, **, &); end
 
   private
 
@@ -3795,7 +3795,7 @@ class Honeybadger::Rack::UserFeedback
   def call(env); end
 
   # pkg:gem/honeybadger#lib/honeybadger/rack/user_feedback.rb:84
-  def config(*_arg0, **_arg1, &_arg2); end
+  def config(*, **, &); end
 
   # @private
   #
@@ -3808,7 +3808,7 @@ class Honeybadger::Rack::UserFeedback
   def custom_template_file?; end
 
   # pkg:gem/honeybadger#lib/honeybadger/rack/user_feedback.rb:85
-  def logger(*_arg0, **_arg1, &_arg2); end
+  def logger(*, **, &); end
 
   # @private
   #
@@ -3840,10 +3840,10 @@ class Honeybadger::Rack::UserInformer
   def call(env); end
 
   # pkg:gem/honeybadger#lib/honeybadger/rack/user_informer.rb:42
-  def config(*_arg0, **_arg1, &_arg2); end
+  def config(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/rack/user_informer.rb:43
-  def logger(*_arg0, **_arg1, &_arg2); end
+  def logger(*, **, &); end
 
   # pkg:gem/honeybadger#lib/honeybadger/rack/user_informer.rb:15
   def replacement(with); end
@@ -3854,12 +3854,12 @@ class Honeybadger::Rack::UserInformer
   def agent; end
 end
 
-# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:42
+# pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:45
 class Honeybadger::RailsSubscriber < ::Honeybadger::NotificationSubscriber
-  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:43
+  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:46
   def record(name, payload); end
 
-  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:48
+  # pkg:gem/honeybadger#lib/honeybadger/notification_subscriber.rb:51
   def record_metrics(name, payload); end
 end
 
@@ -4093,15 +4093,27 @@ end
 # pkg:gem/honeybadger#lib/honeybadger/util/sql.rb:3
 class Honeybadger::Util::SQL
   class << self
-    # pkg:gem/honeybadger#lib/honeybadger/util/sql.rb:21
+    # pkg:gem/honeybadger#lib/honeybadger/util/sql.rb:49
     def force_utf_8(string); end
 
-    # pkg:gem/honeybadger#lib/honeybadger/util/sql.rb:10
-    def obfuscate(sql, adapter); end
+    # Obfuscates literal values in a SQL query. When +max_length+ is given
+    # and the query is larger than that many bytes, the query is truncated
+    # instead (see .truncate): scanning multi-megabyte queries (e.g. an
+    # INSERT of a serialized cache value) is slow, and can exceed the
+    # Regexp.timeout that Rails 8.1+ sets by default.
+    #
+    # pkg:gem/honeybadger#lib/honeybadger/util/sql.rb:25
+    def obfuscate(sql, adapter, max_length: T.unsafe(nil)); end
+
+    # Keeps only the head of the statement (up to the first quoted value or
+    # comment) so that no literal data leaks, and notes the original size.
+    #
+    # pkg:gem/honeybadger#lib/honeybadger/util/sql.rb:42
+    def truncate(sql, adapter, max_length); end
   end
 end
 
-# pkg:gem/honeybadger#lib/honeybadger/util/sql.rb:8
+# pkg:gem/honeybadger#lib/honeybadger/util/sql.rb:11
 Honeybadger::Util::SQL::DOUBLE_QUOTERS = T.let(T.unsafe(nil), Regexp)
 
 # pkg:gem/honeybadger#lib/honeybadger/util/sql.rb:6
@@ -4110,11 +4122,29 @@ Honeybadger::Util::SQL::DQUOTE_DATA = T.let(T.unsafe(nil), Regexp)
 # pkg:gem/honeybadger#lib/honeybadger/util/sql.rb:4
 Honeybadger::Util::SQL::ESCAPE_QUOTES = T.let(T.unsafe(nil), Regexp)
 
-# pkg:gem/honeybadger#lib/honeybadger/util/sql.rb:7
+# pkg:gem/honeybadger#lib/honeybadger/util/sql.rb:10
+Honeybadger::Util::SQL::HEX_DATA = T.let(T.unsafe(nil), Regexp)
+
+# Underscore separators are allowed in numeric literals by PostgreSQL
+# 16+ and SQLite 3.46+, and \b does not match next to one.
+#
+# pkg:gem/honeybadger#lib/honeybadger/util/sql.rb:9
 Honeybadger::Util::SQL::NUMBER_DATA = T.let(T.unsafe(nil), Regexp)
 
 # pkg:gem/honeybadger#lib/honeybadger/util/sql.rb:5
 Honeybadger::Util::SQL::SQUOTE_DATA = T.let(T.unsafe(nil), Regexp)
+
+# pkg:gem/honeybadger#lib/honeybadger/util/sql.rb:12
+Honeybadger::Util::SQL::TRUNCATED_HEAD_LENGTH = T.let(T.unsafe(nil), Integer)
+
+# Leading run of characters that can't start a string literal or a
+# comment in any supported adapter: stops at ', $, /, -, #, \ and so
+# on. Double quotes and backticks are kept because they quote
+# identifiers; adapters that use double quotes for strings are cut
+# at the first double quote in .truncate.
+#
+# pkg:gem/honeybadger#lib/honeybadger/util/sql.rb:18
+Honeybadger::Util::SQL::TRUNCATED_HEAD_SAFE = T.let(T.unsafe(nil), Regexp)
 
 # Sanitizer sanitizes data for sending to Honeybadger's API. The filters
 # are based on Rails' HTTP parameter filter.
@@ -4271,7 +4301,7 @@ class Honeybadger::Worker
   def initialize(config); end
 
   # pkg:gem/honeybadger#lib/honeybadger/worker.rb:109
-  def backend(*_arg0, **_arg1, &_arg2); end
+  def backend(*, **, &); end
 
   # Blocks until queue is processed up to this point in time.
   #

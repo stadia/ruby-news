@@ -165,7 +165,6 @@ module ActionCable::Channel; end
 #
 # pkg:gem/actioncable#lib/action_cable/channel/base.rb:109
 class ActionCable::Channel::Base
-  include ::Sentry::Rails::ActionCableExtensions::Channel::Actions
   include ::ActiveSupport::Callbacks
   include ::ActionCable::Channel::Callbacks
   include ::ActionCable::Channel::PeriodicTimers
@@ -173,7 +172,6 @@ class ActionCable::Channel::Base
   include ::ActionCable::Channel::Naming
   include ::ActionCable::Channel::Broadcasting
   include ::ActiveSupport::Rescuable
-  include ::Sentry::Rails::ActionCableExtensions::Channel::Subscriptions
   extend ::ActiveSupport::Callbacks::ClassMethods
   extend ::ActiveSupport::DescendantsTracker
   extend ::ActionCable::Channel::Callbacks::ClassMethods
@@ -1198,7 +1196,6 @@ class ActionCable::Connection::Authorization::UnauthorizedError < ::StandardErro
 #
 # pkg:gem/actioncable#lib/action_cable/connection/base.rb:57
 class ActionCable::Connection::Base
-  include ::Sentry::Rails::ActionCableExtensions::Connection
   include ::ActionCable::Connection::Identification
   include ::ActionCable::Connection::InternalChannel
   include ::ActionCable::Connection::Authorization

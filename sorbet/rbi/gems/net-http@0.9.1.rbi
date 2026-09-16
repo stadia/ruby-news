@@ -696,7 +696,6 @@
 #
 # pkg:gem/net-http#lib/net/http.rb:724
 class Net::HTTP < ::Net::Protocol
-  include ::Sentry::Utils::HttpTracing
 
   # Creates a new \Net::HTTP object for the specified server address,
   # without opening the TCP connection or initializing the \HTTP session.

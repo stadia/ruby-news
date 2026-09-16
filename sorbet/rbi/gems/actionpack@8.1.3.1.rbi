@@ -1266,8 +1266,6 @@ class ActionController::API < ::ActionController::Metal
   include ::Devise::Controllers::Helpers
   include ::Devise::Controllers::UrlHelpers
   include ::Devise::OmniAuth::UrlHelpers
-  include ::Sentry::Rails::ControllerMethods
-  include ::Sentry::Rails::ControllerTransaction
   extend ::ActionView::ViewPaths::ClassMethods
   extend ::AbstractController::UrlFor::ClassMethods
   extend ::ActionController::Redirecting::ClassMethods
@@ -4767,7 +4765,6 @@ class ActionController::InvalidParameterKey < ::ArgumentError; end
 #
 # pkg:gem/actionpack#lib/action_controller/metal/live.rb:91
 module ActionController::Live
-  include ::Sentry::Rails::Overrides::StreamingReporter
   extend ::ActiveSupport::Concern
   include GeneratedInstanceMethods
 
