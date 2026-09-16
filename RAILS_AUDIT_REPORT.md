@@ -403,7 +403,7 @@ end
 
 1. [ ] `spec/requests/articles_show_noindex_spec.rb:49` 실패 테스트 수정 [TEST-01]
 2. [ ] 외부 Faraday 클라이언트에 open/read 타임아웃 일괄 적용 [EXT-01]
-3. [ ] `hacker_news_site_job`의 포괄 rescue를 구체 예외로 교체 + Sentry 보고 [EXT-02]
+3. [ ] `hacker_news_site_job`의 포괄 rescue를 구체 예외로 교체 [EXT-02]
 4. [ ] 블로그 초안을 세션 대신 solid_cache로 이동 [SEC-01]
 
 ### Short-term (이번 스프린트)

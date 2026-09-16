@@ -26,7 +26,6 @@ class Components::Base < Phlex::HTML
       # 회귀 신호이므로 삼키지 않고 로깅한다("no silent failures").
       unless Rails.env.local?
         Rails.logger.error("cdn_variant_url failed (#{variant_name}): #{e.class} - #{e.message}")
-        Sentry.capture_exception(e) if defined?(Sentry)
       end
       nil
     end

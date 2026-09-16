@@ -20,7 +20,6 @@ export default class extends Lightbox {
     // 재시도할 수 있게 하고(안 그러면 dedup 가드가 영구 차단), 신호를 남긴다.
     link.onerror = () => {
       console.error("Failed to load lightgallery stylesheet:", href);
-      window.Sentry?.captureException?.(new Error(`lightgallery CSS load failed: ${href}`));
       link.remove();
     };
     document.head.appendChild(link);

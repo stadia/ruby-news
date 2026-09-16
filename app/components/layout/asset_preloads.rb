@@ -49,7 +49,6 @@ class Components::Layout::AssetPreloads < Components::Base
     # preconnect는 성능 최적화일 뿐이라 페이지 렌더는 계속하되,
     # "no silent failures" 원칙에 따라 삼키지 않고 신호를 남긴다.
     Rails.logger.error("render_asset_preconnect failed: #{e.class} - #{e.message}")
-    Sentry.capture_exception(e) if defined?(Sentry)
     nil
   end
 
