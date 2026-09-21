@@ -97,7 +97,7 @@ GEM
       public_suffix (>= 2.0.2, < 8.0)
     aes_key_wrap (1.1.0)
     alba (3.11.0)
-    amazing_print (2.0.0)
+    amazing_print (3.0.0)
     anonymous_loader (0.1.3)
       version_gem (~> 1.1, >= 1.1.14)
     ast (2.4.3)
