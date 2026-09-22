@@ -105,3 +105,12 @@ end
 module Herb
   class Engine; end
 end
+
+# Bundler 4 vendors connection_pool as Bundler::ConnectionPool, whose
+# ForkTracker extends Process at runtime. `tapioca gem` records that extend in
+# the sqlite3 and test-prof RBIs, but no gem RBI defines the vendored module.
+module Bundler
+  module ConnectionPool
+    module ForkTracker; end
+  end
+end
