@@ -244,7 +244,9 @@
         --semantic-info-text-hover: var(--semantic-info-solid-hover);
         --semantic-danger-solid: oklch(0.577 0.215 27); /* red-600 */
         --semantic-danger-solid-hover: oklch(0.505 0.191 28); /* red-700 */
-        --semantic-danger-text: var(--semantic-danger-solid);
+        /* danger-text도 info-text와 같은 이유로 red-700을 쓴다. red-600은
+           bg-destructive/5~10 틴트 위에서 3.96~4.28로 AA에 미달한다. */
+        --semantic-danger-text: var(--semantic-danger-solid-hover);
         --semantic-danger-text-hover: var(--semantic-danger-solid-hover);
 
         /* Prose */
