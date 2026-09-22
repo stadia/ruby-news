@@ -221,6 +221,8 @@ ko:
     site_name: Ruby-News | 루비 AI 뉴스
     skip_to_content: 본문으로 건너뛰기
     theme: 테마
+    theme_dark: 다크 모드로 전환
+    theme_light: 라이트 모드로 전환
   login_required:
     go_to_login: 로그인 하러 가기
     message: 댓글을 작성하거나 대화에 참여하려면 로그인이 필요합니다.

@@ -221,6 +221,8 @@ ja:
     site_name: Ruby-News | Ruby AIニュース
     skip_to_content: 本文へスキップ
     theme: テーマ
+    theme_dark: ダークモードに切り替え
+    theme_light: ライトモードに切り替え
   login_required:
     go_to_login: ログインへ
     message: コメントを書いたり会話に参加するにはログインが必要です。

@@ -221,6 +221,8 @@ en:
     site_name: Ruby-News | Ruby AI News
     skip_to_content: Skip to content
     theme: Theme
+    theme_dark: Switch to dark mode
+    theme_light: Switch to light mode
   login_required:
     go_to_login: Go to sign in
     message: You need to sign in to write comments or join conversations.

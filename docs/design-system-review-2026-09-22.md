@@ -73,11 +73,12 @@
   - 라이트 `text-danger-text` on `bg-destructive/10`: 3.96:1 (`views/oauth/result.rb:49`)
   - fedipub 레이아웃 skip link `focus:bg-brand` 흰 글자 (다크): 2.28:1. `bg-brand-solid`로 바꾸면 해결된다.
 
-### 브라우저 확인에서 추가로 발견 (미해결, 이번 변경 이전부터 존재)
-- **다크 테마 미체크 체크박스/라디오가 흰색으로 채워진다.** `@tailwindcss/forms`의 기본 흰 배경을 덮어쓰지 않아 어두운 화면에서 흰 사각형/원이 튄다. → `bg-surface-muted` 등 앱 토큰 배경 지정.
-- **다크 테마 드롭다운이 페이지보다 어둡다.** P1-5(`bg-background` 0.145 vs `bg-app` neutral-900)가 화면에서 그대로 확인됨. 떠 있는 메뉴가 바닥보다 가라앉아 보인다.
-- **라이트 테마 미체크 체크박스 테두리가 거의 안 보인다.** `border-input`(0.922) on white 1.26:1 (P1-9).
-- **푸터 테마 전환 버튼 2개에 접근 가능한 이름이 없다.** 아이콘만 있고 `aria-label`이 없어 스크린리더에서 "(no name)" 버튼으로 읽힌다(`components/layout/footer.rb:48,63`).
+### 브라우저 확인에서 추가로 발견 (이번 변경 이전부터 존재)
+- **(해결) 다크 테마 미체크 체크박스/라디오가 흰색으로 채워졌다.** `@tailwindcss/forms`의 기본 흰 배경 때문. → `bg-transparent` 지정, 체크박스 테두리는 `border-content-muted`(다크 6.97 / 라이트 7.22:1).
+- **(해결) 라이트 테마 미체크 체크박스 테두리가 거의 안 보였다.** `border-input` 1.26:1 → 위 수정으로 함께 해결.
+- **(해결) 푸터 테마 전환 버튼 2개에 접근 가능한 이름이 없었다.** `aria-label`(`layout.theme_light`/`layout.theme_dark`, ko/en/ja) 추가, 아이콘 SVG는 `aria-hidden`.
+- **(미해결) 다크 테마 드롭다운이 페이지보다 어둡다.** P1-5(`bg-background` 0.145 vs `bg-app` neutral-900)가 화면에서 그대로 확인됨. 떠 있는 메뉴가 바닥보다 가라앉아 보인다.
+- **(참고) 로케일 파일이 i18n-tasks 정규화 순서가 아니다.** `i18n-tasks check-normalized`가 ko/en/ja 모두 실패한다(이번 변경 전부터). 정규화하면 약 190줄이 재배치되므로 별도 커밋으로 처리 권장.
 - 다크 테마 스위치의 thumb이 `bg-background`(거의 검정)라 켜진 상태에서 초록 트랙 위 검은 원으로 보인다. 대비는 8.62:1로 충분하나 일반적인 흰 thumb 관례와 다르다.
 
 ## 후속 권장 순서

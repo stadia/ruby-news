@@ -45,11 +45,12 @@ class Components::Layout::Footer < Components::Base
   def render_theme_toggle
     ThemeToggle do |toggle|
       SetLightMode do
-        Button(variant: :ghost, icon: true) do
+        Button(variant: :ghost, icon: true, aria_label: t("layout.theme_light")) do
           svg(
             xmlns: "http://www.w3.org/2000/svg",
             viewbox: "0 0 24 24",
             fill: "currentColor",
+            aria_hidden: "true",
             class: "w-4 h-4"
           ) do |s|
             s.path(
@@ -60,11 +61,12 @@ class Components::Layout::Footer < Components::Base
         end
       end
       SetDarkMode do
-        Button(variant: :ghost, icon: true) do
+        Button(variant: :ghost, icon: true, aria_label: t("layout.theme_dark")) do
           svg(
             xmlns: "http://www.w3.org/2000/svg",
             viewbox: "0 0 24 24",
             fill: "currentColor",
+            aria_hidden: "true",
             class: "w-4 h-4"
           ) do |s|
             s.path(
