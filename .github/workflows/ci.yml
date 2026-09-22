@@ -122,10 +122,9 @@ jobs:
 
     services:
       postgres:
+        # Public image, so no credentials: Dependabot-triggered runs cannot read
+        # Actions secrets, and an empty password makes the whole job invalid.
         image: ghcr.io/stadia/ra-pg:18
-        credentials:
-          username: ${{ github.actor }}
-          password: ${{ secrets.DOCKER_PASSWD }}
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -191,10 +190,9 @@ jobs:
 
     services:
       postgres:
+        # Public image, so no credentials: Dependabot-triggered runs cannot read
+        # Actions secrets, and an empty password makes the whole job invalid.
         image: ghcr.io/stadia/ra-pg:18
-        credentials:
-          username: ${{ github.actor }}
-          password: ${{ secrets.DOCKER_PASSWD }}
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
