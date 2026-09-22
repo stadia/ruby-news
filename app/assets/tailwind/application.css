@@ -14,13 +14,27 @@
     --success-foreground: oklch(1 0 0);
 }
 
+/* RubyUI(shadcn) 표면/글자/테두리 토큰은 앱 시맨틱 토큰(tokens.css)의 alias다.
+   테마별 값은 tokens.css에서만 정한다. */
 :root,
 .theme-dark,
 .dark,
-.theme-light {
-    --muted: var(--secondary);
-    --accent: var(--secondary);
-    --accent-foreground: var(--secondary-foreground);
+.theme-light,
+.light {
+    --background: var(--color-bg-primary);
+    --foreground: var(--color-text-primary);
+    --card: var(--color-bg-elevated);
+    --card-foreground: var(--color-text-primary);
+    --popover: var(--color-bg-elevated);
+    --popover-foreground: var(--color-text-primary);
+    --secondary: var(--color-bg-tertiary);
+    --secondary-foreground: var(--color-text-primary);
+    --muted: var(--color-bg-tertiary);
+    --muted-foreground: var(--color-text-muted);
+    --accent: var(--color-bg-hover);
+    --accent-foreground: var(--color-text-primary);
+    --border: var(--semantic-border);
+    --input: var(--color-border-light);
     --sidebar-foreground: var(--foreground);
     --sidebar-accent: var(--accent);
     --sidebar-accent-foreground: var(--accent-foreground);
@@ -30,23 +44,12 @@
 :root,
 .theme-dark,
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
     /* primary/destructive는 흰 글자를 얹는 solid 배경 토큰이다. 글자색 용도는
        text-link / text-danger-text를 쓴다(다크에서 solid 색은 글자 대비 미달). */
     --primary: var(--semantic-brand-solid);
     --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: var(--foreground);
-    --muted-foreground: oklch(0.708 0 0);
     --destructive: var(--semantic-danger-solid);
     --destructive-foreground: oklch(1 0 0);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.7205 0.192 149.49);
     --chart-1: oklch(0.488 0.243 264.376);
     --chart-2: oklch(0.696 0.17 162.48);
@@ -63,21 +66,10 @@
 
 .theme-light,
 .light {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: var(--background);
-    --card-foreground: var(--foreground);
-    --popover: var(--background);
-    --popover-foreground: var(--foreground);
     --primary: var(--semantic-brand-solid);
     --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: var(--foreground);
-    --muted-foreground: oklch(0.556 0 0);
     --destructive: var(--semantic-danger-solid);
     --destructive-foreground: oklch(1 0 0);
-    --border: oklch(0.922 0 0);
-    --input: var(--border);
     --ring: var(--semantic-brand-solid);
     --chart-1: oklch(0.646 0.222 41.116);
     --chart-2: oklch(0.6 0.118 184.704);
@@ -146,7 +138,7 @@
     --color-content-secondary: var(--color-text-secondary);
     --color-content-muted: var(--color-text-muted);
     --color-content-disabled: var(--color-text-disabled);
-    --color-border-strong: var(--color-border);
+    --color-border-strong: var(--semantic-border);
     --color-border-muted: var(--color-border-light);
     --color-border-subtle: var(--color-border-dark);
     --color-brand: var(--semantic-brand);

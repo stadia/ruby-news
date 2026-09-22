@@ -172,8 +172,10 @@
         --color-text-muted: var(--neutral-400);
         --color-text-disabled: var(--neutral-600);
 
-        /* Border */
-        --color-border: var(--neutral-700);
+        /* Border — --color-border는 Tailwind 테마 네임스페이스와 겹치므로
+           참조는 --semantic-border로 한다. */
+        --semantic-border: var(--neutral-700);
+        --color-border: var(--semantic-border);
         --color-border-light: var(--color-text-disabled);
         --color-border-dark: var(--color-bg-secondary);
 
@@ -218,7 +220,8 @@
         --color-text-disabled: var(--neutral-400);
 
         /* Border */
-        --color-border: var(--neutral-300);
+        --semantic-border: var(--neutral-300);
+        --color-border: var(--semantic-border);
         --color-border-light: var(--color-text-disabled);
         --color-border-dark: var(--color-bg-tertiary);
 

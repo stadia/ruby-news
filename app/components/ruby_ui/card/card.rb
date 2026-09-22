@@ -11,7 +11,7 @@ module RubyUI
 
     def default_attrs
       {
-        class: "rounded-xl border bg-background shadow"
+        class: "rounded-xl border bg-card text-card-foreground shadow"
       }
     end
   end

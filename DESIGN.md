@@ -383,6 +383,7 @@ When updating old UI, use these mandatory replacements:
 - `2026-04-10` — Architecture: preserve existing directory structure, no JS build pipeline, Tailwind v4 native token system.
 - `2026-04-10` — Theme: class-based switching preserved (.theme-dark/.theme-light), Stimulus controller contract defined.
 - `2026-09-22` — Contrast review (`docs/design-system-review-2026-09-22.md`). RubyUI `--primary`/`--destructive` now alias the solid tokens (`--semantic-brand-solid`, `--semantic-danger-solid`) with white foreground; they are background-only. Text uses `text-link` / `text-danger-text`, never `text-primary` / `text-destructive`. `--color-brand` is theme-aware via `--semantic-brand` (green-700 in light) so `ring-brand` meets 3:1.
+- `2026-09-22` — RubyUI surface tokens now alias app tokens (single source in `tokens.css`): `--background` → `bg-app`, `--card`/`--popover` → `bg-surface-elevated`, `--muted`/`--secondary` → `bg-surface-muted`, `--accent` → `bg-surface-hover`, `--border` → `--semantic-border`. Floating UI uses `bg-popover`, cards `bg-card`. Reference borders via `--semantic-border`, not `--color-border` (collides with Tailwind's theme namespace).
 
 ---
 

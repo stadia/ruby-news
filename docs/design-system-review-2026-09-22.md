@@ -29,7 +29,24 @@
 
 ### P1 — 구조 문제
 
-5. **토큰 레이어 불일치 (미해결)**: `body`는 `bg-app`(slate neutral-900, L 0.208)인데 RubyUI Card, Dialog, Dropdown, Popover, Select, Input은 `bg-background`(무채색 0.145)를 쓴다. 다크 모드에서 팝오버/다이얼로그가 페이지보다 어두워 elevation이 반대로 보이고 색조도 섞인다. → `--background`, `--card`, `--popover`, `--border`, `--input`을 앱 토큰의 alias로 연결.
+5. **토큰 레이어 불일치 (해결)**: `body`는 `bg-app`(slate neutral-900, L 0.208)인데 RubyUI Card, Dialog, Dropdown, Popover, Select, Input은 `bg-background`(무채색 0.145)를 써서, 다크 모드에서 팝오버/다이얼로그가 페이지보다 어둡고 색조도 섞였다. → RubyUI 표면/글자/테두리 토큰을 모두 앱 토큰 alias로 연결했다(`application.css` 공통 블록).
+
+   | RubyUI | 앱 토큰 | 다크 / 라이트 |
+   |---|---|---|
+   | `--background` | `--color-bg-primary` (`bg-app`) | n900 / n50 |
+   | `--card`, `--popover` | `--color-bg-elevated` (`bg-surface-elevated`) | n800 / white |
+   | `--secondary`, `--muted` | `--color-bg-tertiary` (`bg-surface-muted`) | n700 / n200 |
+   | `--accent` | `--color-bg-hover` (`bg-surface-hover`) | n600 / n300 |
+   | `--foreground` 계열 | `--color-text-primary` | |
+   | `--muted-foreground` | `--color-text-muted` | |
+   | `--border` | `--semantic-border` (신규) | n700 / n300 |
+   | `--input` | `--color-border-light` | n600 / n400 |
+
+   - 떠 있는 표면(Dropdown, Popover, Select, Dialog, AlertDialog)은 `bg-popover`, Card는 `bg-card`로 바꿔 페이지보다 한 단계 위에 오게 했다. Input/Textarea는 `bg-background`(페이지 색)를 유지해 카드 안에서 안쪽으로 들어간 느낌을 준다.
+   - `--color-border`는 Tailwind 테마 변수와 이름이 겹쳐(레이어 순서에 따라 `var(--border)`와 순환 참조 위험) 새 `--semantic-border`를 두고 이를 참조한다.
+   - TabsList 글자는 `muted` 위에서 4.04:1이라 `text-content-secondary`(8.39:1)로 바꿨다.
+   - 기본 테두리(`* { border-color: var(--border) }`)가 다크 white/10%에서 neutral-700, 라이트 0.922에서 neutral-300으로 조금 진해졌다. 색을 지정하지 않은 `border`가 모두 영향을 받는다.
+   - 브라우저 확인: 홈(카드, 사이드바, 사용자 드롭다운), 프로필 활동 탭을 두 테마에서 확인.
 6. **`text-content-disabled`를 정보 텍스트에 사용 (미해결)**: 1.9–2.5:1. 빈 상태 메시지 4곳(`views/profiles/{activity,boost,follow,like}_list.rb`, `views/blog_posts/index.rb`), `components/users/user.rb:52`의 10px 대문자 라벨. 원인은 `DESIGN.md` 마이그레이션 표의 `text-gray-500 → text-content-disabled`. → `text-content-muted`로 교체하고 표 수정.
 7. **상태 색을 글자색으로 사용 (미해결)**: danger/info에는 `-text` 토큰이 있으나 success/warning에는 없다. 라이트에서 warning 배지 1.90, success 배지 2.68, Boost 활성(`text-success`) 2.95. 다크 success 배지 4.12. → `--semantic-success-text`, `--semantic-warning-text` 추가.
 8. **Destructive 변형 (해결)**: 글자색과 배경색이 거의 같았음(다크 1.32, 라이트 1.00). 호출부는 없었으나 잠재 결함. → `--destructive`를 danger-solid로, 글자는 흰색으로(4.83:1).
@@ -77,14 +94,14 @@
 - **(해결) 다크 테마 미체크 체크박스/라디오가 흰색으로 채워졌다.** `@tailwindcss/forms`의 기본 흰 배경 때문. → `bg-transparent` 지정, 체크박스 테두리는 `border-content-muted`(다크 6.97 / 라이트 7.22:1).
 - **(해결) 라이트 테마 미체크 체크박스 테두리가 거의 안 보였다.** `border-input` 1.26:1 → 위 수정으로 함께 해결.
 - **(해결) 푸터 테마 전환 버튼 2개에 접근 가능한 이름이 없었다.** `aria-label`(`layout.theme_light`/`layout.theme_dark`, ko/en/ja) 추가, 아이콘 SVG는 `aria-hidden`.
-- **(미해결) 다크 테마 드롭다운이 페이지보다 어둡다.** P1-5(`bg-background` 0.145 vs `bg-app` neutral-900)가 화면에서 그대로 확인됨. 떠 있는 메뉴가 바닥보다 가라앉아 보인다.
+- **(해결) 다크 테마 드롭다운이 페이지보다 어두웠다.** P1-5 통합으로 해결(n800 on n900).
 - **(해결) 라이트 테마 경고 배너 글자가 4.28:1로 AA에 조금 못 미쳤다.** RubyUI Alert(destructive)의 `text-danger-text`(red-600) on `bg-destructive/5`. 라이트 `info-text`처럼 텍스트 전용 토큰만 red-700(`--semantic-danger-solid-hover`)으로 낮췄다. 배너 5.74, OAuth 오류 문구 5.55(기존 3.96), 댓글 폼 오류 4.70:1. 다크는 변경 없음(6.31:1). (참고) "이미 로그인되어 있습니다."처럼 단순 안내도 Devise `flash[:alert]`라 빨간 경고 스타일로 표시된다.
 - **(참고) 로케일 파일이 i18n-tasks 정규화 순서가 아니다.** `i18n-tasks check-normalized`가 ko/en/ja 모두 실패한다(이번 변경 전부터). 정규화하면 약 190줄이 재배치되므로 별도 커밋으로 처리 권장.
 - 다크 테마 스위치의 thumb이 `bg-background`(거의 검정)라 켜진 상태에서 초록 트랙 위 검은 원으로 보인다. 대비는 8.62:1로 충분하나 일반적인 흰 thumb 관례와 다르다.
 
 ## 후속 권장 순서
 
-1. `--background`/`--card`/`--popover`/`--border`/`--input`을 앱 토큰 alias로 통합 (P1-5)
+1. ~~`--background`/`--card`/`--popover`/`--border`/`--input`을 앱 토큰 alias로 통합 (P1-5)~~ 완료
 2. success/warning `-text` 토큰 추가 (P1-7)
 3. 빈 상태 메시지 `text-content-muted`로 교체, `DESIGN.md` 마이그레이션 표 수정 (P1-6)
 4. `.theme-dark { color-scheme: dark }` / `.theme-light { color-scheme: light }` (P2)
