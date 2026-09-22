@@ -16,7 +16,7 @@ module RubyUI
 
     def default_attrs
       {
-        class: "text-primary font-medium hover:underline underline-offset-4 cursor-pointer"
+        class: "text-link font-medium hover:text-link-hover hover:underline underline-offset-4 cursor-pointer"
       }
     end
   end

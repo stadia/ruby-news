@@ -24,7 +24,7 @@ class Views::Oauth::Result < Views::Base
             if @success
               render PhlexIcons::Hero::CheckCircle.new(variant: :outline, class: "w-8 h-8 text-success")
             else
-              render PhlexIcons::Hero::XCircle.new(variant: :outline, class: "w-8 h-8 text-destructive")
+              render PhlexIcons::Hero::XCircle.new(variant: :outline, class: "w-8 h-8 text-danger-text")
             end
             render RubyUI::Heading.new(level: 2) { title }
           end
@@ -46,7 +46,7 @@ class Views::Oauth::Result < Views::Base
             div(class: "space-y-2") do
               p(class: "text-content-secondary") { t("oauth.result.failure_message", provider: provider_name) }
               if @error.present?
-                p(class: "text-sm text-destructive bg-destructive/10 rounded px-3 py-2") { @error }
+                p(class: "text-sm text-danger-text bg-destructive/10 rounded px-3 py-2") { @error }
               end
             end
           end

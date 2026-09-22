@@ -14,7 +14,7 @@ module RubyUI
         data: {
           ruby_ui__form_field_target: "error"
         },
-        class: "empty:hidden text-sm font-medium text-destructive"
+        class: "empty:hidden text-sm font-medium text-danger-text"
       }
     end
   end

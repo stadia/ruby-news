@@ -36,13 +36,15 @@
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.205 0 0);
     --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.7205 0.192 149.49);
+    /* primary/destructive는 흰 글자를 얹는 solid 배경 토큰이다. 글자색 용도는
+       text-link / text-danger-text를 쓴다(다크에서 solid 색은 글자 대비 미달). */
+    --primary: var(--semantic-brand-solid);
     --primary-foreground: oklch(0.985 0 0);
     --secondary: oklch(0.269 0 0);
     --secondary-foreground: var(--foreground);
     --muted-foreground: oklch(0.708 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --destructive-foreground: oklch(0.637 0.237 25.331);
+    --destructive: var(--semantic-danger-solid);
+    --destructive-foreground: oklch(1 0 0);
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.7205 0.192 149.49);
@@ -67,16 +69,16 @@
     --card-foreground: var(--foreground);
     --popover: var(--background);
     --popover-foreground: var(--foreground);
-    --primary: oklch(0.7205 0.192 149.49);
+    --primary: var(--semantic-brand-solid);
     --primary-foreground: oklch(0.985 0 0);
     --secondary: oklch(0.97 0 0);
-    --secondary-foreground: var(--primary);
+    --secondary-foreground: var(--foreground);
     --muted-foreground: oklch(0.556 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: var(--destructive);
+    --destructive: var(--semantic-danger-solid);
+    --destructive-foreground: oklch(1 0 0);
     --border: oklch(0.922 0 0);
     --input: var(--border);
-    --ring: oklch(0.7205 0.192 149.49);
+    --ring: var(--semantic-brand-solid);
     --chart-1: oklch(0.646 0.222 41.116);
     --chart-2: oklch(0.6 0.118 184.704);
     --chart-3: oklch(0.398 0.07 227.392);
@@ -147,7 +149,7 @@
     --color-border-strong: var(--color-border);
     --color-border-muted: var(--color-border-light);
     --color-border-subtle: var(--color-border-dark);
-    --color-brand: var(--brand-primary);
+    --color-brand: var(--semantic-brand);
     --color-brand-hover: var(--brand-primary-hover);
     --color-brand-soft: var(--brand-primary-light);
     --color-brand-strong: var(--brand-primary-dark);

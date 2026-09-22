@@ -55,8 +55,8 @@ module RubyUI
       [
         BASE_CLASSES,
         size_classes,
-        "text-primary underline-offset-4",
-        "hover:underline"
+        "text-link underline-offset-4",
+        "hover:text-link-hover hover:underline"
       ]
     end
 

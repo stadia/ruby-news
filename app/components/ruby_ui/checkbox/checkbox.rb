@@ -20,7 +20,7 @@ module RubyUI
         class: [
           "peer h-4 w-4 shrink-0 rounded-sm border-input ring-offset-background accent-primary",
           "disabled:cursor-not-allowed disabled:opacity-50",
-          "checked:bg-primary checked:text-primary-foreground checked:border-primary",
+          "checked:bg-primary checked:text-primary-foreground checked:border-brand",
           "aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:pointer-events-none",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         ]

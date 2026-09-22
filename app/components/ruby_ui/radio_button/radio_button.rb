@@ -17,9 +17,9 @@ module RubyUI
           action: "change->ruby-ui--form-field#onInput invalid->ruby-ui--form-field#onInvalid"
         },
         class: [
-          "h-4 w-4 p-0 border-primary rounded-full flex-none",
+          "h-4 w-4 p-0 border-brand rounded-full flex-none",
           "disabled:cursor-not-allowed disabled:opacity-50",
-          "checked:bg-primary checked:text-primary-foreground checked:border-primary",
+          "checked:bg-primary checked:text-primary-foreground checked:border-brand",
           "aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:pointer-events-none"
         ]
       }

@@ -180,6 +180,9 @@
         /* Surface Interaction */
         --color-bg-hover: var(--neutral-600);
 
+        /* Brand (ring-brand, border-brand, bg-brand/N) */
+        --semantic-brand: var(--brand-primary);
+
         /* Accent Text */
         --semantic-link: var(--brand-primary-light);
         --semantic-link-hover: var(--brand-primary);
@@ -221,6 +224,9 @@
 
         /* Surface Interaction */
         --color-bg-hover: var(--neutral-300);
+
+        /* Brand: green-500은 밝은 배경 대비 2.2:1이라 포커스 링(3:1)에 미달한다. */
+        --semantic-brand: var(--brand-primary-dark);
 
         /* Accent Text */
         --semantic-link: var(--brand-primary-dark);

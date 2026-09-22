@@ -23,7 +23,7 @@ module RubyUI
       when :success
         "ring-success/20 bg-success/5 text-success [&>svg]:text-success/80"
       when :destructive
-        "ring-destructive/20 bg-destructive/5 text-destructive [&>svg]:text-destructive/80"
+        "ring-destructive/20 bg-destructive/5 text-danger-text [&>svg]:text-danger-text/80"
       end
     end
 

@@ -70,17 +70,17 @@ class Views::Sessions::New < Views::Base
 
           render RubyUI::Link.new(
             href: new_user_password_path,
-            variant: :primary,
+            variant: :outline,
             size: :lg,
-            class: "w-full sm:w-auto text-center rounded-md text-content-muted hover:text-content font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-app"
+            class: "w-full sm:w-auto text-center rounded-md border-border-muted bg-transparent shadow-none text-content-secondary hover:bg-surface-hover hover:text-content font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-app"
           ) { t("sessions.new.forgot_password") }
 
           if confirmation_required?
             render RubyUI::Link.new(
               href: new_user_confirmation_path,
-              variant: :primary,
+              variant: :outline,
               size: :lg,
-              class: "w-full sm:w-auto text-center rounded-md text-content-muted hover:text-content font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-app"
+              class: "w-full sm:w-auto text-center rounded-md border-border-muted bg-transparent shadow-none text-content-secondary hover:bg-surface-hover hover:text-content font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-app"
             ) { t("sessions.new.resend_confirmation") }
           end
         end

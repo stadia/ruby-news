@@ -24,7 +24,7 @@ module RubyUI
         aria_valuemin: 0,
         aria_valuemax: 100,
         aria_valuetext: "#{@value}%",
-        class: "relative h-2 overflow-hidden rounded-full bg-primary/20 [&>*]:bg-primary"
+        class: "relative h-2 overflow-hidden rounded-full bg-brand/20 [&>*]:bg-brand"
       }
     end
 
