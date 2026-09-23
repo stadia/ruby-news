@@ -182,9 +182,9 @@ class ArticleAgentsService < OperationService
 
     {
       title_ja: content["title_ja"].to_s.strip.presence,
-      summary_key_ja: array_of_strings(content["summary_key_ja"]),
-      summary_detail_ja: hash_of_strings(content["summary_detail_ja"]),
-      summary_body_ja: content["summary_body_ja"].to_s.strip.presence
+      summary_key_ja: array_of_strings(content["summary_key_ja"] || content["summary_key"]),
+      summary_detail_ja: hash_of_strings(content["summary_detail_ja"] || content["summary_detail"]),
+      summary_body_ja: (content["summary_body_ja"] || content["summary_body"]).to_s.strip.presence
     }.compact
   end
 
