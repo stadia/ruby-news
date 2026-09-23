@@ -776,21 +776,19 @@ GEM
       logger
     ruby2ruby (2.6.1)
       sexp_processor (~> 4.6)
-    ruby_llm (1.16.0)
+    ruby_llm (2.0.0)
       base64
       event_stream_parser (~> 1)
       faraday (>= 1.10.0)
       faraday-multipart (>= 1)
       faraday-net_http (>= 1)
       faraday-retry (>= 1)
-      marcel (~> 1)
-      ruby_llm-schema (~> 0)
+      json (< 3)
+      marcel (>= 1.0, < 3)
+      schematist (~> 1.1)
       zeitwerk (~> 2)
-    ruby_llm-responses_api (0.6.1)
-      ruby_llm (>= 1.13)
-    ruby_llm-schema (0.4.0)
-    ruby_llm-skills (0.3.0)
-      ruby_llm (~> 1.12)
+    ruby_llm-skills (0.5.0.pre1)
+      ruby_llm (>= 2.0.0.rc3, < 3)
     ruby_parser (3.22.0)
       racc (~> 1.5)
       sexp_processor (~> 4.16)
@@ -1036,9 +1034,8 @@ DEPENDENCIES
   ruby-mcp-client (~> 2.0)
   ruby-readability
   ruby-vips (~> 2.0)
-  ruby_llm (~> 1.16)
-  ruby_llm-responses_api
-  ruby_llm-skills
+  ruby_llm (~> 2.0)
+  ruby_llm-skills (>= 0.5.0.pre1)
   ruby_ui (~> 1.2)
   schema_dot_org
   schematist

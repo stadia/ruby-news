@@ -83,11 +83,12 @@ class ArticleAgentsService < OperationService
   def run_humanize(article)
     prompt = ArticleHumanizer.prompt(article)
     message = HumanMonolithAgent.chat.with_skills.ask(prompt)
-    humanized = extract_humanized(message.content)
+    content = Articles::AgentResponse.structured(message)
+    humanized = extract_humanized(content)
 
     return Failure(:humanize_failed) if humanized.blank? || humanized[:summary_body].blank?
 
-    logger.info "Humanize metrics for article #{article.id}: #{message.content['metrics']}"
+    logger.info "Humanize metrics for article #{article.id}: #{content['metrics']}"
     article.update!(humanized)
     Success(article)
   rescue StandardError => e
@@ -133,7 +134,7 @@ class ArticleAgentsService < OperationService
       return {}
     end
 
-    build_japanese_attrs(message.content)
+    build_japanese_attrs(Articles::AgentResponse.structured(message))
   end
 
   def run_thumbnail(article)
@@ -248,7 +249,7 @@ class ArticleAgentsService < OperationService
     end
   end
 
-  # content가 Hash가 아니면(RubyLLM이 스키마 JSON 파싱에 실패해 String을 그대로 넘긴 경우)
+  # content가 Hash가 아니면(모델 응답이 JSON이 아니어서 AgentResponse.structured가 String을 넘긴 경우)
   # content["summary_body"]는 String#[] 부분문자열 매칭이 되어 키 이름 자체를 돌려준다.
   # 그대로 두면 본문이 "summary_body"라는 글자로 덮이므로 반드시 Hash만 받는다.
   #: (untyped content) -> Hash[Symbol, untyped]

@@ -13,8 +13,8 @@ module Agents
 
     description "Searches the knowledge base for relevant documents"
 
-    param :query, type: :string, description: "The search query", required: true
-    param :limit, type: :integer, description: "Maximum results to return", default: 10
+    parameter :query, type: :string, description: "The search query", required: true
+    parameter :limit, type: :integer, description: "Maximum results to return", required: false
 
     def execute(query:, limit: 10)
       # Implement your tool logic here
@@ -37,12 +37,23 @@ Human-readable description of what the tool does. The LLM uses this to decide wh
 description "Fetches current weather data for a given location"
 ```
 
-### `param`
-Define parameters the tool accepts:
+### `parameter`
+Define parameters the tool accepts. Defaults belong in the `execute` signature (`parameter` has no `default:` option):
 
 ```ruby
-param :name, type: :string, description: "Parameter description", required: true
-param :count, type: :integer, description: "Optional count", default: 5
+parameter :name, type: :string, description: "Parameter description", required: true
+parameter :count, type: :integer, description: "Optional count", required: false
+```
+
+### `parameters`
+Pass a full JSON Schema hash (or a schematist block) when you need constraints such as `minimum`/`maximum`. The tools in this directory use this form:
+
+```ruby
+parameters type: "object",
+  properties: {
+    limit: { type: "integer", description: "Maximum results", minimum: 1, maximum: 10 }
+  },
+  required: []
 ```
 
 **Supported types:**
@@ -54,7 +65,7 @@ param :count, type: :integer, description: "Optional count", default: 5
 - `:object` - Nested objects
 
 ### `execute`
-The method that runs when the tool is called. Receives keyword arguments matching the defined params.
+The method that runs when the tool is called. Receives keyword arguments matching the declared parameters.
 
 ```ruby
 def execute(query:, limit: 10)
@@ -103,8 +114,8 @@ module Agents
 
     description "Looks up customer information by email or ID"
 
-    param :email, type: :string, description: "Customer email address"
-    param :id, type: :integer, description: "Customer ID"
+    parameter :email, type: :string, description: "Customer email address"
+    parameter :id, type: :integer, description: "Customer ID"
 
     def execute(email: nil, id: nil)
       customer = if id
@@ -135,8 +146,8 @@ module Agents
 
     description "Gets current weather for a location"
 
-    param :city, type: :string, description: "City name", required: true
-    param :units, type: :string, description: "Temperature units (celsius/fahrenheit)", default: "celsius"
+    parameter :city, type: :string, description: "City name", required: true
+    parameter :units, type: :string, description: "Temperature units (celsius/fahrenheit)", required: false
 
     def execute(city:, units: "celsius")
       response = HTTP.get("https://api.weather.com/current", params: {
@@ -167,9 +178,9 @@ module Agents
 
     description "Sends an email to a recipient"
 
-    param :to, type: :string, description: "Recipient email", required: true
-    param :subject, type: :string, description: "Email subject", required: true
-    param :body, type: :string, description: "Email body content", required: true
+    parameter :to, type: :string, description: "Recipient email", required: true
+    parameter :subject, type: :string, description: "Email subject", required: true
+    parameter :body, type: :string, description: "Email body content", required: true
 
     def execute(to:, subject:, body:)
       # Validate email format

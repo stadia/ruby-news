@@ -13,15 +13,15 @@ module Articles
       #: (article: Article, prompt: String) -> Dry::Monads::Result
       def run(article:, prompt:)
         message = ArticleAgent.new.ask(prompt)
-        raw_content = message.content
         logger.info "Response received for article id: #{article.id}"
 
-        if raw_content.blank?
+        if message.content.blank?
           article.discard!
           return Failure(message.finish_reason)
         end
 
-        content = raw_content.deep_stringify_keys
+        # ruby_llm 2.0부터 content는 JSON 문자열이고 스키마 응답 Hash는 parsed에 있다.
+        content = message.parsed.deep_stringify_keys
 
         apply_tags(article, content)
         normalize_summary_body(content)

@@ -5,7 +5,7 @@
 class SearchRelatedArticles < RubyLLM::Tool
   description "관련 기사를 검색한다. article_id가 주어지면 벡터 유사도로, query가 주어지면 제목 텍스트로 검색한다."
 
-  params type: "object",
+  parameters type: "object",
     properties: {
       article_id: {
         type: "integer",

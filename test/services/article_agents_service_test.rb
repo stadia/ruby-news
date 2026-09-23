@@ -7,8 +7,16 @@ require "test_helper"
 class ArticleAgentsServiceTest < ActiveSupport::TestCase
   include ActiveJob::TestHelper
 
-  AgentResult = Struct.new(:finish_reason, :content)
-  HumanizeResult = Struct.new(:content)
+  # ruby_llm 2.0의 스키마 응답은 content에 JSON 문자열, parsed에 Hash를 담는다.
+  # 실제 Message를 써야 content/parsed 계약이 바뀌었을 때 테스트가 잡아낸다.
+  def llm_message(payload)
+    raw_message(payload.to_json)
+  end
+
+  # 모델이 스키마를 어기고 JSON이 아닌 텍스트를 돌려준 경우
+  def raw_message(content)
+    RubyLLM::Message.new(role: :assistant, content:, finish_reason: "stop")
+  end
 
   # run_humanize는 HumanMonolithAgent.chat.with_skills.ask 체인을 타므로
   # 스텁도 with_skills를 지원해야 실제 호출 경로를 검증한다.
@@ -55,7 +63,7 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
       summary_body: "원본 요약"
     )
 
-    humanize_response = HumanizeResult.new({
+    humanize_response = llm_message({
       "summary_key" => [ "다듬은 첫 요점", "다듬은 둘째 요점" ],
       "summary_detail" => { "introduction" => "다듬은 도입 문장", "conclusion" => "다듬은 마무리 문장" },
       "summary_body" => "### 공격 개요\n\n운문 결과 본문입니다.",
@@ -91,10 +99,11 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
       summary_body: "요약 본문"
     )
 
+    agent_response = llm_message({ "is_related" => true })
     agent = Object.new
-    agent.define_singleton_method(:ask) { |_| AgentResult.new(nil, { "is_related" => true }) }
+    agent.define_singleton_method(:ask) { |_| agent_response }
 
-    humanize_chat = build_humanize_chat(HumanizeResult.new({}))
+    humanize_chat = build_humanize_chat(llm_message({}))
 
     japanese_called = false
     service = ArticleAgentsService.new
@@ -185,7 +194,7 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     article = articles(:ruby_article)
     article.update!(summary_body: "원본 요약")
 
-    aborted_response = HumanizeResult.new({
+    aborted_response = llm_message({
       "summary_key" => [],
       "summary_detail" => {},
       "summary_body" => "원본 요약",
@@ -203,14 +212,13 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     assert_equal "원본 요약", article.reload.summary_body
   end
 
-  # RubyLLM은 스키마 응답 JSON 파싱에 실패하면 content를 String 그대로 둔다.
-  # 이때 content["summary_body"]는 String#[] 부분문자열 매칭이라 키 이름 자체를 돌려주므로,
-  # 가드가 없으면 본문이 "summary_body"라는 글자로 덮인다.
-  test "run_humanize는 content가 String이면 article을 갱신하지 않고 실패를 반환한다" do
+  # 모델이 JSON을 코드 펜스로 감싸면 parsed가 JSON::ParserError를 낸다.
+  # 이때 article을 건드리지 않고 실패로 끝나야 한다.
+  test "run_humanize는 응답이 JSON이 아니면 article을 갱신하지 않고 실패를 반환한다" do
     article = articles(:ruby_article)
     article.update!(summary_body: "원본 요약")
 
-    raw_response = HumanizeResult.new(
+    raw_response = raw_message(
       "```json\n{\"summary_key\": [\"요점\"], \"summary_body\": \"윤문된 본문\"}\n```"
     )
 
@@ -225,13 +233,27 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     assert_equal "원본 요약", article.reload.summary_body
   end
 
-  test "japanese_via_agent는 content가 String이면 빈 해시를 반환한다" do
+  test "japanese_via_agent는 JSON 응답을 번역 속성으로 바꾼다" do
     article = articles(:ruby_article)
 
+    response = llm_message({ "title_ja" => "タイトル", "summary_body_ja" => "本文" })
     agent = Object.new
-    agent.define_singleton_method(:ask) do |_prompt|
-      AgentResult.new("stop", "{\"title_ja\": \"タイトル\", \"summary_body_ja\": \"本文\"}")
+    agent.define_singleton_method(:ask) { |_prompt| response }
+
+    attrs = nil
+    ArticleJapaneseAgent.stub(:new, agent) do
+      attrs = ArticleAgentsService.new.send(:japanese_via_agent, article)
     end
+
+    assert_equal({ title_ja: "タイトル", summary_body_ja: "本文" }, attrs)
+  end
+
+  test "japanese_via_agent는 응답이 JSON이 아니면 빈 해시를 반환한다" do
+    article = articles(:ruby_article)
+
+    response = raw_message("title_ja: タイトル")
+    agent = Object.new
+    agent.define_singleton_method(:ask) { |_prompt| response }
 
     attrs = nil
     ArticleJapaneseAgent.stub(:new, agent) do
