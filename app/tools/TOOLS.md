@@ -83,9 +83,9 @@ module Agents
   class ResearchAgent < ApplicationAgent
     model "gpt-4o"
 
-    tools [SearchTool, CalculatorTool, WebFetchTool]
+    tools SearchTool, CalculatorTool, WebFetchTool
 
-    param :question, required: true
+    parameter :question, required: true
 
     private
 

@@ -1035,7 +1035,7 @@ DEPENDENCIES
   ruby-readability
   ruby-vips (~> 2.0)
   ruby_llm (~> 2.0)
-  ruby_llm-skills (>= 0.5.0.pre1)
+  ruby_llm-skills (~> 0.5.0.pre1)
   ruby_ui (~> 1.2)
   schema_dot_org
   schematist

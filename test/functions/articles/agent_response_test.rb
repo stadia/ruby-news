@@ -17,4 +17,10 @@ class Articles::AgentResponseTest < ActiveSupport::TestCase
 
     assert_equal raw, Articles::AgentResponse.structured(llm_message(raw))
   end
+
+  # JSON.parse 자체는 배열/스칼라도 성공시킨다. structured는 JSON::ParserError만 잡으므로
+  # 이 경우 파싱된 값을 그대로 돌려주고, Hash 여부 판단은 호출부의 몫으로 남긴다.
+  test "structured는 유효하지만 Hash가 아닌 JSON이면 파싱된 값을 그대로 돌려준다" do
+    assert_equal([ "ruby", "rails" ], Articles::AgentResponse.structured(llm_message('["ruby","rails"]')))
+  end
 end
