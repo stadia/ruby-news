@@ -143,7 +143,6 @@ Rails.application.routes.draw do
 
   constraints AuthenticatedConstraint.new do
     mount MissionControl::Jobs::Engine, at: "/jobs"
-    mount RubyLLM::Monitoring::Engine, at: "/monitoring"
   end
 
   # Fedipub client 대체 라우트

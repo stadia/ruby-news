@@ -3,3 +3,6 @@
 
 ignore:
   - CVE-THAT-DOES-NOT-APPLY
+  # ruby_llm 1.16.0 ReDoS(GHSA-42r3-x6vx-x49x). 수정 버전은 2.0.0.rc1 이상뿐이고
+  # 바로 다음 스택 PR(ruby_llm 2.0 업그레이드)이 올리면서 이 항목을 지운다.
+  - CVE-2026-67991

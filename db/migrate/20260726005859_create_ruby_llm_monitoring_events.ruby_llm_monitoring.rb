@@ -1,7 +1,7 @@
 # This migration comes from ruby_llm_monitoring (originally 20251208171258)
-class CreateRubyLLMMonitoringEvents < ActiveRecord::Migration[7.2]
-  include RubyLLM::Monitoring::MigrationHelpers
-
+class CreateRubyLlmMonitoringEvents < ActiveRecord::Migration[7.2]
+  # ruby_llm-monitoring 젬을 제거한 뒤에도 새 환경에서 db:migrate가 돌도록
+  # 젬의 MigrationHelpers가 PostgreSQL에서 만들던 식을 그대로 옮겨 적었다.
   def change
     create_table :ruby_llm_monitoring_events do |t|
       t.integer :allocations
@@ -16,12 +16,12 @@ class CreateRubyLLMMonitoringEvents < ActiveRecord::Migration[7.2]
       t.float :time
       t.string :transaction_id
 
-      t.virtual :provider, type: :string, as: json_extract("provider"), stored: true
-      t.virtual :model, type: :string, as: json_extract("model"), stored: true
-      t.virtual :input_tokens, type: :integer, as: json_extract("input_tokens", as: :integer), stored: true
-      t.virtual :output_tokens, type: :integer, as: json_extract("output_tokens", as: :integer), stored: true
-      t.virtual :exception_class, type: :string, as: json_extract_array("exception", 0), stored: true
-      t.virtual :exception_message, type: :string, as: json_extract_array("exception", 1), stored: true
+      t.virtual :provider, type: :string, as: "payload->>'provider'", stored: true
+      t.virtual :model, type: :string, as: "payload->>'model'", stored: true
+      t.virtual :input_tokens, type: :integer, as: "(payload->>'input_tokens')::integer", stored: true
+      t.virtual :output_tokens, type: :integer, as: "(payload->>'output_tokens')::integer", stored: true
+      t.virtual :exception_class, type: :string, as: "(payload->'exception'->>0)", stored: true
+      t.virtual :exception_message, type: :string, as: "(payload->'exception'->>1)", stored: true
 
       t.timestamps
     end

@@ -13,39 +13,6 @@
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file or at
 # https://developers.google.com/open-source/licenses/bsd
-# Protocol Buffers - Google's data interchange format
-# Copyright 2022 Google Inc.  All rights reserved.
-#
-# Use of this source code is governed by a BSD-style
-# license that can be found in the LICENSE file or at
-# https://developers.google.com/open-source/licenses/bsd
-# Protocol Buffers - Google's data interchange format
-# Copyright 2022 Google Inc.  All rights reserved.
-#
-# Use of this source code is governed by a BSD-style
-# license that can be found in the LICENSE file or at
-# https://developers.google.com/open-source/licenses/bsd
-# Protocol Buffers - Google's data interchange format
-# Copyright 2022 Google Inc.  All rights reserved.
-#
-# Use of this source code is governed by a BSD-style
-# license that can be found in the LICENSE file or at
-# https://developers.google.com/open-source/licenses/bsd
-# Protocol Buffers - Google's data interchange format
-# Copyright 2022 Google Inc.  All rights reserved.
-#
-# Use of this source code is governed by a BSD-style
-# license that can be found in the LICENSE file or at
-# https://developers.google.com/open-source/licenses/bsd
-# Protocol Buffers - Google's data interchange format
-# Copyright 2022 Google Inc.  All rights reserved.
-#
-# Use of this source code is governed by a BSD-style
-# license that can be found in the LICENSE file or at
-# https://developers.google.com/open-source/licenses/bsd
-#
-# Implementation details below are subject to breaking changes without
-# warning and are intended for use only within the gem.
 #
 # Implementation details below are subject to breaking changes without
 # warning and are intended for use only within the gem.
@@ -57,28 +24,10 @@
 # https://developers.google.com/open-source/licenses/bsd
 # A to_native DataConverter method that raises an error if the value is not of the same type.
 # Adapted from to https://www.varvet.com/blog/advanced-topics-in-ruby-ffi/
-# Protocol Buffers - Google's data interchange format
-# Copyright 2022 Google Inc.  All rights reserved.
-#
-# Use of this source code is governed by a BSD-style
-# license that can be found in the LICENSE file or at
-# https://developers.google.com/open-source/licenses/bsd
 # Decorates Descriptor with the `build_message_class` method that defines
 # Message classes.
 # Protocol Buffers - Google's data interchange format
 # Copyright 2024 Google Inc.  All rights reserved.
-#
-# Use of this source code is governed by a BSD-style
-# license that can be found in the LICENSE file or at
-# https://developers.google.com/open-source/licenses/bsd
-# Protocol Buffers - Google's data interchange format
-# Copyright 2022 Google Inc.  All rights reserved.
-#
-# Use of this source code is governed by a BSD-style
-# license that can be found in the LICENSE file or at
-# https://developers.google.com/open-source/licenses/bsd
-# Protocol Buffers - Google's data interchange format
-# Copyright 2022 Google Inc.  All rights reserved.
 #
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file or at
@@ -98,18 +47,6 @@
 #   - #concat should return the orig array
 #   - #push should accept multiple arguments and push them all at the same time
 #
-# Protocol Buffers - Google's data interchange format
-# Copyright 2024 Google Inc.  All rights reserved.
-#
-# Use of this source code is governed by a BSD-style
-# license that can be found in the LICENSE file or at
-# https://developers.google.com/open-source/licenses/bsd
-# Protocol Buffers - Google's data interchange format
-# Copyright 2023 Google Inc.  All rights reserved.
-#
-# Use of this source code is governed by a BSD-style
-# license that can be found in the LICENSE file or at
-# https://developers.google.com/open-source/licenses/bsd
 # Protocol Buffers - Google's data interchange format
 # Copyright 2008 Google Inc.  All rights reserved.
 #
@@ -713,22 +650,22 @@ class Google::Protobuf::RepeatedField
   def initialize(*_arg0); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def &(*_arg0, **_arg1, &_arg2); end
+  def &(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def *(*_arg0, **_arg1, &_arg2); end
+  def *(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf_native.rb:13
   def +(_arg0); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def -(*_arg0, **_arg1, &_arg2); end
+  def -(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf_native.rb:13
   def <<(_arg0); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def <=>(*_arg0, **_arg1, &_arg2); end
+  def <=>(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf_native.rb:13
   def ==(_arg0); end
@@ -740,16 +677,16 @@ class Google::Protobuf::RepeatedField
   def []=(_arg0, _arg1); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def assoc(*_arg0, **_arg1, &_arg2); end
+  def assoc(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf_native.rb:13
   def at(*_arg0); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def bsearch(*_arg0, **_arg1, &_arg2); end
+  def bsearch(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def bsearch_index(*_arg0, **_arg1, &_arg2); end
+  def bsearch_index(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf_native.rb:13
   def clear; end
@@ -761,10 +698,10 @@ class Google::Protobuf::RepeatedField
   def collect!(*args, &block); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def combination(*_arg0, **_arg1, &_arg2); end
+  def combination(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def compact(*_arg0, **_arg1, &_arg2); end
+  def compact(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:116
   def compact!(*args, &block); end
@@ -773,10 +710,10 @@ class Google::Protobuf::RepeatedField
   def concat(_arg0); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def count(*_arg0, **_arg1, &_arg2); end
+  def count(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def cycle(*_arg0, **_arg1, &_arg2); end
+  def cycle(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:104
   def delete(*args, &block); end
@@ -788,16 +725,16 @@ class Google::Protobuf::RepeatedField
   def delete_if(*args, &block); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def difference(*_arg0, **_arg1, &_arg2); end
+  def difference(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def dig(*_arg0, **_arg1, &_arg2); end
+  def dig(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def drop(*_arg0, **_arg1, &_arg2); end
+  def drop(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def drop_while(*_arg0, **_arg1, &_arg2); end
+  def drop_while(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf_native.rb:13
   def dup; end
@@ -819,22 +756,22 @@ class Google::Protobuf::RepeatedField
   def empty?; end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def eql?(*_arg0, **_arg1, &_arg2); end
+  def eql?(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def fetch(*_arg0, **_arg1, &_arg2); end
+  def fetch(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:116
   def fill(*args, &block); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def find_index(*_arg0, **_arg1, &_arg2); end
+  def find_index(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:58
   def first(n = T.unsafe(nil)); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def flatten(*_arg0, **_arg1, &_arg2); end
+  def flatten(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:116
   def flatten!(*args, &block); end
@@ -858,22 +795,22 @@ class Google::Protobuf::RepeatedField
   def hash; end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def include?(*_arg0, **_arg1, &_arg2); end
+  def include?(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def index(*_arg0, **_arg1, &_arg2); end
+  def index(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:116
   def insert(*args, &block); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def inspect(*_arg0, **_arg1, &_arg2); end
+  def inspect(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def intersection(*_arg0, **_arg1, &_arg2); end
+  def intersection(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def join(*_arg0, **_arg1, &_arg2); end
+  def join(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:151
   def keep_if(*args, &block); end
@@ -891,70 +828,70 @@ class Google::Protobuf::RepeatedField
   def map!(*args, &block); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def pack(*_arg0, **_arg1, &_arg2); end
+  def pack(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def permutation(*_arg0, **_arg1, &_arg2); end
+  def permutation(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:81
   def pop(n = T.unsafe(nil)); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def pretty_print(*_arg0, **_arg1, &_arg2); end
+  def pretty_print(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def pretty_print_cycle(*_arg0, **_arg1, &_arg2); end
+  def pretty_print_cycle(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def product(*_arg0, **_arg1, &_arg2); end
+  def product(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf_native.rb:13
   def push(*_arg0); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def rassoc(*_arg0, **_arg1, &_arg2); end
+  def rassoc(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:153
   def reject!(*args, &block); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def repeated_combination(*_arg0, **_arg1, &_arg2); end
+  def repeated_combination(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def repeated_permutation(*_arg0, **_arg1, &_arg2); end
+  def repeated_permutation(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf_native.rb:13
   def replace(_arg0); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def reverse(*_arg0, **_arg1, &_arg2); end
+  def reverse(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:116
   def reverse!(*args, &block); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def rindex(*_arg0, **_arg1, &_arg2); end
+  def rindex(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def rotate(*_arg0, **_arg1, &_arg2); end
+  def rotate(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:116
   def rotate!(*args, &block); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def sample(*_arg0, **_arg1, &_arg2); end
+  def sample(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:116
   def select!(*args, &block); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def shelljoin(*_arg0, **_arg1, &_arg2); end
+  def shelljoin(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:104
   def shift(*args, &block); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def shuffle(*_arg0, **_arg1, &_arg2); end
+  def shuffle(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:116
   def shuffle!(*args, &block); end
@@ -986,16 +923,16 @@ class Google::Protobuf::RepeatedField
   def to_ary; end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def to_s(*_arg0, **_arg1, &_arg2); end
+  def to_s(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def transpose(*_arg0, **_arg1, &_arg2); end
+  def transpose(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def union(*_arg0, **_arg1, &_arg2); end
+  def union(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def uniq(*_arg0, **_arg1, &_arg2); end
+  def uniq(*, **, &); end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:116
   def uniq!(*args, &block); end
@@ -1007,7 +944,7 @@ class Google::Protobuf::RepeatedField
   def values_at; end
 
   # pkg:gem/google-protobuf#lib/google/protobuf/repeated_field.rb:47
-  def |(*_arg0, **_arg1, &_arg2); end
+  def |(*, **, &); end
 
   private
 
