@@ -37,7 +37,7 @@ class ActionText::Attachables::RemoteVideo
   def height; end
 
   # pkg:gem/lexxy#lib/action_text/attachables/remote_video.rb:4
-  def model_name(&_arg0); end
+  def model_name(&); end
 
   # pkg:gem/lexxy#lib/action_text/attachables/remote_video.rb:41
   def to_partial_path; end

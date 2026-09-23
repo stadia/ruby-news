@@ -23,22 +23,22 @@ class Ruby2Ruby < ::SexpProcessor
 
   # Generate a post-or-pre conditional loop.
   #
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1326
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1330
   def cond_loop(exp, name); end
 
   # Utility method to escape something interpolated.
   #
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1351
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1355
   def dthing_escape(type, lit); end
 
   # Indent all lines of +s+ to the current indent level.
   #
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1368
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1372
   def indent(s); end
 
   # Wrap appropriate expressions in matching parens.
   #
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1375
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1379
   def parenthesize(exp); end
 
   # Processors
@@ -58,7 +58,7 @@ class Ruby2Ruby < ::SexpProcessor
   # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:158
   def process_array(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:631
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:635
   def process_array_pat(exp); end
 
   # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:162
@@ -150,7 +150,7 @@ class Ruby2Ruby < ::SexpProcessor
   # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:527
   def process_false(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:620
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:624
   def process_find_pat(exp); end
 
   # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:531
@@ -174,215 +174,215 @@ class Ruby2Ruby < ::SexpProcessor
   # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:571
   def process_hash(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:654
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:658
   def process_hash_pat(exp); end
 
   # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:598
   def process_iasgn(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:691
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:695
   def process_if(exp); end
 
   # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:608
   def process_in(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:736
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:740
   def process_iter(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:800
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:804
   def process_ivar(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:648
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:652
   def process_kwrest(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:806
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:810
   def process_kwsplat(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:730
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:734
   def process_lambda(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:811
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:815
   def process_lasgn(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:828
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:832
   def process_lit(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:838
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:842
   def process_lvar(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:844
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:848
   def process_masgn(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:869
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:873
   def process_match(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:875
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:879
   def process_match2(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:885
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:889
   def process_match3(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:899
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:903
   def process_module(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:903
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:907
   def process_next(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:914
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:918
   def process_nil(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:918
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:922
   def process_not(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:923
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:927
   def process_nth_ref(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:928
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:932
   def process_op_asgn(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:949
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:953
   def process_op_asgn1(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:960
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:964
   def process_op_asgn2(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:971
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:975
   def process_op_asgn_and(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:978
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:982
   def process_op_asgn_or(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:985
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:989
   def process_or(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:999
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1003
   def process_postexe(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:687
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:691
   def process_preexe(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1003
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1007
   def process_redo(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1007
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1011
   def process_resbody(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1026
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1030
   def process_rescue(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1056
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1060
   def process_retry(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1060
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1064
   def process_return(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1073
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1077
   def process_safe_attrasgn(exp); end
 
   # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:309
   def process_safe_call(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1091
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1095
   def process_safe_op_asgn(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1101
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1105
   def process_safe_op_asgn2(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1113
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1117
   def process_sclass(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1122
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1126
   def process_self(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1126
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1130
   def process_splat(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1135
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1139
   def process_str(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1140
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1144
   def process_super(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1150
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1154
   def process_svalue(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1158
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1162
   def process_to_ary(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1164
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1168
   def process_true(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1168
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1172
   def process_undef(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1174
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1178
   def process_until(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1178
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1182
   def process_valias(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1184
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1188
   def process_when(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1199
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1203
   def process_while(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1203
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1207
   def process_xstr(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1207
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1211
   def process_yield(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1221
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1225
   def process_zsuper(exp); end
 
   # Return the appropriate regexp flags for a given numeric code.
   #
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1387
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1391
   def re_opt(options); end
 
   # Rewriters:
   #
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1228
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1232
   def rewrite_attrasgn(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1238
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1242
   def rewrite_call(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1246
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1250
   def rewrite_ensure(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1251
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1255
   def rewrite_if(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1262
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1266
   def rewrite_resbody(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1270
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1274
   def rewrite_rescue(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1287
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1291
   def rewrite_svalue(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1298
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1302
   def rewrite_until(exp); end
 
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1309
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1313
   def rewrite_while(exp); end
 
   # Return a splatted symbol for +sym+.
   #
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1396
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1400
   def splat(sym); end
 
   # Utility method to generate something interpolated.
   #
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1403
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1407
   def util_dthing(type, exp); end
 
   # Utility method to generate ether a module or class.
   #
-  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1426
+  # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:1430
   def util_module_or_class(exp, is_class = T.unsafe(nil)); end
 end
 
@@ -413,7 +413,7 @@ Ruby2Ruby::HASH_VAL_NO_PAREN = T.let(T.unsafe(nil), Array)
 # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:37
 Ruby2Ruby::LINE_LENGTH = T.let(T.unsafe(nil), Integer)
 
-# pkg:gem/ruby2ruby#lib/ruby2ruby.rb:734
+# pkg:gem/ruby2ruby#lib/ruby2ruby.rb:738
 Ruby2Ruby::MUST_BE_CURLY = T.let(T.unsafe(nil), Array)
 
 # pkg:gem/ruby2ruby#lib/ruby2ruby.rb:34

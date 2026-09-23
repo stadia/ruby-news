@@ -39,64 +39,8 @@ end
 # AmazingPrint is freely distributable under the terms of MIT license.
 # See LICENSE file or http://www.opensource.org/licenses/mit-license.php
 # ------------------------------------------------------------------------------
-# Copyright (c) 2010-2016 Michael Dvorkin and contributors
-#
-# AmazingPrint is freely distributable under the terms of MIT license.
-# See LICENSE file or http://www.opensource.org/licenses/mit-license.php
-# ------------------------------------------------------------------------------
-# Copyright (c) 2010-2016 Michael Dvorkin and contributors
-#
-# AmazingPrint is freely distributable under the terms of MIT license.
-# See LICENSE file or http://www.opensource.org/licenses/mit-license.php
-# ------------------------------------------------------------------------------
-# Copyright (c) 2010-2016 Michael Dvorkin and contributors
-#
-# AmazingPrint is freely distributable under the terms of MIT license.
-# See LICENSE file or http://www.opensource.org/licenses/mit-license.php
-# ------------------------------------------------------------------------------
-# Copyright (c) 2010-2016 Michael Dvorkin and contributors
-#
-# AmazingPrint is freely distributable under the terms of MIT license.
-# See LICENSE file or http://www.opensource.org/licenses/mit-license.php
-# ------------------------------------------------------------------------------
-# Copyright (c) 2010-2016 Michael Dvorkin and contributors
-#
-# AmazingPrint is freely distributable under the terms of MIT license.
-# See LICENSE file or http://www.opensource.org/licenses/mit-license.php
-# ------------------------------------------------------------------------------
-# Copyright (c) 2010-2016 Michael Dvorkin and contributors
-#
-# AmazingPrint is freely distributable under the terms of MIT license.
-# See LICENSE file or http://www.opensource.org/licenses/mit-license.php
-# ------------------------------------------------------------------------------
-# Copyright (c) 2010-2016 Michael Dvorkin and contributors
-#
-# AmazingPrint is freely distributable under the terms of MIT license.
-# See LICENSE file or http://www.opensource.org/licenses/mit-license.php
-# ------------------------------------------------------------------------------
-# Copyright (c) 2010-2016 Michael Dvorkin and contributors
-#
-# AmazingPrint is freely distributable under the terms of MIT license.
-# See LICENSE file or http://www.opensource.org/licenses/mit-license.php
-# ------------------------------------------------------------------------------
-# Copyright (c) 2010-2016 Michael Dvorkin and contributors
-#
-# AmazingPrint is freely distributable under the terms of MIT license.
-# See LICENSE file or http://www.opensource.org/licenses/mit-license.php
-# ------------------------------------------------------------------------------
-# Copyright (c) 2010-2016 Michael Dvorkin and contributors
-#
-# AmazingPrint is freely distributable under the terms of MIT license.
-# See LICENSE file or http://www.opensource.org/licenses/mit-license.php
-# ------------------------------------------------------------------------------
 #
 # Helper module for hash_format: :json
-#
-# Copyright (c) 2010-2016 Michael Dvorkin and contributors
-#
-# AmazingPrint is freely distributable under the terms of MIT license.
-# See LICENSE file or http://www.opensource.org/licenses/mit-license.php
-# ------------------------------------------------------------------------------
 #
 # pkg:gem/amazing_print#lib/amazing_print/custom_defaults.rb:3
 module AmazingPrint
@@ -552,7 +496,7 @@ class AmazingPrint::Formatters::BaseFormatter
   # pkg:gem/amazing_print#lib/amazing_print/formatters/base_formatter.rb:146
   def colorless(string); end
 
-  # pkg:gem/amazing_print#lib/amazing_print/formatters/base_formatter.rb:150
+  # pkg:gem/amazing_print#lib/amazing_print/formatters/base_formatter.rb:151
   def colorless_size(string); end
 
   # pkg:gem/amazing_print#lib/amazing_print/formatters/base_formatter.rb:36
@@ -568,7 +512,7 @@ class AmazingPrint::Formatters::BaseFormatter
   def indentation; end
 
   # pkg:gem/amazing_print#lib/amazing_print/formatters/base_formatter.rb:113
-  def indented(&_arg0); end
+  def indented(&); end
 
   # pkg:gem/amazing_print#lib/amazing_print/formatters/base_formatter.rb:45
   def limited(data, width, is_hash: T.unsafe(nil)); end
@@ -696,6 +640,9 @@ class AmazingPrint::Formatters::HashFormatter < ::AmazingPrint::Formatters::Base
   # pkg:gem/amazing_print#lib/amazing_print/formatters/hash_formatter.rb:41
   def empty_hash; end
 
+  # pkg:gem/amazing_print#lib/amazing_print/formatters/hash_formatter.rb:149
+  def format_key(key); end
+
   # pkg:gem/amazing_print#lib/amazing_print/formatters/hash_formatter.rb:117
   def json_format?; end
 
@@ -717,8 +664,8 @@ class AmazingPrint::Formatters::HashFormatter < ::AmazingPrint::Formatters::Base
   # pkg:gem/amazing_print#lib/amazing_print/formatters/hash_formatter.rb:45
   def multiline_hash?; end
 
-  # pkg:gem/amazing_print#lib/amazing_print/formatters/hash_formatter.rb:148
-  def plain_single_line(&_arg0); end
+  # pkg:gem/amazing_print#lib/amazing_print/formatters/hash_formatter.rb:157
+  def no_colors; end
 
   # pkg:gem/amazing_print#lib/amazing_print/formatters/hash_formatter.rb:143
   def pre_ruby19_syntax(key, value, width); end
@@ -735,7 +682,7 @@ class AmazingPrint::Formatters::HashFormatter < ::AmazingPrint::Formatters::Base
   # pkg:gem/amazing_print#lib/amazing_print/formatters/hash_formatter.rb:53
   def simple_hash; end
 
-  # pkg:gem/amazing_print#lib/amazing_print/formatters/hash_formatter.rb:156
+  # pkg:gem/amazing_print#lib/amazing_print/formatters/hash_formatter.rb:165
   def single_line; end
 
   # pkg:gem/amazing_print#lib/amazing_print/formatters/hash_formatter.rb:109
@@ -794,7 +741,7 @@ class AmazingPrint::Formatters::ObjectFormatter < ::AmazingPrint::Formatters::Ba
   # pkg:gem/amazing_print#lib/amazing_print/formatters/object_formatter.rb:64
   def awesome_instance; end
 
-  # pkg:gem/amazing_print#lib/amazing_print/formatters/object_formatter.rb:75
+  # pkg:gem/amazing_print#lib/amazing_print/formatters/object_formatter.rb:74
   def left_aligned; end
 
   # pkg:gem/amazing_print#lib/amazing_print/formatters/object_formatter.rb:60
@@ -847,7 +794,7 @@ class AmazingPrint::Formatters::StructFormatter < ::AmazingPrint::Formatters::Ba
   # pkg:gem/amazing_print#lib/amazing_print/formatters/struct_formatter.rb:60
   def awesome_instance; end
 
-  # pkg:gem/amazing_print#lib/amazing_print/formatters/struct_formatter.rb:72
+  # pkg:gem/amazing_print#lib/amazing_print/formatters/struct_formatter.rb:71
   def left_aligned; end
 end
 
@@ -887,7 +834,7 @@ class AmazingPrint::Inspector
   def current_indentation; end
 
   # pkg:gem/amazing_print#lib/amazing_print/inspector.rb:82
-  def increase_indentation(&_arg0); end
+  def increase_indentation(&); end
 
   # pkg:gem/amazing_print#lib/amazing_print/inspector.rb:16
   def indentator; end
@@ -903,23 +850,23 @@ class AmazingPrint::Inspector
 
   private
 
-  # pkg:gem/amazing_print#lib/amazing_print/inspector.rb:190
+  # pkg:gem/amazing_print#lib/amazing_print/inspector.rb:192
   def dotfile_readable?(dotfile); end
 
-  # pkg:gem/amazing_print#lib/amazing_print/inspector.rb:170
+  # pkg:gem/amazing_print#lib/amazing_print/inspector.rb:172
   def find_dotfile; end
 
   # This method needs to be mocked during testing so that it always loads
   # predictable values
   # ---------------------------------------------------------------------------
   #
-  # pkg:gem/amazing_print#lib/amazing_print/inspector.rb:183
+  # pkg:gem/amazing_print#lib/amazing_print/inspector.rb:185
   def load_dotfile; end
 
   # Load ~/.aprc file with custom defaults that override default options.
   # ---------------------------------------------------------------------------
   #
-  # pkg:gem/amazing_print#lib/amazing_print/inspector.rb:198
+  # pkg:gem/amazing_print#lib/amazing_print/inspector.rb:200
   def merge_custom_defaults!; end
 
   # Update @options by first merging the :color hash and then the remaining
