@@ -4,7 +4,7 @@
 
 class HumanMonolithAgent < RubyLLM::Agent
   # model "qwen/qwen3.7-plus", provider: :openrouter, assume_model_exists: true
-  model "deepseek/deepseek-v4-flash-0731", provider: :openrouter, assume_model_exists: true
+  model "deepseek-v4.1-flash", provider: :ollama_cloud
   temperature 0.2
   skills "app/skills", only: [ "humanize_korean" ]
 
