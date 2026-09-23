@@ -32,7 +32,6 @@
     ]
   },
   "enabledPlugins": {
-    "ruby-rbs@stevegeek-marketplace": true,
     "ruby-skills@ruby-skills": true
   }
 }
