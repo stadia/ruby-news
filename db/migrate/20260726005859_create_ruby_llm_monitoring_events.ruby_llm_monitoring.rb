@@ -1,5 +1,5 @@
 # This migration comes from ruby_llm_monitoring (originally 20251208171258)
-class CreateRubyLLMMonitoringEvents < ActiveRecord::Migration[7.2]
+class CreateRubyLlmMonitoringEvents < ActiveRecord::Migration[7.2]
   # ruby_llm-monitoring 젬을 제거한 뒤에도 새 환경에서 db:migrate가 돌도록
   # 젬의 MigrationHelpers가 PostgreSQL에서 만들던 식을 그대로 옮겨 적었다.
   def change
