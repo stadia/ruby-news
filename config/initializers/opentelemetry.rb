@@ -25,7 +25,12 @@ if Rails.env.production?
     # rack, rails + its sub-instrumentations, rake, ruby_llm). No manual
     # `require` needed — each gem self-registers into the instrumentation
     # registry on load, and use_all installs everything registered.
-    c.use_all
+    #
+    # RubyLLM is disabled until opentelemetry-instrumentation-ruby_llm supports
+    # ruby_llm 2.0 (thoughtbot/opentelemetry-instrumentation-ruby_llm#39). 0.7.1
+    # prepends Chat#complete and calls Message#model_id/#input_tokens, which 2.0
+    # removed, so every chat in production would raise NoMethodError.
+    c.use_all("OpenTelemetry::Instrumentation::RubyLLM" => { enabled: false })
   end
 
   # --- Logs: send structured records to SigNoz over OTLP ---
