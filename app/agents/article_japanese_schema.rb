@@ -2,8 +2,6 @@
 # frozen_string_literal: true
 # rbs_inline: enabled
 
-require "ruby_llm/schema"
-
 class ArticleJapaneseSchema < Schematist::Schema
   string :title_ja, description: "한국어 제목의 의미를 살린 자연스러운 일본어 제목"
 

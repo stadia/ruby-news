@@ -2,7 +2,7 @@
 RubyLLM.configure do |config|
   # --- Default Models ---
   # Used by RubyLLM.chat, RubyLLM.embed, RubyLLM.paint if no model is specified.
-  config.default_model = "gemini-3.5-flash"
+  config.default_model = "gemini-3.6-flash"
   # config.gemini_api_base = 'https://generativelanguage.googleapis.com/v1'
 
   # --- Connection Settings ---
@@ -19,10 +19,8 @@ RubyLLM.configure do |config|
 
   # API key - use what your server expects
   config.openai_api_key = ENV.fetch("OPENAI_API_KEY", nil)
-  config.openai_api_base = ENV.fetch("OPENAI_API_BASE", "https://api.openai.com/v1/")
 
   config.openrouter_api_key = ENV.fetch("OPENROUTER_API_KEY", nil)
 
-  config.ollama_api_base = ENV.fetch("OLLAMA_API_BASE", "https://ollama.com/v1/")
-  config.ollama_api_key = ENV.fetch("OLLAMA_API_KEY", nil)
+  config.ollama_cloud_api_key = ENV.fetch("OLLAMA_CLOUD_API_KEY", nil)
 end

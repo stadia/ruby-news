@@ -178,9 +178,7 @@ gem "opentelemetry-instrumentation-rails"
 gem "opentelemetry-instrumentation-rake"
 gem "opentelemetry-instrumentation-ruby_llm"
 
-gem "ruby_llm", "~> 1.16"
-# OpenAI Responses API 프로바이더. ruby_llm 2.0이 릴리스되면 코어로 흡수되므로 제거한다.
-# gpt-5.x는 chat/completions에서 function tool + reasoning을 함께 쓸 수 없다 (crmne/ruby_llm#213).
-gem "ruby_llm-responses_api"
-gem "ruby_llm-skills"
+gem "ruby_llm", "~> 2.0"
+# ruby_llm 2.0을 지원하는 첫 버전이 프리릴리스뿐이다. 정식 릴리스가 나오면 제약을 푼다.
+gem "ruby_llm-skills", "~> 0.5.0.pre1"
 gem "schematist"

@@ -5,7 +5,7 @@
 class ValidateSlug < RubyLLM::Tool
   description "article slug가 실제로 존재하는지 확인한다. summary_body에 /articles/:slug 링크를 삽입하기 전에 검증용으로 사용한다."
 
-  params type: "object",
+  parameters type: "object",
     properties: {
       slug: {
         type: "string",

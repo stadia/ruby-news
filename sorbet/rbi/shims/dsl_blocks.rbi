@@ -68,15 +68,16 @@ end
 
 class RubyLLM::Agent
   class << self
-    # lib/ruby_llm/agent.rb -- `schema { ... }` is class_eval'd on an anonymous
-    # RubyLLM::Schema subclass, which is where `string`/`array`/`object`/
-    # `integer`/`number`/`boolean` live (RubyLLM::Schema::DSL::*, extended).
+    # lib/ruby_llm/agent.rb -- a non-lambda `schema { ... }` block becomes
+    # Schematist::Schema.create(&block), which class_evals it on an anonymous
+    # Schematist::Schema subclass. That is where `string`/`array`/`object`/
+    # `integer`/`number`/`boolean` live.
     #
     # Used by app/agents/*.rb.
     sig do
       params(
         value: T.untyped,
-        block: T.nilable(T.proc.bind(T.class_of(RubyLLM::Schema)).void)
+        block: T.nilable(T.proc.bind(T.class_of(Schematist::Schema)).void)
       ).returns(T.untyped)
     end
     def schema(value = nil, &block); end

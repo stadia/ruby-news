@@ -13,15 +13,25 @@ module Articles
       #: (article: Article, prompt: String) -> Dry::Monads::Result
       def run(article:, prompt:)
         message = ArticleAgent.new.ask(prompt)
-        raw_content = message.content
         logger.info "Response received for article id: #{article.id}"
 
-        if raw_content.blank?
+        if message.content.blank?
           article.discard!
           return Failure(message.finish_reason)
         end
 
-        content = raw_content.deep_stringify_keys
+        # ruby_llm 2.0부터 content는 JSON 문자열이고 스키마 응답 Hash는 parsed에 있다.
+        # 모델이 코드펜스로 감싸거나 Hash가 아닌 JSON(배열 등)을 돌려줄 수 있어
+        # AgentResponse.structured로 예외를 흡수하고 Hash가 아니면 실패로 처리한다.
+        # 여기서 raise가 새면 ArticleAgentsService#call의 step이 못 잡아 파이프라인
+        # 전체가 discard·후속 단계 없이 미처리 예외로 죽는다.
+        content = Articles::AgentResponse.structured(message)
+        unless content.is_a?(Hash)
+          logger.warn "Agent response was not a Hash (#{content.class}) for article #{article.id}"
+          article.discard!
+          return Failure(:invalid_agent_response)
+        end
+        content = content.deep_stringify_keys
 
         apply_tags(article, content)
         normalize_summary_body(content)

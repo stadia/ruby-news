@@ -5,7 +5,7 @@
 class GetExistingTags < RubyLLM::Tool
   description "기존 confirmed 태그 목록을 조회한다. keyword가 주어지면 이름으로 필터링하고, 없으면 사용 빈도순으로 반환한다."
 
-  params type: "object",
+  parameters type: "object",
     properties: {
       keyword: {
         type: "string",
