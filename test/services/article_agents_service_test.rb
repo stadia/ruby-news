@@ -106,11 +106,12 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     humanize_chat = build_humanize_chat(llm_message({}))
 
     japanese_called = false
-    service = ArticleAgentsService.new
-    service.define_singleton_method(:japanese_translation) do |_article|
+    japanese_service = ArticleJapaneseService.new
+    japanese_service.define_singleton_method(:japanese_translation) do |_article|
       japanese_called = true
       { title_ja: "テスト", summary_body_ja: "要約" }
     end
+    service = ArticleAgentsService.new
 
     embed_result = Struct.new(:vectors).new(Array.new(3072, 0.0))
 
@@ -120,7 +121,9 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     RubyLLM.stub(:embed, ->(*, **) { embed_result }) do
       ArticleAgent.stub(:new, agent) do
         HumanMonolithAgent.stub(:chat, humanize_chat) do
-          result = service.call(article)
+          ArticleJapaneseService.stub(:new, -> { japanese_service }) do
+            result = service.call(article)
+          end
         end
       end
     end
@@ -233,33 +236,27 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     assert_equal "원본 요약", article.reload.summary_body
   end
 
-  test "japanese_via_agent는 JSON 응답을 번역 속성으로 바꾼다" do
+  # 번역 대상이 아닌 기사는 파이프라인 실패가 아니다. 판정은 ArticleJapaneseService가 한다.
+  test "run_japanese는 한국어 요약이 없는 기사를 성공으로 건너뛴다" do
     article = articles(:ruby_article)
+    article.update!(summary_body: nil)
 
-    response = llm_message({ "title_ja" => "タイトル", "summary_body_ja" => "本文" })
-    agent = Object.new
-    agent.define_singleton_method(:ask) { |_prompt| response }
+    result = ArticleAgentsService.new.send(:run_japanese, article)
 
-    attrs = nil
-    ArticleJapaneseAgent.stub(:new, agent) do
-      attrs = ArticleAgentsService.new.send(:japanese_via_agent, article)
-    end
-
-    assert_equal({ title_ja: "タイトル", summary_body_ja: "本文" }, attrs)
+    assert_predicate result, :success?
+    assert_nil article.reload.title_ja
   end
 
-  test "japanese_via_agent는 응답이 JSON이 아니면 빈 해시를 반환한다" do
+  test "run_japanese는 번역 실패를 그대로 돌려준다" do
     article = articles(:ruby_article)
+    japanese_service = Object.new
+    japanese_service.define_singleton_method(:call) { |_a| Dry::Monads::Failure(:japanese_agent_empty) }
 
-    response = raw_message("title_ja: タイトル")
-    agent = Object.new
-    agent.define_singleton_method(:ask) { |_prompt| response }
-
-    attrs = nil
-    ArticleJapaneseAgent.stub(:new, agent) do
-      attrs = ArticleAgentsService.new.send(:japanese_via_agent, article)
+    result = nil #: Dry::Monads::Result?
+    ArticleJapaneseService.stub(:new, -> { japanese_service }) do
+      result = ArticleAgentsService.new.send(:run_japanese, article)
     end
 
-    assert_empty attrs
+    assert_equal :japanese_agent_empty, result.failure
   end
 end

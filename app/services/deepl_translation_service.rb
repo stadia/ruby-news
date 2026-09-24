@@ -48,7 +48,7 @@ class DeeplTranslationService < OperationService
     # A nil element means DeepL answered with a translation object whose text
     # was null -- the size check above only catches a short response.
     #
-    # This must stay a Failure. `japanese_translation` in ArticleAgentsService
+    # This must stay a Failure. `japanese_translation` in ArticleJapaneseService
     # falls back to ArticleJapaneseAgent on failure, but takes a Success at
     # face value: `return attrs if attrs.is_a?(Hash)`. Letting the nils through
     # as "" would therefore skip the fallback entirely and either persist empty

@@ -23,4 +23,20 @@ class Articles::AgentResponseTest < ActiveSupport::TestCase
   test "structured는 유효하지만 Hash가 아닌 JSON이면 파싱된 값을 그대로 돌려준다" do
     assert_equal([ "ruby", "rails" ], Articles::AgentResponse.structured(llm_message('["ruby","rails"]')))
   end
+
+  test "array_of_strings는 배열을 빈 값 없는 문자열 배열로 정규화한다" do
+    assert_equal [ "1", "요점" ], Articles::AgentResponse.array_of_strings([ 1, "", "요점", nil ])
+  end
+
+  test "array_of_strings는 배열이 아니면 nil을 돌려준다" do
+    assert_nil Articles::AgentResponse.array_of_strings("summary_key")
+  end
+
+  test "hash_of_strings는 해시의 값을 문자열로 정규화한다" do
+    assert_equal({ "introduction" => "1" }, Articles::AgentResponse.hash_of_strings({ "introduction" => 1 }))
+  end
+
+  test "hash_of_strings는 해시가 아니면 nil을 돌려준다" do
+    assert_nil Articles::AgentResponse.hash_of_strings("summary_detail")
+  end
 end

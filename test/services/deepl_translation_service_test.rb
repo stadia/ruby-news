@@ -32,7 +32,7 @@ class DeeplTranslationServiceTest < ActiveSupport::TestCase
   end
 
   # The regression this guards: with `.to_s` and no nil check, the nil above
-  # became "" and the service returned Success. ArticleAgentsService takes a
+  # became "" and the service returned Success. ArticleJapaneseService takes a
   # Success at face value (`return attrs if attrs.is_a?(Hash)`), so the
   # ArticleJapaneseAgent fallback would be skipped and empty Japanese columns
   # could be persisted -- invisible to readers, who then see the Korean text
@@ -40,8 +40,8 @@ class DeeplTranslationServiceTest < ActiveSupport::TestCase
   test "nil 번역 실패는 ArticleJapaneseAgent 폴백으로 이어진다" do
     article = translatable_article
 
-    agents = ArticleAgentsService.new
-    agents.define_singleton_method(:japanese_via_agent) do |_a|
+    japanese = ArticleJapaneseService.new
+    japanese.define_singleton_method(:japanese_via_agent) do |_a|
       { title_ja: "エージェント題", summary_body_ja: "エージェント本文" }
     end
 
@@ -52,7 +52,7 @@ class DeeplTranslationServiceTest < ActiveSupport::TestCase
 
     attrs = nil #: Hash[Symbol, untyped]?
     DeeplTranslationService.stub(:new, -> { stubbed }) do
-      attrs = agents.send(:japanese_translation, article)
+      attrs = japanese.send(:japanese_translation, article)
     end
 
     assert_equal "エージェント題", attrs[:title_ja]

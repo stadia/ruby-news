@@ -1,4 +1,7 @@
+# typed: false
 # Below are the routes for madmin
+# rbs_inline: enabled
+
 namespace :madmin do
   namespace :active_storage do
     resources :attachments
@@ -12,6 +15,7 @@ namespace :madmin do
       put :mark_unrelated
       put :reprocess
       put :regenerate_thumbnail
+      put :translate_japanese
     end
   end
   resources :sites do

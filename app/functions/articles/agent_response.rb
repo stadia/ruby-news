@@ -13,6 +13,22 @@ module Articles
       rescue JSON::ParserError
         message.content
       end
+
+      # 값이 Array일 때만 문자열 배열로 정규화한다. 그 외에는 nil(호출부에서 compact 제거).
+      #: (untyped value) -> Array[String]?
+      def array_of_strings(value)
+        return unless value.is_a?(Array)
+
+        value.map(&:to_s).reject(&:blank?)
+      end
+
+      # 값이 Hash일 때만 값들을 문자열로 정규화한다. 그 외에는 nil(호출부에서 compact 제거).
+      #: (untyped value) -> Hash[untyped, String]?
+      def hash_of_strings(value)
+        return unless value.is_a?(Hash)
+
+        value.transform_values(&:to_s)
+      end
     end
   end
 end

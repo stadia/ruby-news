@@ -424,6 +424,9 @@ module GeneratedPathHelpersModule
   def terms_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
+  def translate_japanese_madmin_article_path(*args); end
+
+  sig { params(args: T.untyped).returns(String) }
   def turbo_recede_historical_location_path(*args); end
 
   sig { params(args: T.untyped).returns(String) }
