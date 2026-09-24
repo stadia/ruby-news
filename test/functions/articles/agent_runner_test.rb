@@ -120,12 +120,13 @@ class Articles::AgentRunnerTest < ActiveSupport::TestCase
     assert_nil article.updated_content
   end
 
-  # 스키마 강제 에이전트라도 모델이 JSON을 코드펜스로 감싸는 등 규칙을 어길 수 있다.
+  # 스키마 강제 에이전트라도 모델이 JSON이 아닌 텍스트를 돌려주는 등 규칙을 어길 수 있다.
+  # (코드펜스로 감싼 JSON은 Articles::AgentResponse.structured가 풀어 준다.)
   # 이때 예외를 그대로 던지면 ArticleAgentsService#call의 step이 못 잡아 파이프라인
   # 전체가 미처리 예외로 죽는다(article discard·이후 단계 모두 건너뜀).
   test "content가 JSON이 아니면 예외 대신 기사를 discard하고 Failure를 반환한다" do
     article = ArticleStub.new
-    message = raw_message("```json\n{\"tags\": [\"ruby\"]}\n```", "stop")
+    message = raw_message("tags: ruby", "stop")
 
     ArticleAgent.stub(:new, AgentStub.new(message)) do
       result = Articles::AgentRunner.run(article:, prompt: "prompt")

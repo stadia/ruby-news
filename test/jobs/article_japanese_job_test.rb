@@ -23,8 +23,11 @@ class ArticleJapaneseJobTest < ActiveSupport::TestCase
     article = articles(:ruby_article)
     article.discard!
 
-    ArticleJapaneseService.stub(:new, -> { flunk "폐기된 기사에 번역 서비스가 호출됐다" }) do
+    called = false
+    ArticleJapaneseService.stub(:new, -> { called = true }) do
       ArticleJapaneseJob.perform_now(article.id)
     end
+
+    assert_not called, "폐기된 기사에 번역 서비스가 호출됐다"
   end
 end

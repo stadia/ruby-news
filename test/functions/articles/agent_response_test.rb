@@ -13,9 +13,24 @@ class Articles::AgentResponseTest < ActiveSupport::TestCase
 
   # 호출부는 Hash가 아니면 갱신하지 않는다. 예외 대신 원문을 넘겨 그 가드가 거르게 한다.
   test "structured는 JSON이 아닌 응답이면 원문 문자열을 돌려준다" do
-    raw = "```json\n{\"title\":\"제목\"}\n```"
+    raw = "title: 제목"
 
     assert_equal raw, Articles::AgentResponse.structured(llm_message(raw))
+  end
+
+  # 모델이 스키마 응답을 마크다운 코드 펜스로 감싸 보내는 경우. 본문 안의 코드 펜스는 JSON
+  # 문자열 값이라 건드리지 않고 바깥 펜스만 벗긴다.
+  test "structured는 코드 펜스로 감싼 JSON을 Hash로 돌려준다" do
+    raw = "```json\n{\"title\":\"제목\",\"body\":\"```http\\nGET / HTTP/1.1\\n```\"}\n```"
+
+    assert_equal({ "title" => "제목", "body" => "```http\nGET / HTTP/1.1\n```" },
+                 Articles::AgentResponse.structured(llm_message(raw)))
+  end
+
+  test "structured는 문자열로 한 번 더 인코딩된 JSON을 Hash로 돌려준다" do
+    raw = { "title" => "제목" }.to_json.to_json
+
+    assert_equal({ "title" => "제목" }, Articles::AgentResponse.structured(llm_message(raw)))
   end
 
   # JSON.parse 자체는 배열/스칼라도 성공시킨다. structured는 JSON::ParserError만 잡으므로

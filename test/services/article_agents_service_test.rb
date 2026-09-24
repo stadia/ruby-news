@@ -215,15 +215,14 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     assert_equal "원본 요약", article.reload.summary_body
   end
 
-  # 모델이 JSON을 코드 펜스로 감싸면 parsed가 JSON::ParserError를 낸다.
-  # 이때 article을 건드리지 않고 실패로 끝나야 한다.
+  # 모델이 JSON이 아닌 텍스트를 돌려주면 parsed가 JSON::ParserError를 낸다.
+  # 이때 article을 건드리지 않고 실패로 끝나야 한다. (코드 펜스로 감싼 JSON은
+  # Articles::AgentResponse.structured가 풀어 주므로 여기 해당하지 않는다.)
   test "run_humanize는 응답이 JSON이 아니면 article을 갱신하지 않고 실패를 반환한다" do
     article = articles(:ruby_article)
     article.update!(summary_body: "원본 요약")
 
-    raw_response = raw_message(
-      "```json\n{\"summary_key\": [\"요점\"], \"summary_body\": \"윤문된 본문\"}\n```"
-    )
+    raw_response = raw_message("summary_body: 윤문된 본문")
 
     chat = build_humanize_chat(raw_response)
 

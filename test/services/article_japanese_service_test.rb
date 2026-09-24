@@ -129,6 +129,18 @@ class ArticleJapaneseServiceTest < ActiveSupport::TestCase
     assert_equal({ title_ja: "タイトル", summary_body_ja: "本文" }, attrs)
   end
 
+  test "japanese_via_agent는 코드 펜스로 감싼 JSON 응답도 번역 속성으로 바꾼다" do
+    article = articles(:ruby_article)
+    payload = { "title_ja" => "タイトル", "summary_key" => [ "要点" ], "summary_body" => "本文" }
+
+    attrs = nil
+    stub_japanese_agent(raw_message("```json\n#{JSON.pretty_generate(payload)}\n```")) do
+      attrs = ArticleJapaneseService.new.send(:japanese_via_agent, article)
+    end
+
+    assert_equal({ title_ja: "タイトル", summary_key_ja: [ "要点" ], summary_body_ja: "本文" }, attrs)
+  end
+
   test "japanese_via_agent는 응답이 JSON이 아니면 빈 해시를 반환한다" do
     article = articles(:ruby_article)
 
