@@ -104,4 +104,29 @@ class SitemapBuilderTest < ActiveSupport::TestCase
 
     assert_equal "2026-01-02T10:00:00+09:00", SitemapBuilder.lastmod_for(article)
   end
+
+  test "collect_article_entries는 게시 가능한 기사를 번역 로케일과 함께 수집한다" do
+    article = articles(:ruby_article)
+    article.update!(summary_key_ja: [ "要点" ])
+
+    entry = SitemapBuilder.collect_article_entries.find { |e| e.path == "/articles/#{article.slug}" }
+
+    assert_not_nil entry
+    assert_equal %w[ko ja], entry.available
+    assert_equal SitemapBuilder.lastmod_for(article.reload), entry.lastmod
+  end
+
+  # 매시 전체 기사를 순회하므로 본문·임베딩 같은 TOAST 컬럼을 읽지 않아야 한다.
+  test "collect_article_entries는 사이트맵에 필요한 컬럼만 조회한다" do
+    queries = []
+    callback = ->(*, payload) { queries << payload[:sql] if payload[:sql].include?("articles") }
+    ActiveSupport::Notifications.subscribed(callback, "sql.active_record") do
+      SitemapBuilder.collect_article_entries
+    end
+
+    assert_not_empty queries
+    queries.each do |sql|
+      assert_no_match(/"articles"\.\*|embedding|"body"|summary_body/, sql)
+    end
+  end
 end
