@@ -28,6 +28,22 @@ class RenderedBodySanitizationTest < ActionDispatch::IntegrationTest
     assert_not_includes response.body, DISALLOWED_MARKER
   end
 
+  # The blog allowlist is wider than the short-post one (section headings and
+  # image figures from the editor), but it must still prune disallowed markup.
+  test "blog show keeps blog-only tags while still pruning disallowed markup" do
+    body = %(<h2>section heading</h2><figure><img src="https://cdn.example/a.webp" alt="alt text">) +
+      %(<figcaption>figure caption</figcaption></figure>) + PAYLOAD
+    posts(:blog_published).update_column(:body, body)
+
+    get user_profile_blog_post_url(username: users(:john).username, slug: "lf-published-fixture")
+
+    assert_response :success
+    assert_select ".post-content h2", text: "section heading"
+    assert_select ".post-content figure img[src='https://cdn.example/a.webp'][alt='alt text']"
+    assert_select ".post-content figure figcaption", text: "figure caption"
+    assert_not_includes response.body, DISALLOWED_MARKER
+  end
+
   test "post show (Components::Posts::PostCard) sanitizes the body at render time" do
     posts(:short_with_article).update_column(:body, PAYLOAD)
 

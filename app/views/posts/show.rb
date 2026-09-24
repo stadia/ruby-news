@@ -82,11 +82,12 @@ class Views::Posts::Show < Views::Base
       div(class: "text-sm text-content-muted") do
         plain I18n.l(root.published_at || root.created_at, format: :short)
       end
-      # body is allowlist-sanitized on save (HtmlSanitizable#sanitize_body); we
-      # sanitize again at render time as defense in depth. `sanitize` returns a
-      # SafeBuffer, so `raw` accepts it without an explicit html_safe marker.
+      # body is allowlist-sanitized on save (Posts::Blog#sanitize_body → BlogBody);
+      # we sanitize again at render time with the same blog allowlist as defense
+      # in depth. `sanitize` returns a SafeBuffer, so `raw` accepts it without an
+      # explicit html_safe marker.
       div(class: "post-content prose prose-lg dark:prose-invert max-w-none text-content wrap-break-word") do
-        raw sanitize(root.body.to_s, tags: HtmlSanitizable::ALLOWED_TAGS)
+        raw sanitize(root.body.to_s, tags: BlogBody::ALLOWED_TAGS)
       end
       owner_controls(root)
     end
