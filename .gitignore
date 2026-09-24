@@ -53,8 +53,6 @@ coverage/
 .mutant/
 
 
-# rails-ai-context (JSON cache — markdown files should be committed)
-.ai-context.json
 .omx
 
 # graphify
@@ -67,5 +65,5 @@ graphify-out/
 .worktrees/
 swagger/
 
-# rails-ai-context (embeds this machine's Ruby PATH/GEM_HOME - do not share)
+# Codex 로컬 설정 (머신별 PATH 등이 들어가므로 공유하지 않는다)
 .codex/config.toml

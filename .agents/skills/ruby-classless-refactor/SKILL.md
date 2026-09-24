@@ -260,14 +260,14 @@ end
 
 1. **타깃 식별** — 클래스 파일 경로 확보. 명시되지 않았으면 묻는다.
 2. **사용처 조사** (필수)
-   - `rails 'ai:tool[search_code]' pattern="ClassName" match_type=trace`
+   - `graphify explain "ClassName"`으로 연결된 호출부를 파악하고, 누락이 없도록 `grep -rn "ClassName" app lib test`로 교차 확인
    - 호출부가 많아 PR이 비대해질 것 같으면 여러 PR로 단계적 마이그레이션. 단일 PR 안에서는 절대 절반만 바꾸지 않는다(8번 참조).
 3. **판정 적용** — 메인 질문(객체 팩토리?) → No면 시나리오 1, Rails 프레임워크 클래스면 시나리오 2. 결과를 사용자에게 보여준다.
 4. **테스트 우선** — 기존 테스트는 호출 형태만 바꾸고, 없으면 변환 전에 작성(RED).
 5. **변환 적용** — 레시피 그대로.
 6. **호출부 일괄 수정** — Step 2에서 모은 모든 호출부.
 7. **검증**
-   - `rails 'ai:tool[validate]' files=<바뀐 파일들> level=rails`
+   - `bin/rubocop <바뀐 파일들>` + `bundle exec srb tc`
    - 프로젝트의 테스트 명령으로 관련 디렉토리만 실행 (minitest면 `bin/rails test test/...`, RSpec이면 `bundle exec rspec spec/...` 등)
 8. **이름 변경 시 일관성** — `Foo.new(x).call` → `Foo.build(x)`처럼 호출 형태가 바뀌면 별칭을 두지 말고 한 PR/커밋 안에서 모든 호출부를 일괄 변경.
 
