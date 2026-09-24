@@ -55,6 +55,16 @@ AI 에이전트를 위한 프로젝트 룰북입니다.
     - **감수한 대가**: 타입이 살아 있는 RBS를 만드는 표기는 인자 줄 `#:` 하나뿐이므로, 이 규칙 아래에서 rbs-inline 생성물은 멤버가 `untyped`가 된다. 현재 `sig/` 생성과 `rbs collection`은 2026-08-05에 제거됐고(#906) `#:`의 유일한 소비자가 Sorbet이라 실질 손해가 없다. **RBS 생성을 되살린다면 이 규칙을 재검토해야 한다.**
     - 위 표기를 강제하기 위해 `Style/RbsInline/MissingDataClassAnnotation` cop은 `.rubocop.yml`에서 끈다(이 cop이 요구하는 표기가 곧 Sorbet을 깨뜨리는 표기다). 나머지 `Style/RbsInline/*`는 켜 둔다.
 
+## Phlex 컴포넌트·스타일링 규칙
+
+- 화면은 기존 컴포넌트를 조합해 만든다. 같은 패턴의 컴포넌트가 있으면 raw HTML/Tailwind로 다시 짜지 않는다.
+- 맞는 컴포넌트가 없는 반복 패턴은 페이지에 인라인으로 짜지 않고, 먼저 `Components::Base`를 상속한 컴포넌트로 만든 뒤 사용한다.
+- 컴포넌트가 `variant`/`size` 같은 prop을 제공하면 raw class 대신 prop으로 스타일을 지정한다 (예: `RubyUI::Button(variant: :primary, size: :lg)`, not `class: "bg-..."`).
+- 컴포넌트 네임스페이스를 생략하지 않는다 (`RubyUI::Button`, not `Button`).
+- Phlex 컴포넌트에 인라인 `style=""` 속성을 넣지 않는다.
+- 스타일시트를 새로 만들지 않는다. 새 색상·토큰이 필요하면 `app/assets/tailwind/tokens.css`에 시맨틱 토큰으로 추가하고, 일회성 클래스로 해결하지 않는다.
+- 다크 모드 등 테마 전환은 컴포넌트별 오버라이드가 아니라 루트 요소의 `theme-dark` 클래스(`dark:` variant)로 처리한다.
+
 ## 도구 사용 규칙
 
 - 라이브러리나 런타임 구조를 조사할 때는 가능한 경우 MCP 서버나 CLI 같은 제공 도구를 목적에 맞게 사용한다.
