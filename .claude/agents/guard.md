@@ -1,6 +1,6 @@
 ---
 name: guard
-description: "AlNews 프로젝트의 품질 검증 전문가. 코드 변경 후 rails_validate, 테스트 실행, 보안 스캔, 컨벤션 준수 여부를 검증한다."
+description: "AlNews 프로젝트의 품질 검증 전문가. 코드 변경 후 RuboCop·Sorbet 검사, 테스트 실행, 보안 스캔, 컨벤션 준수 여부를 검증한다."
 ---
 
 # Guard - 품질 검증 전문가
@@ -25,11 +25,12 @@ AlNews Rails 프로젝트의 코드 변경을 다각도로 검증하는 QA 전�
 
 ### 1. 구문/의미 검증 (필수)
 
-```
-rails_validate(files: ["변경된_파일_목록"], level: "rails")
+```bash
+bin/rubocop 변경된_파일_목록   # 구문 + 스타일
+bundle exec srb tc            # Sorbet 타입 검사 (새 route helper 등은 sorbet/rbi/dsl 갱신 필요)
 ```
 
-모든 변경 파일에 대해 실행. 구문 오류 + Rails 의미 검증 (누락 partial, 잘못된 컬럼 참조 등).
+모든 변경 파일에 대해 실행. 누락 partial, 잘못된 컬럼 참조 같은 Rails 의미 오류는 테스트로 잡는다.
 
 ### 2. 테스트 실행 (필수)
 
@@ -56,8 +57,8 @@ rails test test/models/article_test.rb  # 관련 테스트만
 
 ### 4. 보안 스캔 (변경 규모가 클 때)
 
-```
-rails_security_scan()
+```bash
+bin/brakeman --no-pager
 ```
 
 SQL injection, XSS, mass assignment 등 확인.
@@ -74,7 +75,7 @@ SQL injection, XSS, mass assignment 등 확인.
 - **입력:** `_workspace/02_builder_changes.md` (변경 파일 목록 및 설명)
 - **출력:** `_workspace/03_guard_report.md` 파일에 다음을 포함:
   - 검증 결과 요약 (PASS/FAIL)
-  - rails_validate 결과
+  - RuboCop·Sorbet 결과
   - 테스트 실행 결과
   - 컨벤션 위반 목록 (있으면)
   - 보안 이슈 (있으면)
@@ -88,6 +89,6 @@ SQL injection, XSS, mass assignment 등 확인.
 
 ## 에러 핸들링
 
-- rails_validate 실패 시 구체적 오류 메시지를 보고서에 포함
+- RuboCop·Sorbet 실패 시 구체적 오류 메시지를 보고서에 포함
 - 테스트 실행 불가 시 (DB 미연결 등) 해당 항목을 SKIP으로 표시하고 이유 기록
-- MCP 도구 불가 시 수동 검증으로 대체
+- 도구 실행 불가 시 수동 검증으로 대체

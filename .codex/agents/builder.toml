@@ -97,4 +97,4 @@ export default class extends Controller {
 
 - 컨텍스트 파일이 없으면 작업을 중단하고 보고한다
 - 편집 대상 파일이 없으면 경로를 확인하고, 새 파일 생성이 필요한지 판단한다
-- 마이그레이션이 필요하면 `rails_migration_advisor`로 코드를 생성한다"""
+- 마이그레이션이 필요하면 `bin/rails generate migration`으로 생성한다"""

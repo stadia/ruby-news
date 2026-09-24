@@ -38,7 +38,7 @@ Agent(
   
   작업 유형: {feature|bugfix|refactor|ui}
   
-  MCP 도구를 사용하여 관련 모델, 컨트롤러, 뷰, 서비스, 라우트를 조사하라.
+  graphify(query/path/explain)로 관련 모델, 컨트롤러, 뷰, 서비스, 라우트를 조사하라.
   결과를 _workspace/01_scout_context.md에 저장하라.
   
   반드시 포함할 내용:
@@ -87,7 +87,7 @@ Agent(
   prompt: "_workspace/02_builder_changes.md를 읽고 변경 사항을 검증하라.
   
   검증 순서:
-  1. rails_validate로 모든 변경 파일의 구문/의미 검증
+  1. bin/rubocop·bundle exec srb tc로 모든 변경 파일 검증
   2. rails test로 테스트 실행
   3. 컨벤션 준수 확인 (Phlex, RubyUI, i18n, Tailwind 등)
   4. 경계면 정합성 확인 (컨트롤러↔뷰, 모델↔스키마)
@@ -153,7 +153,7 @@ FAIL? → [builder 재실행] → [guard 재실행] (최대 2회)
 
 | 상황 | 전략 |
 |------|------|
-| scout 실패 | MCP 도구 없이 파일 직접 읽기로 폴백. 최소한 관련 파일 경로라도 수집 |
+| scout 실패 | graphify 없이 파일 직접 읽기로 폴백. 최소한 관련 파일 경로라도 수집 |
 | builder 실패 | 에러 내용을 분석하고 컨텍스트를 보강하여 1회 재시도 |
 | guard 실패 | 부분 검증 결과라도 보고서에 포함. 실행 불가 항목은 SKIP 표시 |
 | 2회 재구현 후에도 FAIL | 사용자에게 보고하고 수동 개입 요청 |
