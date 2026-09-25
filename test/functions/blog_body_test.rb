@@ -57,13 +57,73 @@ class BlogBodyTest < ActiveSupport::TestCase
     assert_equal "<h2>큰 제목</h2><h3>작은 제목</h3><h4>더 작은 제목</h4><hr><p>본문</p>", html
   end
 
+  test "툴바의 취소선·밑줄·표를 유지한다" do
+    html = BlogBody.sanitize(
+      "<p>a <s>취소</s> <u>밑줄</u></p>" +
+      %(<figure class="lexxy-content__table-wrapper"><table><tbody><tr>) +
+      %(<th class="lexxy-content__table-cell--header"><p>머리</p></th><td><p>칸</p></td>) +
+      "</tr></tbody></table></figure>"
+    )
+    fragment = Nokogiri::HTML5.fragment(html)
+
+    assert_equal "취소", fragment.at_css("p s").text
+    assert_equal "밑줄", fragment.at_css("p u").text
+    assert_equal "머리", fragment.at_css("figure.lexxy-content__table-wrapper table tr th.lexxy-content__table-cell--header").text
+    assert_equal "칸", fragment.at_css("table tr td").text
+  end
+
+  test "글자색·배경색은 Lexxy 팔레트 변수만 mark에 남긴다" do
+    html = BlogBody.sanitize(
+      %(<p><mark style="color: var(--highlight-1);">색</mark>) +
+      %(<mark style="background-color: var(--highlight-bg-2);color: var(--highlight-3)">둘</mark>) +
+      %(<mark style="color: red; position: fixed">빨강</mark>) +
+      %(<mark style="background: url(javascript:alert(1))">url</mark></p>) +
+      %(<p style="color: var(--highlight-1)">문단</p>)
+    )
+    marks = Nokogiri::HTML5.fragment(html).css("mark")
+
+    assert_equal "color: var(--highlight-1);", marks[0]["style"]
+    assert_equal "background-color: var(--highlight-bg-2); color: var(--highlight-3);", marks[1]["style"]
+    assert_nil marks[2]["style"]
+    assert_nil marks[3]["style"]
+    assert_includes html, "<p>문단</p>"
+  end
+
+  test "코드 블록 언어와 표 셀 병합은 해당 요소에 올바른 값일 때만 남긴다" do
+    html = BlogBody.sanitize(
+      %(<pre data-language="ruby" data-highlight-language="ruby">def a; end</pre>) +
+      %(<pre data-language="x y">b</pre><p data-language="ruby">c</p>) +
+      %(<table><tbody><tr><td colspan="2" rowspan="x">d</td><th colspan="0">e</th></tr></tbody></table>) +
+      %(<p colspan="2">f</p>)
+    )
+    fragment = Nokogiri::HTML5.fragment(html)
+    pres = fragment.css("pre")
+
+    assert_equal %w[ruby ruby], [ pres[0]["data-language"], pres[0]["data-highlight-language"] ]
+    assert_nil pres[1]["data-language"]
+    assert_equal "2", fragment.at_css("td")["colspan"]
+    assert_nil fragment.at_css("td")["rowspan"]
+    assert_nil fragment.at_css("th")["colspan"]
+    assert_equal "<p>c</p>", fragment.css("p").first.to_html
+    assert_equal "<p>f</p>", fragment.css("p").last.to_html
+  end
+
+  test "서식이 있는 본문을 다시 정제해도 그대로다" do
+    once = BlogBody.sanitize(
+      %(<h2>제목</h2><p><s>a</s><u>b</u><mark style="color: var(--highlight-4);">c</mark></p>) +
+      %(<pre data-language="ruby">d</pre><table><tbody><tr><th>e</th><td colspan="2">f</td></tr></tbody></table>)
+    )
+
+    assert_equal once, BlogBody.sanitize(once)
+  end
+
   test "허용하지 않는 태그와 style 속성은 지우고 글자는 남긴다" do
     html = BlogBody.sanitize(
       %(<h2><mark style="color: red;"><strong>제목</strong></mark></h2>) +
       %(<p onclick="x()">본문</p><iframe src="//evil.test/x"></iframe><script>alert(1)</script>)
     )
 
-    assert_includes html, "<h2><strong>제목</strong></h2>"
+    assert_includes html, "<h2><mark><strong>제목</strong></mark></h2>"
     assert_includes html, "<p>본문</p>"
     assert_not_includes html, "style="
     assert_not_includes html, "onclick"

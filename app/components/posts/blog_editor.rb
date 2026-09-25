@@ -119,7 +119,10 @@ class Components::Posts::BlogEditor < Components::Base
     raw(
       f.lexxy_rich_textarea(
         :body,
-        class: "post-composer-editor w-full min-h-[520px] text-content",
+        # lexxy-content: Lexxy가 제목·취소선·밑줄·색·인용·목록·코드·표를 그리는
+        # 스타일(lexxy-content.css)이 이 클래스 아래에서만 적용된다. class를 직접
+        # 넘기면 Lexxy 기본값이 빠지므로 명시한다.
+        class: "post-composer-editor lexxy-content w-full min-h-[520px] text-content",
         rows: 18,
         toolbar: true,
         placeholder: t("posts.blog.body_placeholder"),
