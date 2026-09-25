@@ -771,7 +771,7 @@ GEM
     ruby-lsp-brakeman (0.0.4)
       brakeman (>= 7.0)
       ruby-lsp (~> 0.19)
-    ruby-mcp-client (2.1.0)
+    ruby-mcp-client (3.0.0)
       base64 (~> 0.2)
       faraday (~> 2.0)
       faraday-follow_redirects (~> 0.3)
@@ -1041,7 +1041,7 @@ DEPENDENCIES
   rubocop-sorbet
   ruby-lsp (~> 0.27.0.beta5)
   ruby-lsp-brakeman
-  ruby-mcp-client (~> 2.0)
+  ruby-mcp-client (~> 3.0)
   ruby-readability
   ruby-vips (~> 2.0)
   ruby_llm (~> 2.0)
