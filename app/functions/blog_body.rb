@@ -18,6 +18,23 @@ module BlogBody
       Rails::Html::SafeListSanitizer.new.sanitize(expand_image_attachments(html.to_s), tags: ALLOWED_TAGS).to_s
     end
 
+    # 저장된 본문을 에디터에 다시 넣을 값으로 바꾼다. Lexxy는 <img>만 이미지로 읽고
+    # <figcaption>은 일반 문단으로 가져오므로, 저장본의 <figure>를 그대로 넣으면
+    # 캡션이 본문 문단으로 한 벌 더 생기고 저장할 때마다 한 벌씩 늘어난다.
+    # 이미지 figure를 Lexxy가 직렬화하는 첨부 태그로 되돌려 캡션이 첨부에 붙게 한다.
+    #: (String?) -> String
+    def editor_value(html)
+      html = html.to_s
+      return html unless html.include?("<figure")
+
+      fragment = Nokogiri::HTML5.fragment(html)
+      fragment.css("figure").each do |figure|
+        attachment = image_attachment(figure)
+        figure.replace(attachment) if attachment
+      end
+      fragment.to_html
+    end
+
     private
 
     #: (String) -> String
@@ -44,6 +61,24 @@ module BlogBody
       figure.add_child(document.create_element("img", src: url, alt: node["alt"].presence || caption))
       figure.add_child(document.create_element("figcaption", caption)) if caption.present?
       figure
+    end
+
+    # image_figure의 역변환. img가 없는 figure(표를 감싼 것 등)는 nil — 그대로 둔다.
+    #: (Nokogiri::XML::Element) -> Nokogiri::XML::Element?
+    def image_attachment(figure)
+      img = figure.at_css("img")
+      return unless img
+
+      src = img["src"].to_s
+      figure.document.create_element(
+        "action-text-attachment",
+        "url" => src,
+        "alt" => img["alt"].to_s,
+        "caption" => figure.at_css("figcaption")&.text.to_s.strip,
+        "content-type" => "image/*",
+        "filename" => src.split(/[?#]/).first.to_s.split("/").last.to_s,
+        "presentation" => "gallery"
+      )
     end
   end
 end

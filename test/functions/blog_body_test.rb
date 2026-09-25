@@ -75,4 +75,36 @@ class BlogBodyTest < ActiveSupport::TestCase
     assert_equal "", BlogBody.sanitize(nil)
     assert_equal "", BlogBody.sanitize("")
   end
+
+  test "에디터 값: 저장된 이미지 figure를 캡션이 붙은 첨부로 되돌린다" do
+    saved = BlogBody.sanitize(attachment(url: "https://cdn.example/a.webp?v=1", alt: "대체 텍스트", caption: "사진 설명"))
+    node = Nokogiri::HTML5.fragment(BlogBody.editor_value(saved)).at_css("action-text-attachment")
+
+    assert_not_nil node
+    assert_equal "https://cdn.example/a.webp?v=1", node["url"]
+    assert_equal "대체 텍스트", node["alt"]
+    assert_equal "사진 설명", node["caption"]
+    assert_equal "a.webp", node["filename"]
+    assert node["content-type"].start_with?("image")
+    assert_not_includes BlogBody.editor_value(saved), "figcaption"
+  end
+
+  test "에디터 값을 다시 저장해도 본문이 그대로다 — 저장할 때마다 캡션이 늘지 않는다" do
+    saved = BlogBody.sanitize(
+      "<p>앞</p>" + attachment(url: "https://cdn.example/a.webp", caption: "설명") +
+      attachment(url: "/rails/active_storage/blobs/redirect/abc/b.png", alt: "b.png") + "<p>뒤</p>"
+    )
+
+    resaved = 3.times.reduce(saved) { |body, _| BlogBody.sanitize(BlogBody.editor_value(body)) }
+
+    assert_equal saved, resaved
+  end
+
+  test "에디터 값: 이미지가 없는 figure와 figure 없는 본문은 그대로 둔다" do
+    table = %(<figure class="lexxy-content__table-wrapper"><p>표</p></figure>)
+
+    assert_equal table, BlogBody.editor_value(table)
+    assert_equal "<p>본문</p>", BlogBody.editor_value("<p>본문</p>")
+    assert_equal "", BlogBody.editor_value(nil)
+  end
 end
