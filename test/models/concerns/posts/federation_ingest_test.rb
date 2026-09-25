@@ -123,16 +123,96 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
     assert_equal @comment_post.article_id, result[:article_id]
   end
 
-  # A local /posts/N URL whose post no longer exists must not produce a
-  # dangling parent_id — that would violate the FK on save (issue #871, item 2).
-  test "local /posts/ URL for a missing post yields no parent_id" do
+  test "a missing local post is rejected instead of becoming a standalone post" do
     missing_id = Post.maximum(:id).to_i + 1_000
     hash = { "id" => "https://remote.example.com/notes/gone", "content" => "답글",
              "inReplyTo" => "https://#{@local_host}/posts/#{missing_id}" }
+
+    assert_not Post.send(:handle_federated_object?, hash)
+    assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
+  end
+
+  test "a local post public slug URL resolves to its parent" do
+    @root_post.update_columns(slug: "root-slug-for-reply")
+    hash = { "id" => "https://remote.example.com/notes/slug-reply", "content" => "답글",
+             "inReplyTo" => @root_post.public_url }
+
+    assert_match %r{/posts/root-slug-for-reply\z}, hash["inReplyTo"]
+    assert Post.send(:handle_federated_object?, hash)
+    assert_equal @root_post.id, Post.from_activitypub_object(hash)[:parent_id]
+  end
+
+  test "a missing local post slug is rejected" do
+    hash = { "id" => "https://remote.example.com/notes/missing-slug", "content" => "답글",
+             "inReplyTo" => "https://#{@local_host}/posts/no-such-post" }
+
+    assert_not Post.send(:handle_federated_object?, hash)
+    assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
+  end
+
+  test "a local published post URL resolves to its parent" do
+    hash = { "id" => "https://remote.example.com/notes/published-reply", "content" => "답글",
+             "inReplyTo" => "https://#{@local_host}/federation/published/posts/#{@root_post.id}" }
+
+    assert Post.send(:handle_federated_object?, hash)
+    assert_equal @root_post.id, Post.from_activitypub_object(hash)[:parent_id]
+  end
+
+  test "a local post URL with a trailing slash resolves to its parent" do
+    @root_post.update_columns(slug: "root-slash-reply")
+    hash = { "id" => "https://remote.example.com/notes/slash-reply", "content" => "답글",
+             "inReplyTo" => "https://#{@local_host}/posts/#{@root_post.slug}/" }
+
+    assert Post.send(:handle_federated_object?, hash)
+    assert_equal @root_post.id, Post.from_activitypub_object(hash)[:parent_id]
+  end
+
+  test "a local post HTML URL resolves to its parent" do
+    @root_post.update_columns(slug: "root-html-reply")
+    hash = { "id" => "https://remote.example.com/notes/html-reply", "content" => "답글",
+             "inReplyTo" => "https://#{@local_host}/posts/#{@root_post.slug}.html" }
+
+    assert Post.send(:handle_federated_object?, hash)
+    assert_equal @root_post.id, Post.from_activitypub_object(hash)[:parent_id]
+  end
+
+  test "a missing local article is rejected instead of becoming a comment" do
+    missing_id = Article.maximum(:id).to_i + 1_000
+    hash = { "id" => "https://remote.example.com/notes/missing-article", "content" => "답글",
+             "inReplyTo" => "https://#{@local_host}/articles/#{missing_id}" }
+
+    assert_not Post.send(:handle_federated_object?, hash)
+    assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
+  end
+
+  test "a local article public slug URL resolves to a comment" do
+    hash = { "id" => "https://remote.example.com/notes/article-slug-reply", "content" => "답글",
+             "inReplyTo" => Rails.application.routes.url_helpers.article_url(@article) }
+
+    assert Post.send(:handle_federated_object?, hash)
     result = Post.from_activitypub_object(hash)
 
-    assert_not result.key?(:parent_id)
-    assert_not result.key?(:article_id)
+    assert_equal @article.id, result[:article_id]
+    assert_equal :comment, result[:post_type]
+  end
+
+  test "a local article Markdown URL resolves to a comment" do
+    hash = { "id" => "https://remote.example.com/notes/article-markdown-reply", "content" => "답글",
+             "inReplyTo" => Rails.application.routes.url_helpers.article_url(@article, format: :md) }
+
+    assert Post.send(:handle_federated_object?, hash)
+    result = Post.from_activitypub_object(hash)
+
+    assert_equal @article.id, result[:article_id]
+    assert_equal :comment, result[:post_type]
+  end
+
+  test "a local URL with a post path only in its query is rejected" do
+    hash = { "id" => "https://remote.example.com/notes/query-target", "content" => "답글",
+             "inReplyTo" => "https://#{@local_host}/unrelated?next=/posts/#{@root_post.id}" }
+
+    assert_not Post.send(:handle_federated_object?, hash)
+    assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
   end
 
   # ── hashtag parsing ─────────────────────────────────────────────────

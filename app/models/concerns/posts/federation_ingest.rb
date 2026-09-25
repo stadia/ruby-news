@@ -63,24 +63,45 @@ module Posts::FederationIngest
     # 섞이면 호출부에서 타입이 갈리므로 여기서 정규화한다.
     #: (String) -> Hash[Symbol, Integer]
     def reply_target_attributes(in_reply_to)
-      # Numeric-id branches only for local hosts: a remote UUID like
-      # /articles/019f... would otherwise capture leading digits as a bogus
-      # local id → FK violation.
-      local = reply_target_host_kind(in_reply_to) == :local
+      if reply_target_host_kind(in_reply_to) == :local
+        target = local_reply_target(in_reply_to)
+        unless target
+          logger.warn { "reply_target_attributes: missing local inReplyTo #{in_reply_to.inspect}; refusing to store as standalone" }
+          Kernel.raise ActiveRecord::RecordNotFound, "Local reply target not found: #{in_reply_to}"
+        end
 
-      if local && (article_id = in_reply_to[%r{/articles/(\d+)}, 1])
-        { article_id: article_id.to_i }
-      elsif local && (post_id = in_reply_to[%r{/posts/(\d+)}, 1]) && (parent = Post.find_by(id: post_id))
-        # find_by 가드: 매칭과 조회 사이에 로컬 post가 사라지면 dangling
-        # parent_id가 되어 저장 시 FK 위반이 된다.
-        { parent_id: parent.id, article_id: parent.article_id }.compact
-      elsif (parent = Post.find_by(federated_url: in_reply_to))
+        return { article_id: target.id } if target.is_a?(Article)
+
+        return { parent_id: target.id, article_id: target.article_id }.compact
+      end
+
+      if (parent = Post.find_by(federated_url: in_reply_to))
         { parent_id: parent.id, article_id: parent.article_id }.compact
       else
         # Unresolved inReplyTo: stored standalone — orphan은 프로덕션에서도
         # 보여야 하므로 debug가 아니라 warn으로 남긴다.
         logger.warn { "reply_target_attributes: unresolved inReplyTo #{in_reply_to.inspect}; storing reply without parent/article" }
         {}
+      end
+    end
+
+    # Only routes we publish or serve locally may resolve to a local target.
+    # The public post/article routes use slugs; fedipub's published routes use IDs.
+    #: (String) -> (Post | Article)?
+    def local_reply_target(in_reply_to)
+      path = URI.parse(in_reply_to).path
+
+      case path
+      when %r{\A/federation/published/posts/(\d+)/?\z}
+        Post.find_by(id: Regexp.last_match(1))
+      when %r{\A/federation/published/articles/(\d+)/?\z}
+        Article.find_by(id: Regexp.last_match(1))
+      when %r{\A/posts/([^/.]+)(?:\.html)?/?\z}
+        identifier = URI::DEFAULT_PARSER.unescape(Regexp.last_match(1))
+        Post.find_by(slug: identifier) || (Post.find_by(id: identifier) if identifier.match?(/\A\d+\z/))
+      when %r{\A/articles/([^/.]+)(?:\.(?:html|md))?/?\z}
+        identifier = URI::DEFAULT_PARSER.unescape(Regexp.last_match(1))
+        Article.find_by(slug: identifier) || (Article.find_by(id: identifier) if identifier.match?(/\A\d+\z/))
       end
     end
 
@@ -156,9 +177,13 @@ module Posts::FederationIngest
       # inReplyTo가 없으면 원문 → 수락
       return true if in_reply_to.blank?
 
-      # inReplyTo가 로컬 post 또는 article을 가리키면 수락
+      # 로컬 답글은 실제 대상이 있을 때만 수락한다. 문자열 포함 여부만 검사하면
+      # 없는 대상을 가리키는 답글이 부모 없는 최상위 포스트로 저장된다.
       if reply_target_host_kind(in_reply_to) == :local
-        return true if in_reply_to.include?("/posts/") || in_reply_to.include?("/articles/")
+        return true if local_reply_target(in_reply_to)
+
+        logger.warn { "handle_federated_object?: rejecting missing local inReplyTo #{in_reply_to.inspect}" }
+        return false
       end
 
       # inReplyTo가 기존 post의 federated_url이면 수락
