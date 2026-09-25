@@ -186,3 +186,11 @@ module WebOnlyFormats
     def included(base = T.unsafe(nil), &block); end
   end
 end
+
+# SlackController와 DiscordController가 include한다. 쓰는 것은 상속받은
+# `session`과 `params`뿐이라 ApplicationController를 self로 선언한다.
+module OauthStateVerification
+  extend T::Helpers
+
+  requires_ancestor { ApplicationController }
+end

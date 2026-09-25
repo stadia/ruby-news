@@ -3,13 +3,17 @@
 # rbs_inline: enabled
 
 class SlackController < ApplicationController
+  include OauthStateVerification
+
   protect_from_forgery except: [ :events, :callback ]
   skip_before_action :authenticate_user!
   before_action :verify_slack_signature, only: [ :events ]
 
   def callback
-    stored_state = session.delete(:slack_oauth_state)
-    incoming_state = params[:state]
+    unless valid_oauth_state?(:slack_oauth_state)
+      redirect_to oauth_result_path(provider: "slack", success: "false", error: t("oauth.errors.invalid_state"))
+      return
+    end
 
     oauth = SlackClient.exchange_code(params[:code], redirect_uri: slack_oauth_callback_url)
     team = oauth.fetch("team")

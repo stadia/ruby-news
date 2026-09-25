@@ -3,12 +3,16 @@
 # rbs_inline: enabled
 
 class DiscordController < ApplicationController
+  include OauthStateVerification
+
   protect_from_forgery except: [ :callback ]
   skip_before_action :authenticate_user!
 
   def callback
-    stored_state = session.delete(:discord_oauth_state)
-    incoming_state = params[:state]
+    unless valid_oauth_state?(:discord_oauth_state)
+      redirect_to oauth_result_path(provider: "discord", success: "false", error: t("oauth.errors.invalid_state"))
+      return
+    end
 
     oauth = DiscordClient.exchange_code(params[:code], redirect_uri: discord_oauth_callback_url)
     guild = oauth[:guild]
