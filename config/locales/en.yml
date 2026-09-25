@@ -235,6 +235,7 @@ en:
     errors:
       discord_missing_webhook: Discord OAuth response is missing webhook information.
       discord_not_configured: Discord integration is not configured yet. Please contact an administrator.
+      invalid_state: The OAuth request is invalid. Please start the integration again.
       slack_not_configured: Slack integration is not configured yet. Please contact an administrator.
       unsupported_provider: Unsupported integration.
     result:
