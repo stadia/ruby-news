@@ -278,6 +278,22 @@ class PostTest < ActiveSupport::TestCase
     assert_equal "Ruby Rails 장문입니다.", post.blog_summary
   end
 
+  test "장문은 저장할 때 에디터의 이미지 첨부와 섹션 제목을 유지한다" do
+    body = %(<h2>섹션</h2><p>본문</p><action-text-attachment url="https://cdn.example/a.webp" ) +
+      %(alt="" caption="설명" content-type="image/*" presentation="gallery"></action-text-attachment>)
+    post = Post.create!(title: "장문", body: body, user: @user, post_type: :blog, status: :draft)
+
+    assert_equal %(<h2>섹션</h2><p>본문</p><figure><img src="https://cdn.example/a.webp" alt="설명"><figcaption>설명</figcaption></figure>),
+      post.reload.body
+  end
+
+  test "단문은 저장할 때 기존 허용 태그로만 정제한다" do
+    body = %(<h2>섹션</h2><p>본문</p><action-text-attachment url="https://cdn.example/a.webp" content-type="image/*"></action-text-attachment>)
+    post = Post.create!(body: body, user: @user)
+
+    assert_equal "섹션<p>본문</p>", post.reload.body
+  end
+
   test "from_activitypub_object은 기사 답글을 comment 타입으로 지정한다" do
     host = Rails.application.routes.default_url_options[:host]
     hash = {

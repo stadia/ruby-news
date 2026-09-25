@@ -42,6 +42,15 @@ module Posts
 
     private
 
+    # HtmlSanitizable#sanitize_body(before_save)를 장문에 한해 BlogBody 규칙으로 바꾼다.
+    # Post가 HtmlSanitizable 다음에 이 모듈을 include하므로 이 정의가 먼저 잡힌다.
+    #: () -> void
+    def sanitize_body
+      return super unless blog?
+
+      self.body = BlogBody.sanitize(body)
+    end
+
     #: () -> void
     def validate_blog_draft_content
       return unless draft_blog?
