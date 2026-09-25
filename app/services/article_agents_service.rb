@@ -48,12 +48,20 @@ class ArticleAgentsService < OperationService
     return Success(article) if body.present? && body.size > 30
 
     body_result = ContentService.new.call(article)
-    if body_result.failure? || body_result.value!.size < 31
+    if body_result.failure?
       article.discard!
-      return Failure(body_result.failure)
+      return body_result
     end
 
-    article.update(body: body_result.value!)
+    fetched_body = body_result.value!
+    # 본문을 가져왔더라도 요약할 내용이 없을 만큼 짧으면 폐기한다.
+    # Success에 .failure를 부르면 nil이 되어 실패 사유가 사라지므로 사유를 직접 지정한다.
+    if fetched_body.size < 31
+      article.discard!
+      return Failure(:short_body)
+    end
+
+    article.update(body: fetched_body)
     Success(article)
   rescue StandardError => e
     article.discard!
