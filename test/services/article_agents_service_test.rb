@@ -55,6 +55,23 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     assert_predicate article.reload, :discarded?
   end
 
+  test "ContentService가 성공해도 본문이 31자 미만이면 :short_body 실패를 반환하고 discard한다" do
+    article = articles(:ruby_article)
+    article.update!(body: nil)
+
+    content_service = Object.new
+    content_service.define_singleton_method(:call) { |_article = nil| Dry::Monads::Success("짧은 본문") }
+
+    result = nil #: Dry::Monads::Result?
+    ContentService.stub(:new, -> { content_service }) do
+      result = ArticleAgentsService.new.call(article)
+    end
+
+    assert_predicate result, :failure?
+    assert_equal :short_body, result.failure
+    assert_predicate article.reload, :discarded?
+  end
+
   test "run_humanize는 HumanMonolithAgent의 구조화된 응답으로 summary_* 필드를 갱신한다" do
     article = articles(:ruby_article)
     article.update!(
