@@ -1470,6 +1470,13 @@ class Resend::Response
   # pkg:gem/resend#lib/resend/response.rb:41
   def []=(key, value); end
 
+  # Serialize response data for encoders that call as_json, such as ActiveSupport
+  # @param args [Array] Options forwarded to Hash#as_json when it is defined
+  # @return [Hash] The response data in as_json form
+  #
+  # pkg:gem/resend#lib/resend/response.rb:69
+  def as_json(*args); end
+
   # Dig into nested hash structure
   # @param keys [Array<Symbol, String>] Keys to dig through
   # @return [Object] The value at the nested key path
@@ -1479,16 +1486,16 @@ class Resend::Response
 
   # Enable enumeration over the data
   #
-  # pkg:gem/resend#lib/resend/response.rb:82
+  # pkg:gem/resend#lib/resend/response.rb:95
   def each(&block); end
 
   # Check if response is empty
   # @return [Boolean] True if data is empty
   #
-  # pkg:gem/resend#lib/resend/response.rb:95
+  # pkg:gem/resend#lib/resend/response.rb:108
   def empty?; end
 
-  # pkg:gem/resend#lib/resend/response.rb:79
+  # pkg:gem/resend#lib/resend/response.rb:92
   def has_key?(key); end
 
   # Access response headers
@@ -1500,25 +1507,25 @@ class Resend::Response
   # String representation for debugging
   # @return [String] String representation of the response
   #
-  # pkg:gem/resend#lib/resend/response.rb:117
+  # pkg:gem/resend#lib/resend/response.rb:130
   def inspect; end
 
   # Check if key exists
   # @param key [Symbol, String] The key to check
   # @return [Boolean] True if key exists
   #
-  # pkg:gem/resend#lib/resend/response.rb:75
+  # pkg:gem/resend#lib/resend/response.rb:88
   def key?(key); end
 
   # Get all keys from the data
   # @return [Array] Array of keys
   #
-  # pkg:gem/resend#lib/resend/response.rb:62
+  # pkg:gem/resend#lib/resend/response.rb:75
   def keys; end
 
   # Delegate unknown methods to the underlying data hash
   #
-  # pkg:gem/resend#lib/resend/response.rb:105
+  # pkg:gem/resend#lib/resend/response.rb:118
   def method_missing(method_name, *args, &block); end
 
   # Convert to plain hash
@@ -1530,16 +1537,22 @@ class Resend::Response
   # pkg:gem/resend#lib/resend/response.rb:58
   def to_hash; end
 
+  # Serialize response data without response headers
+  # @return [String] JSON representation of the response data
+  #
+  # pkg:gem/resend#lib/resend/response.rb:62
+  def to_json(*args); end
+
   # Transform keys in the underlying data
   # @return [Resend::Response] Self for chaining
   #
-  # pkg:gem/resend#lib/resend/response.rb:88
+  # pkg:gem/resend#lib/resend/response.rb:101
   def transform_keys!(&block); end
 
   # Get all values from the data
   # @return [Array] Array of values
   #
-  # pkg:gem/resend#lib/resend/response.rb:68
+  # pkg:gem/resend#lib/resend/response.rb:81
   def values; end
 
   private
@@ -1548,12 +1561,12 @@ class Resend::Response
   # @param headers [Hash, HTTParty::Response, nil] The headers to normalize
   # @return [Hash] Normalized headers hash
   #
-  # pkg:gem/resend#lib/resend/response.rb:126
+  # pkg:gem/resend#lib/resend/response.rb:139
   def normalize_headers(headers); end
 
   # Respond to hash-like methods
   #
-  # pkg:gem/resend#lib/resend/response.rb:100
+  # pkg:gem/resend#lib/resend/response.rb:113
   def respond_to_missing?(method_name, include_private = T.unsafe(nil)); end
 end
 

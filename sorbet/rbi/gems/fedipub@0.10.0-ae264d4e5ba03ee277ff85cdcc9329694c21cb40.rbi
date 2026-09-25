@@ -7,14 +7,6 @@
 
 # This module includes classes and methods related to Ruby on Rails: engine configuration, models, controllers, etc.
 # rbs_inline: enabled
-# rbs_inline: enabled
-# rbs_inline: enabled
-# rbs_inline: enabled
-# rbs_inline: enabled
-# rbs_inline: enabled
-# rbs_inline: enabled
-# rbs_inline: enabled
-# rbs_inline: enabled
 #
 # pkg:gem/fedipub#lib/fedipub/version.rb:4
 module Fedipub
@@ -45,7 +37,7 @@ module Fedipub
     def configuration; end
 
     # pkg:gem/fedipub#lib/fedipub.rb:31
-    def configure(&_arg0); end
+    def configure(&); end
 
     # @return [Boolean] True if the given model is a possible data entity
     #
@@ -147,7 +139,7 @@ class Fedipub::Activity < ::Fedipub::ApplicationRecord
   def set_default_addressing; end
 
   class << self
-    def feed_for(*args, **_arg1); end
+    def feed_for(*args, **); end
 
     private
 
@@ -189,8 +181,10 @@ class Fedipub::Actor < ::Fedipub::ApplicationRecord
   include ::Fedipub::HandlesDeleteRequests
   include ::Fedipub::Likeable
   include ::Fedipub::Announceable
+  include ::Fedipub::ApplicationActor
   extend ::Fedipub::HasUuid::ClassMethods
   extend ::Fedipub::HandlesDeleteRequests::ClassMethods
+  extend ::Fedipub::ApplicationActor::ClassMethods
 
   def _on_fedipub_delete_requested_callbacks; end
   def _on_fedipub_undelete_requested_callbacks; end
@@ -330,7 +324,7 @@ class Fedipub::Actor < ::Fedipub::ApplicationRecord
     def _on_fedipub_delete_requested_callbacks=(value); end
     def _on_fedipub_undelete_requested_callbacks; end
     def _on_fedipub_undelete_requested_callbacks=(value); end
-    def distant(*args, **_arg1); end
+    def distant(*args, **); end
 
     sig { params(account: ::String).returns(::Fedipub::Actor) }
     def find_by_account(account); end
@@ -356,9 +350,9 @@ class Fedipub::Actor < ::Fedipub::ApplicationRecord
     sig { params(object: ::Object).returns(::Fedipub::Actor) }
     def find_or_create_by_object(object); end
 
-    def local(*args, **_arg1); end
-    def not_tombstoned(*args, **_arg1); end
-    def tombstoned(*args, **_arg1); end
+    def local(*args, **); end
+    def not_tombstoned(*args, **); end
+    def tombstoned(*args, **); end
 
     private
 
@@ -492,7 +486,7 @@ module Fedipub::ActorEntity::ClassMethods
 
   private
 
-  def dispatch_callback(name, instance, *_arg2); end
+  def dispatch_callback(name, instance, *); end
 
   sig { params(instance: T.untyped, follow: ::Fedipub::Following, follow_activity: ::Fedipub::Activity).void }
   def dispatch_followed_callback(instance, follow, follow_activity:); end
@@ -504,6 +498,20 @@ module Fedipub::Announceable
   extend ::ActiveSupport::Concern
 
   def announce!(actor: T.unsafe(nil)); end
+end
+
+module Fedipub::ApplicationActor
+  extend ::ActiveSupport::Concern
+
+  mixes_in_class_methods ::Fedipub::ApplicationActor::ClassMethods
+
+  def application_actor?; end
+end
+
+Fedipub::ApplicationActor::APPLICATION_ACTOR_ATTRIBUTES = T.let(T.unsafe(nil), Hash)
+
+module Fedipub::ApplicationActor::ClassMethods
+  def application_actor; end
 end
 
 class Fedipub::ApplicationJob < ::ActiveJob::Base
@@ -785,9 +793,9 @@ module Fedipub::ClientController::HelperMethods
   include ::ApplicationController::HelperMethods
   include ::Pundit::Helper
 
-  def policy(*_arg0, **_arg1, &_arg2); end
-  def pundit_policy_scope(*_arg0, **_arg1, &_arg2); end
-  def pundit_user(*_arg0, **_arg1, &_arg2); end
+  def policy(*, **, &); end
+  def pundit_policy_scope(*, **, &); end
+  def pundit_user(*, **, &); end
 end
 
 # Stores the Fedipub configuration in a _singleton_.
@@ -1277,16 +1285,16 @@ class Fedipub::Following < ::Fedipub::ApplicationRecord
   class << self
     def _on_fedipub_delete_requested_callbacks; end
     def _on_fedipub_delete_requested_callbacks=(value); end
-    def accepted(*args, **_arg1); end
+    def accepted(*args, **); end
 
     sig { params(account: ::String, actor: ::Fedipub::Actor).returns(::Fedipub::Following) }
     def new_from_account(account, actor:); end
 
-    def not_accepted(*args, **_arg1); end
-    def not_pending(*args, **_arg1); end
-    def pending(*args, **_arg1); end
+    def not_accepted(*args, **); end
+    def not_pending(*args, **); end
+    def pending(*args, **); end
     def statuses; end
-    def with_actor(*args, **_arg1); end
+    def with_actor(*args, **); end
 
     private
 
@@ -1335,8 +1343,8 @@ module Fedipub::HandlesDeleteRequests
 end
 
 module Fedipub::HandlesDeleteRequests::ClassMethods
-  def on_fedipub_delete_requested(*_arg0); end
-  def on_fedipub_undelete_requested(*_arg0); end
+  def on_fedipub_delete_requested(*); end
+  def on_fedipub_undelete_requested(*); end
 end
 
 module Fedipub::HandlesSocialActivities
@@ -1346,10 +1354,10 @@ module Fedipub::HandlesSocialActivities
 end
 
 module Fedipub::HandlesSocialActivities::ClassMethods
-  def on_fedipub_announce_received(method_name = T.unsafe(nil), **_arg1, &_arg2); end
-  def on_fedipub_like_received(method_name = T.unsafe(nil), **_arg1, &_arg2); end
-  def on_fedipub_undo_announce_received(method_name = T.unsafe(nil), **_arg1, &_arg2); end
-  def on_fedipub_undo_like_received(method_name = T.unsafe(nil), **_arg1, &_arg2); end
+  def on_fedipub_announce_received(method_name = T.unsafe(nil), **, &); end
+  def on_fedipub_like_received(method_name = T.unsafe(nil), **, &); end
+  def on_fedipub_undo_announce_received(method_name = T.unsafe(nil), **, &); end
+  def on_fedipub_undo_like_received(method_name = T.unsafe(nil), **, &); end
 
   private
 
@@ -1415,8 +1423,8 @@ class Fedipub::Host < ::Fedipub::ApplicationRecord
     end
     def create_or_update(domain, min_update_interval: T.unsafe(nil)); end
 
-    def same_app(*args, **_arg1); end
-    def same_app_and_version(*args, **_arg1); end
+    def same_app(*args, **); end
+    def same_app_and_version(*args, **); end
 
     private
 
@@ -1600,6 +1608,9 @@ class Fedipub::Server::ActorResource < ::Fedipub::Server::BaseResource
   def serializable_hash; end
 end
 
+Fedipub::Server::ActorResource::DISCOVERY_IMPLEMENTS = T.let(T.unsafe(nil), Array)
+Fedipub::Server::ActorResource::FEP_844E_CONTEXT = T.let(T.unsafe(nil), String)
+Fedipub::Server::ActorResource::IMPLEMENTS = T.let(T.unsafe(nil), Array)
 class Fedipub::Server::ActorTombstoneResource < ::Fedipub::Server::BaseResource; end
 
 class Fedipub::Server::ActorsController < ::Fedipub::ServerController
@@ -1616,6 +1627,7 @@ class Fedipub::Server::ActorsController < ::Fedipub::ServerController
 
   def _layout(lookup_context, formats, keys); end
   def _layout_from_proc; end
+  def application_actor_show?; end
   def set_actor; end
 
   class << self
@@ -1711,6 +1723,8 @@ class Fedipub::Server::NodeinfoController < ::Fedipub::ServerController
 end
 
 class Fedipub::Server::NodeinfoIndexPayload < ::Struct
+  def application_actor_href; end
+  def application_actor_href=(_); end
   def href; end
   def href=(_); end
 
@@ -1856,10 +1870,17 @@ module Fedipub::Server::VerifySignature
   private
 
   def actor_match?(payload); end
+  def body_digest(digest_name); end
+  def content_digest_match?(header); end
+  def digest_match?(header); end
   def extract_payload_actor; end
   def log_signature_failure(error); end
+  def verify_body_digest!; end
   def verify_http_signature!; end
 end
+
+Fedipub::Server::VerifySignature::CONTENT_DIGEST_ALGORITHMS = T.let(T.unsafe(nil), Hash)
+Fedipub::Server::VerifySignature::DIGEST_CHECKS = T.let(T.unsafe(nil), Hash)
 
 class Fedipub::Server::WebFingerController < ::Fedipub::ServerController
   def find; end
@@ -1892,6 +1913,8 @@ class Fedipub::Server::WebFingerPayload < ::Struct
   def remote_follow_url=(_); end
   def self_href; end
   def self_href=(_); end
+  def service_href; end
+  def service_href=(_); end
   def subject; end
   def subject=(_); end
 
@@ -1904,7 +1927,11 @@ class Fedipub::Server::WebFingerPayload < ::Struct
   end
 end
 
-class Fedipub::Server::WebFingerResource < ::Fedipub::Server::BaseResource; end
+class Fedipub::Server::WebFingerResource < ::Fedipub::Server::BaseResource
+  private
+
+  def service_link(href); end
+end
 
 class Fedipub::ServerController < ::ActionController::Base
   include ::Pagy::Method
@@ -1918,10 +1945,13 @@ class Fedipub::ServerController < ::ActionController::Base
   def error_fallback(exception, fallback_message, status); end
   def error_gone(exception = T.unsafe(nil)); end
   def error_not_found(exception = T.unsafe(nil)); end
+  def log_signature_failure(error, **details); end
   def render_serialized(resource_class, object, content_type:, status: T.unsafe(nil), location: T.unsafe(nil), params: T.unsafe(nil)); end
+  def verify_request_signature!; end
 
   class << self
     def _routes; end
+    def require_signature?; end
 
     private
 
@@ -1960,9 +1990,9 @@ module Fedipub::ServerController::HelperMethods
   include ::Fedipub::ServerHelper
   include ::Pundit::Helper
 
-  def policy(*_arg0, **_arg1, &_arg2); end
-  def pundit_policy_scope(*_arg0, **_arg1, &_arg2); end
-  def pundit_user(*_arg0, **_arg1, &_arg2); end
+  def policy(*, **, &); end
+  def pundit_policy_scope(*, **, &); end
+  def pundit_user(*, **, &); end
 end
 
 module Fedipub::ServerHelper
@@ -2067,32 +2097,104 @@ class Fedipub::Utils::Host
   end
 end
 
-# Simple wrapper to make requests expecting JSON
+# Wrapper around HTTP calls which ensures signatures etc are applied.
 #
 # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:10
-module Fedipub::Utils::JsonRequest
+class Fedipub::Utils::JsonRequest
+  include ::Singleton::SingletonInstanceMethods
+  include ::Singleton
+  extend ::Singleton::SingletonClassMethods
+
+  # Makes a GET request signed by +from+ (the application actor by default), following redirects
+  #
+  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:45
+  def get(url:, params: T.unsafe(nil), headers: T.unsafe(nil), from: T.unsafe(nil)); end
+
+  # Makes a GET request and returns a +Hash+ from the parsed body
+  #
+  # @param url [String] Target URL
+  # @param params [Hash] Querystring parameters
+  # @param headers [Hash] Additional headers
+  # @param expected_status [Integer, nil] Expected response status. Will raise a +UnhandledResponseStatus+ when status is different; +nil+ disables the check
+  # @param from [Fedipub::Actor, nil] Actor signing the request; defaults to the application actor
+  #
+  # @return [Hash, Array] The parsed JSON object
+  #
+  # @raise [UnhandledResponseStatus] when response status is not the expected_status
+  #
+  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:37
+  def get_json(url, params: T.unsafe(nil), headers: T.unsafe(nil), expected_status: T.unsafe(nil), from: T.unsafe(nil)); end
+
+  # Makes a POST request, signed by +from+ when given. Redirects are not followed.
+  #
+  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:50
+  def post(url:, message:, headers: T.unsafe(nil), from: T.unsafe(nil)); end
+
+  private
+
+  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:84
+  def build_request(method:, url:, params: T.unsafe(nil), headers: T.unsafe(nil), message: T.unsafe(nil)); end
+
+  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:100
+  def connection; end
+
+  # Follows redirects for GETs only, signing the request again for each new target: signatures cover the target URI.
+  # POSTs are not redirected, so an activity is never replayed to a target we did not choose.
+  #
+  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:58
+  def execute_request(method:, url:, params: T.unsafe(nil), headers: T.unsafe(nil), message: T.unsafe(nil), from: T.unsafe(nil)); end
+
+  # Sends with an RFC9421 signature, then retries once with a draft-cavage-12 signature (double-knocking)
+  # on a freshly built request if we signed and got a 400 or 401.
+  #
+  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:75
+  def send_request(method:, url:, params:, headers:, message:, from:); end
+
   class << self
+    # Makes a GET request signed by +from+ (the application actor by default), following redirects
+    #
+    # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:21
+    def get(*, **, &); end
+
     # Makes a GET request and returns a +Hash+ from the parsed body
     #
     # @param url [String] Target URL
     # @param params [Hash] Querystring parameters
     # @param headers [Hash] Additional headers
-    # @param follow_redirects [Boolean] Whether to follow redirections
-    # @param expected_status [Integer] Expected response status. Will raise a +UnhandledResponseStatus+ when status is different
+    # @param expected_status [Integer, nil] Expected response status. Will raise a +UnhandledResponseStatus+ when status is different; +nil+ disables the check
+    # @param from [Fedipub::Actor, nil] Actor signing the request; defaults to the application actor
     #
-    # @return The parsed JSON object
+    # @return [Hash, Array] The parsed JSON object
     #
     # @raise [UnhandledResponseStatus] when response status is not the expected_status
     #
-    # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:29
-    def get_json(url, params: T.unsafe(nil), headers: T.unsafe(nil), follow_redirects: T.unsafe(nil), expected_status: T.unsafe(nil)); end
+    # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:21
+    def get_json(*, **, &); end
+
+    # Makes a POST request, signed by +from+ when given. Redirects are not followed.
+    #
+    # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:21
+    def post(*, **, &); end
+
+    private
+
+    # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:11
+    def allocate; end
+
+    # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:11
+    def new(*_arg0); end
   end
 end
 
-# pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:13
-Fedipub::Utils::JsonRequest::BASE_HEADERS = T.let(T.unsafe(nil), Hash)
+# @rbs @connection: Faraday::Connection
+#
+# pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:15
+Fedipub::Utils::JsonRequest::MAX_REDIRECTS = T.let(T.unsafe(nil), Integer)
 
-# pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:11
+# pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:16
+Fedipub::Utils::JsonRequest::REDIRECT_STATUSES = T.let(T.unsafe(nil), Array)
+
+# pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:24
 class Fedipub::Utils::JsonRequest::UnhandledResponseStatus < ::StandardError; end
 
 # Methods to manipulate incoming objects
@@ -2199,12 +2301,8 @@ Fedipub::VERSION = T.let(T.unsafe(nil), String)
 
 # This module includes classes and helpers to interact with the Fediverse.
 # rbs_inline: enabled
-# rbs_inline: enabled
-# rbs_inline: enabled
-# rbs_inline: enabled
-# rbs_inline: enabled
 #
-# pkg:gem/fedipub#lib/fediverse/collection.rb:4
+# pkg:gem/fedipub#lib/fediverse/signature.rb:1
 module Fediverse; end
 
 # pkg:gem/fedipub#lib/fediverse/collection.rb:5
@@ -2527,17 +2625,17 @@ class Fediverse::Notifier
     # @param activity [Fedipub::Activity]
     # @param inbox_url [String]
     #
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:30
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:31
     def deliver_to_inbox(activity, inbox_url); end
 
     # Enqueues a separate delivery job for each recipient inbox.
     #
     # @param activity [Fedipub::Activity]
     #
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:16
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:17
     def enqueue_deliveries(activity); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:59
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:60
     sig do
       params(
         payload: T::Hash[::String, T.untyped],
@@ -2551,63 +2649,62 @@ class Fediverse::Notifier
     #
     # @param activity [Fedipub::Activity]
     #
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:41
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:42
     def post_to_inboxes(activity); end
 
     private
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:141
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:142
     sig { params(actor_url: T.nilable(::String)).returns(T.nilable(::String)) }
     def actor_inbox_for(actor_url); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:284
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:257
     sig { params(url: ::String).returns(T.nilable(T::Array[::Fedipub::Actor])) }
     def actors_for_local_collection(url); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:118
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:119
     sig { params(url: ::String, max_depth: ::Integer).returns(T::Array[::Fedipub::Actor]) }
     def collection_to_actors(url, max_depth: T.unsafe(nil)); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:232
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:205
     sig do
       params(
         inbox_url: ::String,
         status: ::Integer,
-        body: ::String,
+        body: T.nilable(::String),
         retry_after: T.nilable(::String),
         permanent: T::Boolean
       ).returns(::String)
     end
     def delivery_error_message(inbox_url:, status:, body:, retry_after:, permanent:); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:220
-    sig { params(message: ::String).returns(::String) }
-    def digest(message); end
-
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:150
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:151
     sig { params(collection_urls: T::Array[::String]).returns(T.nilable(::Fedipub::Actor)) }
     def forwarding_sender_for(collection_urls); end
 
     # Determines the list of inboxes that the activity should be delivered to
     #
-    # @return [Array<Fedipub::Actor>]
+    # @return [Array<String>] inbox URLs (preferring shared inboxes), excluding the sender's own and blocking actors' inboxes
     #
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:83
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:84
     def inboxes_for(activity); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:262
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:235
     sig { params(activity: ::Fedipub::Activity, json: T::Hash[::Symbol, T.untyped]).returns(::String) }
     def invalid_payload_message(activity, json); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:162
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:163
     sig { params(activity: ::Fedipub::Activity).returns(::String) }
     def payload(activity); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:227
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:200
     sig { params(status: ::Integer).returns(T::Boolean) }
     def permanent_delivery_status?(status); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:170
+    # Extension point: host apps may override this to filter deliveries (e.g. moderation).
+    # Must return a Faraday::Response or raise a Fedipub::*DeliveryError.
+    #
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:173
     sig do
       params(
         inbox_url: ::String,
@@ -2617,23 +2714,15 @@ class Fediverse::Notifier
     end
     def post_to_inbox(inbox_url:, message:, from: T.unsafe(nil)); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:207
-    sig { params(url: ::String, message: ::String).returns(::Faraday::Request) }
-    def request(url:, message:); end
-
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:200
-    sig { params(url: ::String, message: ::String, from: T.nilable(::Fedipub::Actor)).returns(::Faraday::Request) }
-    def signed_request(url:, message:, from:); end
-
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:257
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:230
     sig { params(json: T::Hash[::Symbol, T.untyped]).returns(T::Boolean) }
     def update_object_id_missing?(json); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:279
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:252
     sig { params(activity: ::Fedipub::Activity, message: ::String).void }
     def validate_message!(activity, message); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:245
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:218
     sig { params(activity: ::Fedipub::Activity, json: T::Hash[::Symbol, T.untyped]).void }
     def validate_payload!(activity, json); end
   end
@@ -2645,7 +2734,9 @@ Fediverse::Notifier::ACTIONS_REQUIRING_OBJECT = T.let(T.unsafe(nil), Array)
 # pkg:gem/fedipub#lib/fediverse/notifier.rb:8
 Fediverse::Notifier::MAX_COLLECTION_DEPTH = T.let(T.unsafe(nil), Integer)
 
-# pkg:gem/fedipub#lib/fediverse/notifier.rb:10
+# Redirects are permanent failures too: signed POSTs are never replayed to another target
+#
+# pkg:gem/fedipub#lib/fediverse/notifier.rb:11
 Fediverse::Notifier::PERMANENT_DELIVERY_STATUS_CODES = T.let(T.unsafe(nil), Array)
 
 # pkg:gem/fedipub#lib/fediverse/request.rb:7
@@ -2672,111 +2763,161 @@ class Fediverse::Request
   end
 end
 
-# pkg:gem/fedipub#lib/fediverse/signature.rb:5
-class Fediverse::Signature
+# pkg:gem/fedipub#lib/fediverse/signature.rb:2
+module Fediverse::Signature
   class << self
-    # Parse an HTTP Signature header (cavage draft format) into its components
+    # Whether the request carries a body that the signature must cover
     #
-    # pkg:gem/fedipub#lib/fediverse/signature.rb:77
-    sig do
-      params(
-        header: ::String
-      ).returns({key_id: ::String, headers: ::String, signature: ::String, algorithm: T.nilable(::String)})
-    end
-    def parse_signature_header(header); end
+    # pkg:gem/fedipub#lib/fediverse/signature.rb:80
+    def body?(request); end
 
-    # pkg:gem/fedipub#lib/fediverse/signature.rb:10
-    sig { params(sender: ::Fedipub::Actor, request: ::Faraday::Request).returns(::String) }
-    def sign(sender:, request:); end
-
-    # Performs a signed GET request on behalf of a local actor
+    # Finds (or fetches) the actor owning a key id
     #
-    # @param url [String] Target URL
-    # @param actor [Fedipub::Actor] Local actor to sign as
-    # @return [Hash, nil] Parsed JSON response or nil on failure
+    # @raise [BadSignature] when the actor can't be retrieved or has no public key
     #
-    # pkg:gem/fedipub#lib/fediverse/signature.rb:30
-    def signed_get(url, actor:); end
+    # pkg:gem/fedipub#lib/fediverse/signature.rb:45
+    def find_sender(key_id); end
 
-    # pkg:gem/fedipub#lib/fediverse/signature.rb:58
-    sig { params(sender: ::Fedipub::Actor, request: ::ActionDispatch::Request).returns(T::Boolean) }
-    def verify(sender:, request:); end
-
-    # Verify the Digest header matches the request body (cavage draft format)
+    # Re-fetches a remote sender whose cached data is stale, so a rotated key can be picked up.
+    # The sender is touched even when nothing changed, so failing requests can't trigger a fetch every time.
     #
-    # pkg:gem/fedipub#lib/fediverse/signature.rb:97
-    sig { params(request: ::ActionDispatch::Request).void }
-    def verify_digest!(request); end
-
-    # Verify an inbound request's HTTP Signature, returning the sending actor.
-    # Supports both cavage draft and RFC 9421 formats.
+    # @return [Boolean] true if the sender was refreshed and verification is worth retrying
+    # @raise [BadSignature] when the refresh fails
     #
-    # pkg:gem/fedipub#lib/fediverse/signature.rb:114
-    sig { params(request: ::ActionDispatch::Request).returns(::Fedipub::Actor) }
-    def verify_request!(request); end
+    # pkg:gem/fedipub#lib/fediverse/signature.rb:62
+    def refresh_stale_sender!(sender); end
 
-    private
-
-    # Parse RFC 9421 Signature + Signature-Input headers, returning one entry per label.
-    # Signature:       sig1=:base64bytes:, sig2=:base64bytes:
-    # Signature-Input: sig1=("@method" "@path");keyid="...";alg="rsa-pss-sha512", sig2=(...)...
+    # Errors that can happen while fetching a remote signer; they mean the signature can't be verified.
+    # (A method rather than a constant, so this file can be required before Rails is loaded.)
     #
-    # pkg:gem/fedipub#lib/fediverse/signature.rb:256
-    def parse_rfc9421_candidates(sig_header, sig_input_header); end
+    # pkg:gem/fedipub#lib/fediverse/signature.rb:8
+    def sender_fetch_errors; end
 
-    # RFC 9421 uses label=:bytes: format; cavage uses keyId="..." format
+    # pkg:gem/fedipub#lib/fediverse/signature.rb:12
+    def sign(sender:, request:, legacy_signature: T.unsafe(nil)); end
+
+    # Verifies the request's signature, if it has one.
     #
-    # pkg:gem/fedipub#lib/fediverse/signature.rb:128
-    def rfc9421_format?(sig_header); end
-
-    # Build the RFC 9421 signature base string from request and covered components.
+    # @return [true] when the signature is valid, or when the request is unsigned and signatures are optional
+    # @raise [BadSignature] when the signature is invalid, or missing while required
     #
-    # pkg:gem/fedipub#lib/fediverse/signature.rb:298
-    def rfc9421_signature_base(request, components, input_params); end
+    # pkg:gem/fedipub#lib/fediverse/signature.rb:24
+    def verify!(request:, require_signature: T.unsafe(nil)); end
 
-    # Verify an RFC 9421 signature. Uses digest-output-length salt for PSS
-    # variants, which matches the default used by most signers.
+    # Verifies the request's signature (RFC9421 first, then draft-cavage-12) and returns the actor whose
+    # key was used to verify it, so callers never have to parse the key id again.
     #
-    # pkg:gem/fedipub#lib/fediverse/signature.rb:318
-    def rfc9421_verify(key, signature, base, algorithm); end
-
-    # pkg:gem/fedipub#lib/fediverse/signature.rb:336
-    sig { params(request: T.untyped, headers: ::String).returns(::String) }
-    def signature_payload(request:, headers:); end
-
-    # Split a Signature-Input header value into { label => params } pairs.
-    # Entries are separated by "," at the top level (not inside the component list parens).
+    # @return [Fedipub::Actor, nil] the signer, or nil when the request is unsigned
+    # @raise [BadSignature] when the signature is invalid
     #
-    # pkg:gem/fedipub#lib/fediverse/signature.rb:290
-    def split_signature_input(header); end
-
-    # Verify one RFC 9421 candidate signature. Returns actor on success, nil on
-    # non-fatal failure (so the caller can try the next candidate), raises on
-    # fatal verification failure.
-    #
-    # pkg:gem/fedipub#lib/fediverse/signature.rb:186
-    def try_verify_rfc9421_candidate(request, parsed); end
-
-    # Verify the body digest referenced by the RFC 9421 component list.
-    # Accepts either the legacy Digest header or the RFC 9421 Content-Digest header.
-    #
-    # pkg:gem/fedipub#lib/fediverse/signature.rb:220
-    def verify_body_digest!(request, component); end
-
-    # pkg:gem/fedipub#lib/fediverse/signature.rb:132
-    def verify_cavage_request!(request); end
-
-    # pkg:gem/fedipub#lib/fediverse/signature.rb:168
-    def verify_rfc9421_request!(request); end
+    # pkg:gem/fedipub#lib/fediverse/signature.rb:36
+    def verify_sender!(request:); end
   end
 end
 
-# pkg:gem/fedipub#lib/fediverse/signature.rb:6
-class Fediverse::Signature::SignatureVerificationError < ::StandardError; end
+# pkg:gem/fedipub#lib/fediverse/signature.rb:3
+class Fediverse::Signature::BadSignature < ::StandardError; end
+
+# pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:5
+class Fediverse::Signature::DraftCavage12
+  class << self
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:7
+    def sign(sender:, request:); end
+
+    # @return [Fedipub::Actor, false] the signer, or false if the request has no draft-cavage-12 signature
+    # @raise [Fediverse::Signature::BadSignature] when the signature is invalid
+    #
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:26
+    def verify!(request:); end
+
+    private
+
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:52
+    def check_covered_headers!(request, headers); end
+
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:59
+    def check_date!(request); end
+
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:92
+    def digest(message); end
+
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:68
+    def do_verification(signature, sender, comparison_string); end
+
+    # Path and query string, as sent on the wire
+    #
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:111
+    def request_target_path(request); end
+
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:74
+    def set_headers(request); end
+
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:128
+    def signature(sender:, request:); end
+
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:81
+    def signature_components(request); end
+
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:120
+    def signature_headers(request); end
+
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:98
+    def signature_payload(request:, headers: T.unsafe(nil)); end
+  end
+end
+
+# pkg:gem/fedipub#lib/fediverse/signature/rfc9421.rb:9
+class Fediverse::Signature::Rfc9421
+  class << self
+    # pkg:gem/fedipub#lib/fediverse/signature/rfc9421.rb:11
+    def sign(sender:, request:); end
+
+    # Verifies each signature label in turn and returns the sender of the first valid one.
+    #
+    # @return [Fedipub::Actor, false] the signer, or false if the request has no RFC9421 signature
+    # @raise [Fediverse::Signature::BadSignature] when no signature label is valid
+    #
+    # pkg:gem/fedipub#lib/fediverse/signature/rfc9421.rb:32
+    def verify!(request:); end
+
+    private
+
+    # Linzer only verifies what the signer chose to cover
+    #
+    # pkg:gem/fedipub#lib/fediverse/signature/rfc9421.rb:74
+    def check_covered_components!(request, signature); end
+
+    # pkg:gem/fedipub#lib/fediverse/signature/rfc9421.rb:81
+    def check_created!(signature); end
+
+    # pkg:gem/fedipub#lib/fediverse/signature/rfc9421.rb:104
+    def components(request); end
+
+    # pkg:gem/fedipub#lib/fediverse/signature/rfc9421.rb:112
+    def digest(message); end
+
+    # Converts key to right structure for Linzer to use
+    #
+    # pkg:gem/fedipub#lib/fediverse/signature/rfc9421.rb:92
+    def linzer_private_key(sender); end
+
+    # pkg:gem/fedipub#lib/fediverse/signature/rfc9421.rb:97
+    def linzer_public_key(sender); end
+
+    # pkg:gem/fedipub#lib/fediverse/signature/rfc9421.rb:50
+    def signature_labels(headers); end
+
+    # pkg:gem/fedipub#lib/fediverse/signature/rfc9421.rb:54
+    def verify_label!(request, message, headers, label); end
+
+    # pkg:gem/fedipub#lib/fediverse/signature/rfc9421.rb:64
+    def verify_with_key_refresh!(sender, message, signature); end
+  end
+end
 
 # Methods related to Webfinger: find accounts, fetch actors,...
 #
-# pkg:gem/fedipub#lib/fediverse/webfinger.rb:10
+# pkg:gem/fedipub#lib/fediverse/webfinger.rb:9
 class Fediverse::Webfinger
   class << self
     # Fetches a distant actor
@@ -2787,7 +2928,7 @@ class Fediverse::Webfinger
     # @return [Fedipub::Actor]
     # @raise [ActiveRecord::RecordNotFound] when the actor cannot be resolved
     #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:40
+    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:39
     def fetch_actor(username, domain); end
 
     # Fetches an actor given its URL
@@ -2797,7 +2938,7 @@ class Fediverse::Webfinger
     # @return [Fedipub::Actor]
     # @raise [ActiveRecord::RecordNotFound] when the actor cannot be resolved
     #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:50
+    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:49
     def fetch_actor_url(url); end
 
     # Determines if a given account string should be a local account (same host as configured one)
@@ -2806,7 +2947,7 @@ class Fediverse::Webfinger
     #
     # @return [Boolean]
     #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:29
+    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:28
     def local_user?(hash); end
 
     # Returns remote follow link template, or complete link if actor_url is provided
@@ -2817,7 +2958,7 @@ class Fediverse::Webfinger
     #
     # @return [String] The URL to use as follow URL
     #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:84
+    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:78
     def remote_follow_url(username, domain, actor_url: T.unsafe(nil)); end
 
     # Extracts username and domain from an account string.
@@ -2827,7 +2968,7 @@ class Fediverse::Webfinger
     #
     # @return [MatchData, nil] Matches with +:username+ and +:domain+ or +nil+
     #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:20
+    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:19
     def split_account(account); end
 
     # Gets the real actor's federation URL from its username and domain
@@ -2837,43 +2978,36 @@ class Fediverse::Webfinger
     #
     # @return [String, nil] Federation URL if found
     #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:65
+    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:59
     def webfinger(username, domain); end
 
     private
 
-    # Makes a simple GET request and returns a +Hash+ from the parsed body
+    # Makes a GET request (signed as the application actor) and returns a +Hash+ from the parsed body
     # @return [Hash]
     # @raise [ActiveRecord::RecordNotFound] when the response is invalid
     #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:176
+    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:147
     def get_json(url, params = T.unsafe(nil)); end
 
     # Extracts the server and port from a string, omitting common ports
     # @return [String] Server and port
     #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:112
+    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:106
     def server_and_port(string); end
-
-    # Performs a signed GET request using a local actor for authentication
-    # Used as fallback when servers require Authorized Fetch (Secure Mode)
-    # @return [Hash]
-    # @raise [ActiveRecord::RecordNotFound] when no local actor exists or request fails
-    #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:153
-    def signed_get_json(url); end
 
     # Makes a webfinger request for a given username/domain
     # @return [Hash] Webfinger response's content
     #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:105
+    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:99
     def webfinger_response(username, domain); end
 
-    # Builds a +Fedipub::Actor+ from a Webfinger response
-    # @param data [Hash] Webfinger response
+    # Builds an unsaved remote +Fedipub::Actor+ from an ActivityPub actor document
+    # @param data [Hash] ActivityPub actor document
     # @return [Fedipub::Actor]
+    # @raise [ActiveRecord::RecordNotFound] when the payload is not a valid actor document
     #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:124
+    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:119
     def webfinger_to_actor(data); end
   end
 end

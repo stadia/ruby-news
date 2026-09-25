@@ -8,24 +8,6 @@
 # :markup: markdown
 # :include: ../README.md
 # :markup: markdown
-# :markup: markdown
-# :markup: markdown
-# :markup: markdown
-# :markup: markdown
-# :markup: markdown
-# :markup: markdown
-# :markup: markdown
-# :markup: markdown
-# :markup: markdown
-# :markup: markdown
-# :markup: markdown
-# :markup: markdown
-# :markup: markdown
-# :markup: markdown
-# :markup: markdown
-# :markup: markdown
-# :markup: markdown
-# :markup: markdown
 #
 # pkg:gem/actiontext#lib/action_text/gem_version.rb:5
 module ActionText
@@ -241,7 +223,7 @@ class ActionText::Attachables::ContentAttachment
   def content_type=(_arg0); end
 
   # pkg:gem/actiontext#lib/action_text/attachables/content_attachment.rb:8
-  def model_name(&_arg0); end
+  def model_name(&); end
 
   # pkg:gem/actiontext#lib/action_text/attachables/content_attachment.rb:8
   def param_delimiter=(_arg0); end
@@ -327,7 +309,7 @@ class ActionText::Attachables::MissingAttachable
   def model; end
 
   # pkg:gem/actiontext#lib/action_text/attachables/missing_attachable.rb:8
-  def model_name(&_arg0); end
+  def model_name(&); end
 
   # pkg:gem/actiontext#lib/action_text/attachables/missing_attachable.rb:16
   def to_partial_path; end
@@ -353,7 +335,7 @@ class ActionText::Attachables::RemoteImage
   def height; end
 
   # pkg:gem/actiontext#lib/action_text/attachables/remote_image.rb:8
-  def model_name(&_arg0); end
+  def model_name(&); end
 
   # pkg:gem/actiontext#lib/action_text/attachables/remote_image.rb:43
   def to_partial_path; end
@@ -414,7 +396,7 @@ class ActionText::Attachment
   def inspect; end
 
   # pkg:gem/actiontext#lib/action_text/attachment.rb:66
-  def method_missing(method, *_arg1, **_arg2, &_arg3); end
+  def method_missing(method, *, **, &); end
 
   # pkg:gem/actiontext#lib/action_text/attachment.rb:63
   def node; end
@@ -435,7 +417,7 @@ class ActionText::Attachment
   def to_html; end
 
   # pkg:gem/actiontext#lib/action_text/attachment.rb:65
-  def to_param(*_arg0, **_arg1, &_arg2); end
+  def to_param(*, **, &); end
 
   # Converts the attachment to plain text.
   #
@@ -569,7 +551,7 @@ class ActionText::AttachmentGallery
   def inspect; end
 
   # pkg:gem/actiontext#lib/action_text/attachment_gallery.rb:7
-  def model_name(&_arg0); end
+  def model_name(&); end
 
   # pkg:gem/actiontext#lib/action_text/attachment_gallery.rb:52
   def node; end
@@ -763,7 +745,7 @@ class ActionText::Content
   def append_attachables(attachables); end
 
   # pkg:gem/actiontext#lib/action_text/content.rb:162
-  def as_json(*_arg0); end
+  def as_json(*); end
 
   # Extracts ActionText::Attachable objects from the HTML fragment:
   #
@@ -789,13 +771,13 @@ class ActionText::Content
   def attachments; end
 
   # pkg:gem/actiontext#lib/action_text/content.rb:30
-  def blank?(*_arg0, **_arg1, &_arg2); end
+  def blank?(*, **, &); end
 
   # pkg:gem/actiontext#lib/action_text/content.rb:29
-  def deconstruct(*_arg0, **_arg1, &_arg2); end
+  def deconstruct(*, **, &); end
 
   # pkg:gem/actiontext#lib/action_text/content.rb:30
-  def empty?(*_arg0, **_arg1, &_arg2); end
+  def empty?(*, **, &); end
 
   # pkg:gem/actiontext#lib/action_text/content.rb:27
   def fragment; end
@@ -804,7 +786,7 @@ class ActionText::Content
   def gallery_attachments; end
 
   # pkg:gem/actiontext#lib/action_text/content.rb:30
-  def html_safe(*_arg0, **_arg1, &_arg2); end
+  def html_safe(*, **, &); end
 
   # pkg:gem/actiontext#lib/action_text/content.rb:166
   def inspect; end
@@ -819,10 +801,10 @@ class ActionText::Content
   def links; end
 
   # pkg:gem/actiontext#lib/action_text/content.rb:30
-  def present?(*_arg0, **_arg1, &_arg2); end
+  def present?(*, **, &); end
 
   # pkg:gem/actiontext#lib/action_text/content.rb:25
-  def render(*_arg0, **_arg1, &_arg2); end
+  def render(*, **, &); end
 
   # pkg:gem/actiontext#lib/action_text/content.rb:109
   def render_attachment_galleries(&block); end
@@ -843,7 +825,7 @@ class ActionText::Content
   #     content.to_plain_text # => "Funny times!"
   #
   #     content = ActionText::Content.new("<div onclick='action()'>safe<script>unsafe</script></div>")
-  #     content.to_plain_text # => "safeunsafe"
+  #     content.to_plain_text # => "safe"
   #
   # NOTE: that the returned string is not HTML safe and should not be rendered in
   # browsers without additional sanitization.
@@ -860,7 +842,7 @@ class ActionText::Content
 
   # Safely transforms Content into an HTML String.
   #
-  #     content = ActionText::Content.new(content: "<h1>Funny times!</h1>")
+  #     content = ActionText::Content.new("<h1>Funny times!</h1>")
   #     content.to_s # => "<h1>Funny times!</h1>"
   #
   #     content = ActionText::Content.new("<div onclick='action()'>safe<script>unsafe</script></div>")
@@ -1041,7 +1023,7 @@ class ActionText::Fragment
   def initialize(source); end
 
   # pkg:gem/actiontext#lib/action_text/fragment.rb:26
-  def deconstruct(*_arg0, **_arg1, &_arg2); end
+  def deconstruct(*, **, &); end
 
   # pkg:gem/actiontext#lib/action_text/fragment.rb:32
   def find_all(selector); end
@@ -1237,18 +1219,18 @@ class ActionText::RichText < ::ActionText::Record
   def autosave_associated_records_for_embeds_attachments(*args); end
   def autosave_associated_records_for_embeds_blobs(*args); end
   def autosave_associated_records_for_record(*args); end
-  def blank?(*_arg0, **_arg1, &_arg2); end
-  def empty?(*_arg0, **_arg1, &_arg2); end
-  def nil?(*_arg0, **_arg1, &_arg2); end
-  def present?(*_arg0, **_arg1, &_arg2); end
+  def blank?(*, **, &); end
+  def empty?(*, **, &); end
+  def nil?(*, **, &); end
+  def present?(*, **, &); end
   def to_plain_text; end
-  def to_s(*_arg0, **_arg1, &_arg2); end
+  def to_s(*, **, &); end
   def to_trix_html; end
   def validate_associated_records_for_embeds_attachments(*args); end
   def validate_associated_records_for_embeds_blobs(*args); end
 
   class << self
-    def with_attached_embeds(*args, **_arg1); end
+    def with_attached_embeds(*args, **); end
 
     private
 
@@ -1293,7 +1275,7 @@ module ActionText::Serialization
   mixes_in_class_methods ::ActionText::Serialization::ClassMethods
 
   # pkg:gem/actiontext#lib/action_text/serialization.rb:34
-  def _dump(*_arg0); end
+  def _dump(*); end
 end
 
 # pkg:gem/actiontext#lib/action_text/serialization.rb:9
@@ -1311,7 +1293,7 @@ end
 # pkg:gem/actiontext#lib/action_text/system_test_helper.rb:6
 module ActionText::SystemTestHelper
   # pkg:gem/actiontext#lib/action_text/system_test_helper.rb:46
-  def fill_in_rich_text_area(locator = T.unsafe(nil), with:, **_arg2); end
+  def fill_in_rich_text_area(locator = T.unsafe(nil), with:, **); end
 
   # Locates a Trix editor and fills it in with the given HTML.
   #
@@ -1345,7 +1327,7 @@ module ActionText::SystemTestHelper
   #     fill_in_rich_textarea "message[content]", with: "Hello <em>world!</em>"
   #
   # pkg:gem/actiontext#lib/action_text/system_test_helper.rb:37
-  def fill_in_rich_textarea(locator = T.unsafe(nil), with:, **_arg2); end
+  def fill_in_rich_textarea(locator = T.unsafe(nil), with:, **); end
 end
 
 module ActionText::TagHelper
@@ -1431,7 +1413,7 @@ ActionText::VERSION::MAJOR = T.let(T.unsafe(nil), Integer)
 ActionText::VERSION::MINOR = T.let(T.unsafe(nil), Integer)
 
 # pkg:gem/actiontext#lib/action_text/gem_version.rb:15
-ActionText::VERSION::PRE = T.let(T.unsafe(nil), String)
+ActionText::VERSION::PRE = T.let(T.unsafe(nil), T.untyped)
 
 # pkg:gem/actiontext#lib/action_text/gem_version.rb:17
 ActionText::VERSION::STRING = T.let(T.unsafe(nil), String)
@@ -1476,7 +1458,7 @@ module ActionView::Helpers::Tags; end
 class ActionView::Helpers::Tags::ActionText < ::ActionView::Helpers::Tags::Base
   include ::ActionView::Helpers::Tags::Placeholderable
 
-  def dom_id(*_arg0, **_arg1, &_arg2); end
+  def dom_id(*, **, &); end
   def render; end
 end
 
