@@ -108,13 +108,16 @@ end
 
 # `ClassMethods` modules are `extend`ed, so their `self` is the includer's
 # singleton class and `requires_ancestor` (which constrains instances) cannot
-# describe it. Both only reach for `logger`, declared here as the contract they
-# expect -- it is `ActiveRecord::Base.logger` in practice.
+# describe it. Both reach for `logger`, declared here as the contract they
+# expect -- it is `ActiveRecord::Base.logger` in practice. The includer is a
+# class, so `Kernel` (`raise`) is on the chain at runtime too.
 module Articles::Activitypub::ClassMethods
   def logger; end
 end
 
 module Posts::FederationIngest::ClassMethods
+  include Kernel
+
   def logger; end
 end
 

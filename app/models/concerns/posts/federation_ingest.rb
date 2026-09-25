@@ -67,7 +67,7 @@ module Posts::FederationIngest
         target = local_reply_target(in_reply_to)
         unless target
           logger.warn { "reply_target_attributes: missing local inReplyTo #{in_reply_to.inspect}; refusing to store as standalone" }
-          Kernel.raise ActiveRecord::RecordNotFound, "Local reply target not found: #{in_reply_to.truncate(200)}"
+          raise ActiveRecord::RecordNotFound, "Local reply target not found: #{in_reply_to.truncate(200)}"
         end
 
         return { article_id: target.id } if target.is_a?(Article)
