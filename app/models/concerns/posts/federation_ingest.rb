@@ -67,7 +67,7 @@ module Posts::FederationIngest
         target = local_reply_target(in_reply_to)
         unless target
           logger.warn { "reply_target_attributes: missing local inReplyTo #{in_reply_to.inspect}; refusing to store as standalone" }
-          Kernel.raise ActiveRecord::RecordNotFound, "Local reply target not found: #{in_reply_to}"
+          Kernel.raise ActiveRecord::RecordNotFound, "Local reply target not found: #{in_reply_to.truncate(200)}"
         end
 
         return { article_id: target.id } if target.is_a?(Article)
@@ -97,12 +97,21 @@ module Posts::FederationIngest
       when %r{\A/federation/published/articles/(\d+)/?\z}
         Article.find_by(id: Regexp.last_match(1))
       when %r{\A/posts/([^/.]+)(?:\.html)?/?\z}
-        identifier = URI::DEFAULT_PARSER.unescape(Regexp.last_match(1))
-        Post.find_by(slug: identifier) || (Post.find_by(id: identifier) if identifier.match?(/\A\d+\z/))
+        find_by_slug_or_id(Post, Regexp.last_match(1).to_s)
       when %r{\A/articles/([^/.]+)(?:\.(?:html|md))?/?\z}
-        identifier = URI::DEFAULT_PARSER.unescape(Regexp.last_match(1))
-        Article.find_by(slug: identifier) || (Article.find_by(id: identifier) if identifier.match?(/\A\d+\z/))
+        find_by_slug_or_id(Article, Regexp.last_match(1).to_s)
       end
+    end
+
+    # 퍼센트 디코딩 결과가 잘못된 UTF-8이거나 NUL을 품으면 PG가 쿼리 자체를
+    # 거부해(StatementInvalid/ArgumentError) 인박스가 500을 낸다. 그런 slug는
+    # 존재할 수 없으므로 조회하지 않고 대상 없음으로 돌려 404 경로에 합친다.
+    #: (singleton(Post) | singleton(Article), String) -> (Post | Article)?
+    def find_by_slug_or_id(model, escaped_identifier)
+      identifier = URI::DEFAULT_PARSER.unescape(escaped_identifier)
+      return unless identifier.valid_encoding? && !identifier.include?("\0")
+
+      model.find_by(slug: identifier) || (model.find_by(id: identifier) if identifier.match?(/\A\d+\z/))
     end
 
     # Exact host match, not substring: a URL merely embedding a local host

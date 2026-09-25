@@ -152,10 +152,61 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
 
   test "a local published post URL resolves to its parent" do
     hash = { "id" => "https://remote.example.com/notes/published-reply", "content" => "답글",
-             "inReplyTo" => "https://#{@local_host}/federation/published/posts/#{@root_post.id}" }
+             "inReplyTo" => published_url("posts", @root_post.id) }
 
     assert Post.send(:handle_federated_object?, hash)
     assert_equal @root_post.id, Post.from_activitypub_object(hash)[:parent_id]
+  end
+
+  test "a local published article URL resolves to a comment" do
+    hash = { "id" => "https://remote.example.com/notes/published-article-reply", "content" => "답글",
+             "inReplyTo" => published_url("articles", @article.id) }
+
+    assert Post.send(:handle_federated_object?, hash)
+    result = Post.from_activitypub_object(hash)
+
+    assert_equal @article.id, result[:article_id]
+    assert_nil result[:parent_id]
+    assert_equal :comment, result[:post_type]
+  end
+
+  test "a missing local published article is rejected" do
+    hash = { "id" => "https://remote.example.com/notes/missing-published-article", "content" => "답글",
+             "inReplyTo" => published_url("articles", Article.maximum(:id).to_i + 1_000) }
+
+    assert_not Post.send(:handle_federated_object?, hash)
+    assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
+  end
+
+  # 예전에 발행된 /posts/N 주소는 slug가 생긴 뒤에도 풀려야 한다.
+  test "a numeric local post URL resolves a post that has a slug" do
+    @root_post.update_columns(slug: "root-numeric-reply")
+    hash = { "id" => "https://remote.example.com/notes/numeric-reply", "content" => "답글",
+             "inReplyTo" => "https://#{@local_host}/posts/#{@root_post.id}" }
+
+    assert Post.send(:handle_federated_object?, hash)
+    assert_equal @root_post.id, Post.from_activitypub_object(hash)[:parent_id]
+  end
+
+  # ArticlesController와 같은 순서(slug → id)로 찾아야 댓글이 다른 기사에 붙지 않는다.
+  test "a slug that looks like another article's id wins over the id" do
+    other = articles(:korean_content_article)
+    other.update_columns(slug: @article.id.to_s)
+    hash = { "id" => "https://remote.example.com/notes/slug-vs-id", "content" => "답글",
+             "inReplyTo" => "https://#{@local_host}/articles/#{@article.id}" }
+
+    assert_equal other.id, Post.from_activitypub_object(hash)[:article_id]
+  end
+
+  # 디코딩 결과가 DB에 넘길 수 없는 문자열이면 PG 오류(500)가 아니라 대상 없음(404)으로 처리한다.
+  [ "/posts/%FF", "/posts/%00", "/articles/%C3%28", "/articles/%00" ].each do |path|
+    test "an undecodable local slug #{path} is rejected as a missing target" do
+      hash = { "id" => "https://remote.example.com/notes/undecodable", "content" => "답글",
+               "inReplyTo" => "https://#{@local_host}#{path}" }
+
+      assert_not Post.send(:handle_federated_object?, hash)
+      assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
+    end
   end
 
   test "a local post URL with a trailing slash resolves to its parent" do
@@ -255,5 +306,15 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
     assert_not result.key?(:parent_id)
     assert_not result.key?(:article_id)
     assert_not result.key?(:post_type)
+  end
+
+  private
+
+  # fedipub가 발행하는 AP id와 같은 경로를 쓴다(config/fedipub.yml의 server_routes_path).
+  # 호스트는 앱 호스트로 붙인다: test 환경의 fedipub site_host(localhost)는 앱 호스트와
+  # 다르지만, production에서는 둘 다 ruby-news.dev다.
+  def published_url(type, id)
+    path = Fedipub::Engine.routes.url_helpers.server_published_path(publishable_type: type, id:)
+    "https://#{@local_host}#{path}"
   end
 end
