@@ -25,6 +25,11 @@ module SitemapBuilder
   # 멤버 타입: sorbet/rbi/shims/data_definitions.rbi
   Entry = Data.define(:path, :lastmod, :available)
 
+  # 사이트맵 수집에 쓰는 컬럼만 읽는다. 매시 전체 기사를 순회하므로 body·summary_body·
+  # embedding 같은 TOAST 컬럼까지 읽으면 불필요한 DB I/O와 역직렬화 비용이 커진다.
+  # id는 find_in_batches의 커서, 나머지는 경로(slug)·lastmod_for·available_in?(ja)가 쓴다.
+  ARTICLE_COLUMNS = %i[id slug published_at updated_at summary_key_ja].freeze
+
   class << self
     # Sorbet은 `include`에 상수 리터럴만 허용해 런타임에 만들어지는 라우트 헬퍼
     # 모듈을 직접 넘길 수 없다(srb.help/4002). `send`로 우회한다.
@@ -68,6 +73,7 @@ module SitemapBuilder
       entries = []
       Article.kept
              .confirmed
+             .select(ARTICLE_COLUMNS)
              .find_in_batches(batch_size: 500) do |batch|
         batch.each do |article|
           # 번역이 존재하는 로케일만 등재 대상. 일본어 번역이 없는 기사는
