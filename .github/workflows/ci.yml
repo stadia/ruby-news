@@ -169,6 +169,23 @@ jobs:
           PGGSSENCMODE: disable
         run: bin/rails test
 
+      # db/schema.rb가 커밋돼 있으면 빈 DB의 `db:migrate`는 마이그레이션을 실행하지
+      # 않고 schema.rb를 로드한다(위 Prepare database도 그렇다). 그러면 마이그레이션과
+      # schema.rb가 어긋나도 CI가 알 수 없다. 별도 DB에서 schema.rb 없이 전체
+      # 마이그레이션을 실제로 돌리고, 그 덤프가 커밋된 파일과 같은지 비교한다.
+      #
+      # 실패하면 로컬에서 같은 절차(schema.rb 치우고 새 DB에 db:migrate)로 덤프해 커밋한다.
+      # `!cancelled()`: 테스트가 실패해도 드리프트 여부는 따로 알려 준다.
+      - name: Check db/schema.rb matches migrations
+        if: ${{ !cancelled() }}
+        env:
+          RAILS_ENV: test
+          TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/ra-news_schema_check
+        run: |
+          mv db/schema.rb "$RUNNER_TEMP/schema.committed.rb"
+          bin/rails db:create:primary db:migrate:primary
+          diff -u "$RUNNER_TEMP/schema.committed.rb" db/schema.rb
+
   # 테스트 프로파일링. 결과는 Actions 요약 화면에 바로 뜨고, Vernier
   # 플레임그래프는 아티팩트로 받아 profiler.firefox.com 에 올린다.
   #

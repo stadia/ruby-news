@@ -34,6 +34,10 @@ AI 에이전트를 위한 프로젝트 룰북입니다.
 - 변경을 마무리하기 전에 테스트 여부와 미실행 사유를 명확히 남긴다.
 - **젬을 올리면(`bundle update`, `bundle add`, Gemfile 수정) 같은 커밋에서 `bin/tapioca gem`을 돌린다.** `srb tc`는 `sorbet/rbi/gems`의 파일을 그대로 읽을 뿐 Gemfile.lock과 맞는지 묻지 않아, RBI 드리프트는 로컬에서 전혀 보이지 않다가 CI의 `tapioca gem --verify`에서 터진다. `Gemfile.lock`이 스테이징되면 lefthook의 `tapioca-gem-drift` 훅이 이를 검사한다(검증만 하고 재생성은 하지 않는다).
 - **`bin/tapioca gem`을 돌린 뒤에는 `ruby script/patch_generated_gem_rbis.rb`를 이어서 돌린다.** tapioca는 Ruby 3.2+ 익명 파라미터 포워딩(`def m(*)`, `(**, &)`)에서 `Method#parameters`가 이름을 주지 않아 타입이 빈 sig(`params(_arg1: , _arg2: )`)를 생성하고, `srb tc`가 이를 "Malformed type declaration"으로 거부한다. 이는 tapioca의 한계이지 젬의 결함이 아니므로 **젬 소스를 관용구 이전으로 되돌려 우회하지 않는다.** 도구의 한계는 소비하는 쪽인 이 앱의 RBI 레이어에서 흡수한다. `tapioca gem --verify`는 파일 집합만 검사하므로 이 후처리는 CI를 깨지 않는다. upstream 수정은 [Shopify/tapioca#2687](https://github.com/Shopify/tapioca/pull/2687)(APPROVED, 머지 대기)이며, **이 PR이 머지된 뒤 첫 릴리스에서 스크립트를 통째로 지운다**(최신 v0.19.2가 PR보다 앞서므로 v0.19.3 또는 v0.20.0이 후보). 젬을 올릴 때 스크립트가 "보정할 항목 없음"을 내면 회수 시점이다.
+- **`db/schema.rb`는 커밋 대상이다. 마이그레이션을 추가하면 덤프된 schema.rb를 같은 커밋에 넣는다.** CI의 `Check db/schema.rb matches migrations` 단계가 schema.rb 없이 새 DB에 전체 마이그레이션을 돌린 덤프와 커밋된 파일을 `diff`한다.
+  - schema.rb가 있으면 빈 DB의 `db:migrate`는 마이그레이션을 실행하지 않고 schema.rb를 로드한다. 마이그레이션 자체를 검증하려면 schema.rb를 치우고 새 DB(`db:drop` → `db:create` → `db:migrate`)에서 돌린다.
+  - 컬럼을 추가하는 마이그레이션에 `db:migrate:redo`를 쓰지 않는다. down의 `remove_column`이 *나중* 마이그레이션이 만든 인덱스를 CASCADE로 함께 지우고, 재-up은 컬럼만 복구한다.
+  - 앱 테이블은 `ra_news` 스키마에 있다(`20260330052833_create_ra_news_schema`). schema.rb의 `create_schema ... if_not_exists: true`는 `config/initializers/schema_dumper_create_schema.rb`가 붙인다.
 - 관련 배경 문서가 필요하면 `docs/CLAUDE_WORKFLOW.md`, `docs/postgresql-extensions.md`를 우선 참고한다.
 - 뷰 클래스는 `Views::Base`를, 컴포넌트 클래스는 `Components::Base`를 상속한다.
 - `OperationService`(`Dry::Operation`)의 `call` 메서드에서 `return Failure(:x)`를 직접 반환하면 `Dry::Operation`이 이를 `Success(Failure(:x))`로 감싸버린다. `Failure`를 반환하려면 반드시 `step`을 통해야 한다. guard clause도 `step validate_something(...)` 형태로 호출한다.
