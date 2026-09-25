@@ -61,6 +61,44 @@ class DiscordControllerTest < ActionDispatch::IntegrationTest
     expect_invalid_state_rejection
   end
 
+  test "GET callback rejects when state is empty" do
+    sign_in_as(users(:john))
+    start_discord_install
+
+    refuse_code_exchange do
+      get discord_oauth_callback_path, params: { code: "attacker-code", state: "" }
+    end
+
+    expect_invalid_state_rejection
+  end
+
+  test "GET callback state cannot be reused after one callback" do
+    sign_in_as(users(:john))
+    state = start_discord_install
+
+    DiscordClient.stub(:exchange_code, ->(*) { raise DiscordClient::ApiError, "invalid_code" }) do
+      get discord_oauth_callback_path, params: { code: "first-code", state: }
+    end
+
+    refuse_code_exchange do
+      get discord_oauth_callback_path, params: { code: "attacker-code", state: }
+    end
+
+    expect_invalid_state_rejection
+  end
+
+  test "GET callback rejects Slack install state" do
+    sign_in_as(users(:john))
+    Configs::Slack.stub(:configured?, true) { get "/slack/install" }
+    slack_state = URI.decode_www_form(URI.parse(response.location).query).to_h.fetch("state")
+
+    refuse_code_exchange do
+      get discord_oauth_callback_path, params: { code: "attacker-code", state: slack_state }
+    end
+
+    expect_invalid_state_rejection
+  end
+
   test "GET callback stores oauth webhook and redirects to result page" do
     sign_in_as(users(:john))
 
@@ -121,7 +159,7 @@ class DiscordControllerTest < ActionDispatch::IntegrationTest
 
   # state 검증에 걸리면 토큰 교환까지 가면 안 된다. 호출되면 테스트를 실패시킨다.
   def refuse_code_exchange(&)
-    DiscordClient.stub(:exchange_code, ->(*) { flunk "state 검증 전에 exchange_code가 호출됐습니다" }, &)
+    DiscordClient.stub(:exchange_code, ->(*) { flunk "state 검증에 실패했는데 exchange_code가 호출됐습니다" }, &)
   end
 
   def expect_invalid_state_rejection

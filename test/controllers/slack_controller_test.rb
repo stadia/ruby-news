@@ -58,10 +58,12 @@ class SlackControllerTest < ActionDispatch::IntegrationTest
 
   test "GET callback rejects when state does not match the session" do
     sign_in_as(users(:john))
-    start_slack_install
+    stored_state = start_slack_install
 
-    refuse_code_exchange do
-      get slack_oauth_callback_path, params: { code: "attacker-code", state: "mismatched-state" }
+    expect_oauth_state_warning(:mismatch, secrets: [ stored_state, "mismatched-state" ]) do
+      refuse_code_exchange do
+        get slack_oauth_callback_path, params: { code: "attacker-code", state: "mismatched-state" }
+      end
     end
 
     expect_invalid_state_rejection
@@ -70,8 +72,10 @@ class SlackControllerTest < ActionDispatch::IntegrationTest
   test "GET callback rejects when session has no stored state" do
     sign_in_as(users(:john))
 
-    refuse_code_exchange do
-      get slack_oauth_callback_path, params: { code: "attacker-code", state: "any-state" }
+    expect_oauth_state_warning(:missing_session_state, secrets: [ "any-state" ]) do
+      refuse_code_exchange do
+        get slack_oauth_callback_path, params: { code: "attacker-code", state: "any-state" }
+      end
     end
 
     expect_invalid_state_rejection
@@ -82,6 +86,19 @@ class SlackControllerTest < ActionDispatch::IntegrationTest
 
     refuse_code_exchange do
       get slack_oauth_callback_path, params: { code: "attacker-code", state: "" }
+    end
+
+    expect_invalid_state_rejection
+  end
+
+  test "GET callback logs when request state is missing" do
+    sign_in_as(users(:john))
+    stored_state = start_slack_install
+
+    expect_oauth_state_warning(:missing_param_state, secrets: [ stored_state ]) do
+      refuse_code_exchange do
+        get slack_oauth_callback_path, params: { code: "attacker-code" }
+      end
     end
 
     expect_invalid_state_rejection
@@ -162,7 +179,18 @@ class SlackControllerTest < ActionDispatch::IntegrationTest
 
   # state 검증에 걸리면 토큰 교환까지 가면 안 된다. 호출되면 테스트를 실패시킨다.
   def refuse_code_exchange(&)
-    SlackClient.stub(:exchange_code, ->(*) { flunk "state 검증 전에 exchange_code가 호출됐습니다" }, &)
+    SlackClient.stub(:exchange_code, ->(*) { flunk "state 검증에 실패했는데 exchange_code가 호출됐습니다" }, &)
+  end
+
+  def expect_oauth_state_warning(reason, secrets:)
+    warnings = []
+    SlackController.logger.stub(:warn, ->(message) { warnings << message }) { yield }
+
+    assert_equal 1, warnings.size
+    assert_includes warnings.first, reason.to_s
+    assert_includes warnings.first, "slack_oauth_state"
+    assert_includes warnings.first, "www.example.com"
+    secrets.each { |secret| refute_includes warnings.first, secret }
   end
 
   def expect_invalid_state_rejection
