@@ -150,6 +150,14 @@ jobs:
           TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/ra-news_test
         run: bin/rails db:create db:migrate
 
+      # 빈 DB의 `db:migrate`는 커밋된 schema.rb를 로드하고, 그 버전 이후의 마이그레이션을
+      # 실행한 뒤 schema.rb를 다시 덤프해 워킹트리 파일을 덮어쓴다(test는
+      # dump_schema_after_migration 기본값 true). 커밋본과 달라졌다면 둘 중 하나다.
+      # - schema.rb 갱신 없이 마이그레이션만 추가했다.
+      # - 로드했다가 다시 덤프하면 모양이 바뀐다(왕복 불안정).
+      - name: Check db/schema.rb round-trips
+        run: git diff --exit-code -- db/schema.rb
+
       # RSpec를 먼저 실행해 커버리지를 계측하고, 이어서 Minitest를 실행한다.
       # 두 스텝은 같은 job의 동일한 coverage/ 디렉토리를 공유하므로 결과가 병합되며,
       # Minitest의 at_exit(persist_result!)가 마지막에 돌아 병합된 최종 스냅샷을 저장한다.
@@ -168,6 +176,24 @@ jobs:
           RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           PGGSSENCMODE: disable
         run: bin/rails test
+
+      # 마이그레이션만으로 커밋된 schema.rb를 재현할 수 있는지 본다. schema.rb가 있으면
+      # 빈 DB의 `db:migrate`가 그것을 먼저 로드하므로, 파일을 치우고 별도 DB에서 전체
+      # 마이그레이션을 실제로 돌린다. 워킹트리의 schema.rb는 Prepare database가 이미
+      # 다시 덤프한 파일이라, 비교 기준은 git에서 커밋본을 꺼낸다.
+      #
+      # 실패하면 로컬에서 같은 절차(schema.rb 치우고 새 DB에 db:migrate)로 덤프해 커밋한다.
+      # `!cancelled()`: 테스트가 실패해도 드리프트 여부는 따로 알려 준다.
+      - name: Check db/schema.rb matches migrations
+        if: ${{ !cancelled() }}
+        env:
+          RAILS_ENV: test
+          TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/ra-news_schema_check
+        run: |
+          git show HEAD:db/schema.rb > "$RUNNER_TEMP/schema.committed.rb"
+          rm db/schema.rb
+          bin/rails db:create:primary db:migrate:primary
+          diff -u "$RUNNER_TEMP/schema.committed.rb" db/schema.rb
 
   # 테스트 프로파일링. 결과는 Actions 요약 화면에 바로 뜨고, Vernier
   # 플레임그래프는 아티팩트로 받아 profiler.firefox.com 에 올린다.

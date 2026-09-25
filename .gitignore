@@ -33,7 +33,6 @@
 # Ignore master key for decrypting credentials and more.
 /config/master.key
 .idea
-# db/schema.rb
 
 /app/assets/builds/*
 !/app/assets/builds/.keep
@@ -41,7 +40,6 @@
 node_modules
 .yarn
 public/sitemap.xml.gz
-db/schema.rb
 
 # ClaudeOnRails
 .claude-on-rails/sessions/
