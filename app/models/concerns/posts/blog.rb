@@ -21,7 +21,13 @@ module Posts
     def publish!
       self.published_at ||= Time.current
       self.status = :published
-      save!
+      # 상위 트랜잭션에서도 unique 위반 뒤 복구할 수 있도록 savepoint를 만든다.
+      Post.transaction(requires_new: true) { save! }
+    rescue ActiveRecord::RecordNotUnique => error
+      raise unless error.message.include?('"index_posts_on_slug"')
+
+      self.slug = nil
+      Post.transaction(requires_new: true) { save! }
     end
 
     #: () -> bool

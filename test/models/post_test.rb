@@ -679,6 +679,7 @@ class PostTest < ActiveSupport::TestCase
 
   test "to_activitypub_object는 장문을 요약과 제목과 원문 링크로 전달한다" do
     post = posts(:blog_published)
+    post.update_column(:slug, "한글-제목")
 
     # Pinned to `nil` by the initial assignment otherwise, which rejects the
     # assignment made inside the block below.
@@ -691,7 +692,7 @@ class PostTest < ActiveSupport::TestCase
     assert_includes captured[:content], post.blog_summary
     assert_includes captured[:content], post.public_url
     assert_equal post.title, captured[:name]
-    assert_equal Rails.application.routes.url_helpers.user_profile_blog_post_url(username: post.user.username, slug: post), captured[:custom]["url"]
+    assert_equal "#{Rails.application.routes.default_url_options[:protocol] || "http"}://#{Rails.application.routes.default_url_options[:host]}/@#{post.user.username}/blog/#{ERB::Util.url_encode("한글-제목")}", captured[:custom]["url"]
   end
 
   test "to_activitypub_object의 실제 발행 Note에 장문 제목이 채워진다" do
@@ -708,7 +709,7 @@ class PostTest < ActiveSupport::TestCase
 
     assert_equal post.title, note["name"]
     assert_equal "<p>#{post.blog_summary}</p><p><a href=\"#{post.public_url}\">#{post.public_url}</a></p>", note["content"]
-    assert_equal Rails.application.routes.url_helpers.user_profile_blog_post_url(username: post.user.username, slug: post), note["url"]
+    assert_equal "#{Rails.application.routes.default_url_options[:protocol] || "http"}://#{Rails.application.routes.default_url_options[:host]}/@#{post.user.username}/blog/#{ERB::Util.url_encode("실제-발행-장문")}", note["url"]
   end
 
   test "to_activitypub_object는 장문 요약의 HTML 특수문자를 이스케이프한다" do
@@ -855,7 +856,7 @@ class PostTest < ActiveSupport::TestCase
   test "초안 블로그 글은 무작위 slug를 쓴다" do
     draft = @user.posts.create!(post_type: :blog, status: :draft, title: "루비 입문", body: "<p>본문</p>")
 
-    assert_equal 22, draft.slug.length
+    assert_match(/\A[a-z0-9_-]+\z/, draft.slug)
     assert_not_equal "루비-입문", draft.slug
   end
 
@@ -934,7 +935,7 @@ class PostTest < ActiveSupport::TestCase
 
     post.publish!
 
-    assert_equal 22, post.reload.slug.length
+    assert_match(/\A[a-z0-9_-]+\z/, post.reload.slug)
   end
 
   test "발행 검증이 실패하면 slug를 저장된 값으로 되돌린다" do
@@ -948,7 +949,7 @@ class PostTest < ActiveSupport::TestCase
   test "단문 포스트는 무작위 slug를 유지한다" do
     post = @user.posts.create!(body: "단문 포스트", title: "제목이 있는 단문")
 
-    assert_equal 22, post.slug.length
+    assert_match(/\A[a-z0-9_-]+\z/, post.slug)
   end
 
   test "posts.slug 컬럼은 길이 제한 없는 text이고 길이는 BlogSlug가 정한다" do
@@ -966,6 +967,71 @@ class PostTest < ActiveSupport::TestCase
 
     assert_raises(ActiveRecord::RecordNotUnique) do
       @reply_post.update_column(:slug, "중복-slug")
+    end
+  end
+  test "발행 검증에서 만든 접미사는 저장 때도 유지한다" do
+    @root_post.update_column(:slug, "같은-제목")
+    post = @user.posts.new(post_type: :blog, title: "같은 제목", body: "<p>본문</p>")
+    post.valid?
+    validated_slug = post.slug
+
+    post.save!
+
+    assert_equal validated_slug, post.reload.slug
+  end
+
+  test "예약어 제목도 접미사로 발행할 수 있다" do
+    post = @user.posts.new(post_type: :blog, title: "admin", body: "<p>본문</p>")
+    post.publish!
+
+    assert_match(/\Aadmin-[a-z0-9]{8}\z/, post.reload.slug)
+  end
+
+  test "slug 인덱스 충돌은 한 번만 재시도한다" do
+    @root_post.update_column(:slug, "이미-사용-중")
+    post = @user.posts.new(post_type: :blog, title: "동시 발행", body: "<p>본문</p>")
+    attempts = 0
+    save = post.method(:save!)
+    post.stub(:save!, -> {
+      attempts += 1
+      if attempts == 1
+        @reply_post.update_column(:slug, @root_post.slug)
+      end
+      save.call
+    }) { post.publish! }
+
+    assert_equal 2, attempts
+    assert_equal "동시-발행", post.reload.slug
+  end
+
+  test "재시도 충돌과 다른 인덱스 충돌은 전파한다" do
+    [ "index_posts_on_slug", "other_unique_index" ].each do |index|
+      post = @user.posts.new(post_type: :blog, title: "충돌", body: "<p>본문</p>")
+      attempts = 0
+
+      post.stub(:save!, -> {
+        attempts += 1
+        raise ActiveRecord::RecordNotUnique, %(duplicate key violates unique constraint "#{index}")
+      }) do
+        assert_raises(ActiveRecord::RecordNotUnique) { post.publish! }
+      end
+      assert_equal(index == "index_posts_on_slug" ? 2 : 1, attempts)
+    end
+  end
+
+  test "기본 후보와 접미사 후보가 모두 사용되면 UUID 폴백도 길이 제한을 지킨다" do
+    title = "가" * BlogSlug::BASE_MAX_LENGTH
+    SecureRandom.stub(:alphanumeric, "abcdefgh") do
+      posts = 3.times.map do
+        post = @user.posts.new(post_type: :blog, title: title, body: "<p>본문</p>")
+        post.publish!
+        post
+      end
+
+      assert_equal title, posts.first.slug
+      assert_equal "#{title}-abcdefgh", posts.second.slug
+      assert_match(/\A가+-[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\z/, posts.third.slug)
+      assert_operator posts.third.slug.length, :<=, BlogSlug::MAX_LENGTH
     end
   end
 end

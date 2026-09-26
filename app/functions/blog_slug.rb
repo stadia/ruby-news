@@ -13,7 +13,7 @@ module BlogSlug
   BASE_MAX_LENGTH = 80
   # 같은 slug가 이미 있을 때 붙이는 무작위 접미사 길이.
   SUFFIX_LENGTH = 8
-  # slug 전체 최대 길이(제목 부분 + "-" + 접미사). 컬럼은 text라 이 값이 상한이다.
+  # slug 전체 최대 길이(제목 부분 + "-" + 접미사). FriendlyId의 생성 제한이며 text 컬럼과 모델 검증은 길이를 제한하지 않는다.
   MAX_LENGTH = BASE_MAX_LENGTH + 1 + SUFFIX_LENGTH
 
   class << self
@@ -21,7 +21,8 @@ module BlogSlug
     #: (String? title) -> String
     def normalize(title)
       title.to_s.unicode_normalize(:nfc).downcase
-        .gsub(/[^\p{L}\p{M}\p{N}]+/, "-")
+        .gsub(/(?:[\p{L}\p{N}]\p{M}*)|./m) { |part| part.match?(/\A[\p{L}\p{N}]/) ? part : "-" }
+        .gsub(/-+/, "-")
         .delete_prefix("-")[0, BASE_MAX_LENGTH].to_s
         .delete_suffix("-")
     end

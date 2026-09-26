@@ -128,7 +128,10 @@ class BlogPostsControllerTest < ActionDispatch::IntegrationTest
     published = Post.blog.published.order(:id).last
 
     assert_equal "제목", published.slug
-    assert_redirected_to user_profile_blog_post_url(username: published.user.username, slug: published)
+    assert_redirected_to "http://example.com/@#{published.user.username}/blog/#{ERB::Util.url_encode("제목")}"
+    follow_redirect!
+
+    assert_response :success
   end
 
   test "publishing a new draft without a title re-renders the editor" do
@@ -446,6 +449,24 @@ class BlogPostsControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, I18n.t("profiles.blog_list.trash_empty")
   end
 
+  test "한글 slug로 발행한 글의 관리 경로에서 편집 수정 삭제할 수 있다" do
+    sign_in @user
+    @draft.update!(title: "한글 관리", body: "<p>본문</p>")
+    @draft.publish!
+    path = "/blog_posts/#{ERB::Util.url_encode("한글-관리")}"
+
+    get "#{path}/edit"
+
+    assert_response :success
+    patch path, params: { post: { title: "수정 제목" } }
+
+    assert_response :redirect
+    assert_equal "한글-관리", @draft.reload.slug
+    delete path
+
+    assert_response :redirect
+    assert_predicate @draft.reload, :discarded?
+  end
   private
 
   # test.rb pins the cache to :null_store, so any code under test that relies on

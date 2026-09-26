@@ -43,4 +43,10 @@ class BlogSlugTest < ActiveSupport::TestCase
     assert_match(/\A가+-[0-9a-z]{#{BlogSlug::SUFFIX_LENGTH}}\z/o, candidate)
     assert_operator candidate.length, :<=, BlogSlug::MAX_LENGTH
   end
+  test "고립된 결합 문자와 이모지 variation selector를 제거한다" do
+    assert_equal "", BlogSlug.normalize("❤️ ☕️ ✈️")
+    assert_equal "ruby", BlogSlug.normalize("Ruby ❤️")
+    assert_equal "é", BlogSlug.normalize("e\u0301")
+    assert_equal "", BlogSlug.normalize("\u0301")
+  end
 end
