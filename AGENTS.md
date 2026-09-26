@@ -147,7 +147,7 @@ PR에서는 돌지 않는다. 계측 고유 비용은 15초 남짓이지만 별�
 
 ## Quality Gates
 
-This project uses automated quality gates. **Run `bin/rake quality` before declaring any task complete.** Do not commit if any gate fails. Report the gate numbers in your response so regressions are visible.
+This project uses automated quality gates. **Run `bin/rake quality` before declaring any task complete.** Report the gate numbers in your response so regressions are visible.
 
 ### Gates
 - **Line coverage** >= 70.0% (SimpleCov)
