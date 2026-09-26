@@ -77,6 +77,13 @@ class Post
   end
 end
 
+# `friendly_id ..., use: :slugged`는 런타임에 FriendlyId::Slugged를 include한다.
+# Post는 normalize_friendly_id를 재정의해 super를 부르므로 그 include 엣지만
+# 선언한다. 메서드 본체는 `friendly_id@5.7.0.rbi`에 있다.
+class Post
+  include FriendlyId::Slugged
+end
+
 # `devise` 매크로는 런타임에 모듈을 mixin하므로, 생성된 User RBI에는 그
 # include 엣지가 없다. 메서드 본체는 `devise@5.0.4.rbi`에 이미 있으므로
 # 손으로 재선언하지 않고 include/extend만 선언한다. Confirmable 전체를

@@ -127,7 +127,11 @@ class BlogPostsControllerTest < ActionDispatch::IntegrationTest
 
     published = Post.blog.published.order(:id).last
 
-    assert_redirected_to user_profile_blog_post_url(username: published.user.username, slug: published)
+    assert_equal "제목", published.slug
+    assert_redirected_to "http://example.com/@#{published.user.username}/blog/#{ERB::Util.url_encode("제목")}"
+    follow_redirect!
+
+    assert_response :success
   end
 
   test "publishing a new draft without a title re-renders the editor" do
@@ -198,9 +202,36 @@ class BlogPostsControllerTest < ActionDispatch::IntegrationTest
     @draft.update!(title: "발행 제목", body: "<p>발행 본문</p>")
     patch publish_blog_post_url(@draft)
 
-    assert_redirected_to user_profile_blog_post_url(username: @draft.user.username, slug: @draft)
     assert_predicate @draft.reload, :published?
+    assert_equal "발행-제목", @draft.slug
+    assert_redirected_to user_profile_blog_post_url(username: @draft.user.username, slug: @draft)
     assert_not_nil @draft.published_at
+  end
+
+  test "autosaved draft publishes under a slug from the title at publish time" do
+    sign_in @user
+    post blog_posts_url, params: { post: { title: "처음 제목", body: "<p>본문</p>" } }, as: :json
+    draft = Post.blog.draft.order(:id).last
+    patch blog_post_url(draft, format: :json), params: { post: { title: "바뀐 제목 & 발행" } }, as: :json
+
+    patch publish_blog_post_url(draft)
+
+    assert_equal "바뀐-제목-발행", draft.reload.slug
+    assert_redirected_to user_profile_blog_post_url(username: @user.username, slug: "바뀐-제목-발행")
+    follow_redirect!
+
+    assert_response :success
+  end
+
+  test "failed publish keeps the editor pointed at the saved draft slug" do
+    sign_in @user
+    @draft.update!(title: "", body: "<p>본문</p>")
+
+    patch publish_blog_post_url(@draft), params: { post: { title: "" } }
+
+    assert_response :unprocessable_entity
+    assert_select "form[action='#{blog_post_path(@draft)}']"
+    assert_equal "lf-draft-fixture", @draft.reload.slug
   end
 
   test "does not publish incomplete draft" do
@@ -218,8 +249,9 @@ class BlogPostsControllerTest < ActionDispatch::IntegrationTest
       post: { title: "수정된 제목", body: "<p>수정된 본문</p>" }
     }
 
-    assert_redirected_to user_profile_blog_post_url(username: @published.user.username, slug: @published)
+    assert_redirected_to user_profile_blog_post_url(username: @published.user.username, slug: "lf-published-fixture")
     assert_equal "수정된 제목", @published.reload.title
+    assert_equal "lf-published-fixture", @published.slug
   end
 
   test "requires authentication to delete" do
@@ -415,6 +447,35 @@ class BlogPostsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_includes response.body, I18n.t("profiles.blog_list.trash_empty")
+  end
+
+  test "한글 slug로 발행한 글의 관리 경로에서 편집 수정 삭제할 수 있다" do
+    sign_in @user
+    @draft.update!(title: "한글 관리", body: "<p>본문</p>")
+    @draft.publish!
+    path = "/blog_posts/#{ERB::Util.url_encode("한글-관리")}"
+
+    get "#{path}/edit"
+
+    assert_response :success
+    patch path, params: { post: { title: "수정 제목" } }
+
+    assert_response :redirect
+    assert_equal "한글-관리", @draft.reload.slug
+    delete path
+
+    assert_response :redirect
+    assert_predicate @draft.reload, :discarded?
+  end
+
+  test "관리 경로도 대소문자·NFD가 다른 slug로 글을 찾는다" do
+    sign_in @user
+    @draft.update!(title: "Ruby 관리", body: "<p>본문</p>")
+    @draft.publish!
+
+    get "/blog_posts/#{ERB::Util.url_encode("RUBY-관리".unicode_normalize(:nfd))}/edit"
+
+    assert_response :success
   end
 
   private

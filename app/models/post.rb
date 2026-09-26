@@ -8,7 +8,12 @@ class Post < ApplicationRecord
 
   # ── Extend ───────────────────────────────────────────────────────────
   extend FriendlyId
-  friendly_id :random_slug, use: :slugged
+  # 블로그 글은 발행 순간 제목에서 slug를 만들고(#1012), 나머지는 무작위 slug를 쓴다.
+  # 숫자 slug는 friendly.find에서 같은 숫자의 다른 글 id를 가리므로 접미사를 붙인다.
+  friendly_id :slug_candidates, use: :slugged,
+                                slug_limit: BlogSlug::MAX_LENGTH,
+                                treat_numeric_as_conflict: true,
+                                treat_reserved_as_conflict: true
 
   # ── Includes ─────────────────────────────────────────────────────────
   include HtmlSanitizable
@@ -59,6 +64,7 @@ class Post < ApplicationRecord
 
   # ── Callbacks ────────────────────────────────────────────────────────
   before_validation :type_article_post_as_comment, on: :create
+  after_validation :restore_slug_if_invalid
   after_commit :enqueue_reply_notification, on: :create
   after_commit :enqueue_article_thumbnail, on: :create
 
@@ -136,6 +142,13 @@ class Post < ApplicationRecord
     return if user_id.present?
     return if fedipub_actor.nil? || fedipub_actor&.server.blank?
     "(#{fedipub_actor&.server})"
+  end
+
+  # FriendlyId::Candidates가 호출하므로 public이다.
+  # 후보는 slug_candidates에서 이미 정규화했다. 기본 parameterize는 한글을 지운다.
+  #: (untyped value) -> String
+  def normalize_friendly_id(value)
+    publishing_blog? ? value.to_s : super
   end
 
   # ── Private Instance Methods ─────────────────────────────────────────
@@ -246,12 +259,40 @@ class Post < ApplicationRecord
     end
   end
 
+  # 발행된 글의 slug는 제목을 바꿔도 유지한다. 공유된 링크가 예고 없이 깨지지 않도록
+  # 발행 취소 기능이 없으므로 초안의 임시 slug만 최초 발행 순간 교체한다.
   def should_generate_new_friendly_id?
-    slug.blank?
+    slug.blank? || (publishing_blog? && !slug_changed?)
+  end
+
+  #: () -> bool
+  def publishing_blog?
+    published_blog? && (new_record? || status_changed?)
+  end
+
+  #: () -> Array[String]
+  def slug_candidates
+    return [ random_slug ] unless publishing_blog?
+
+    base = BlogSlug.normalize(title)
+    return [ random_slug ] if base.empty?
+
+    [ base, BlogSlug.with_suffix(base) ]
+  end
+
+  # 발행 검증이 실패하면 set_slug가 바꿔 둔 slug를 저장된 값으로 되돌린다. 그대로 두면
+  # 다시 그린 편집 화면의 폼이 저장되지 않은 slug로 향해 404가 난다. 새 글은 저장된
+  # 값이 없으므로 nil로 비워, 제목을 고쳐 다시 저장할 때 slug를 새로 만들게 한다.
+  # FriendlyId는 slug 자체의 오류만 복원하므로 본문·제목 오류도 여기서 복원한다.
+  #: () -> void
+  def restore_slug_if_invalid
+    return if errors.empty? || !slug_changed?
+
+    self.slug = slug_in_database
   end
 
   #: () -> String
   def random_slug
-    SecureRandom.urlsafe_base64(16)
+    SecureRandom.urlsafe_base64(16).downcase
   end
 end

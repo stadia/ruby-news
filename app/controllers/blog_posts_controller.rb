@@ -175,7 +175,7 @@ class BlogPostsController < ApplicationController
   def set_post
     scope = Post.blog
     scope = scope.kept unless %w[undiscard destroy_permanently].include?(action_name)
-    @post = scope.find_by!(slug: params[:id])
+    @post = scope.find_by!(slug: BlogSlug.lookup_key(params[:id]))
   end
 
   # 가드를 끄는 대신 지원 포맷만 넓힌다. `skip_before_action`으로 껐다면

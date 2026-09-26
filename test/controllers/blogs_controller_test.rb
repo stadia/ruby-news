@@ -75,4 +75,44 @@ class BlogsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+
+  test "serves a newly published post under its percent-encoded Korean title slug" do
+    post = users(:john).posts.new(post_type: :blog, title: "한글 제목, 그리고 Rails!", body: "<p>본문</p>")
+    post.publish!
+
+    get "/@#{post.user.username}/blog/#{ERB::Util.url_encode('한글-제목-그리고-rails')}"
+
+    assert_response :success
+    assert_includes response.body, "한글 제목, 그리고 Rails!"
+  end
+
+  test "keeps serving a post at its original slug after the title changes" do
+    post = users(:john).posts.new(post_type: :blog, title: "원래 제목", body: "<p>본문</p>")
+    post.publish!
+    post.update!(title: "수정한 제목")
+
+    get user_profile_blog_post_url(username: post.user.username, slug: "원래-제목")
+
+    assert_response :success
+  end
+
+  test "redirects a differently cased slug to the canonical URL" do
+    post = users(:john).posts.new(post_type: :blog, title: "Ruby 소식", body: "<p>본문</p>")
+    post.publish!
+
+    get "/@#{post.user.username}/blog/#{ERB::Util.url_encode('RUBY-소식')}"
+
+    assert_response :moved_permanently
+    assert_redirected_to "http://www.example.com/@#{post.user.username}/blog/#{ERB::Util.url_encode('ruby-소식')}"
+  end
+
+  test "redirects an NFD-encoded Korean slug to the canonical NFC URL" do
+    post = users(:john).posts.new(post_type: :blog, title: "한글 소식", body: "<p>본문</p>")
+    post.publish!
+
+    get "/@#{post.user.username}/blog/#{ERB::Util.url_encode('한글-소식'.unicode_normalize(:nfd))}"
+
+    assert_response :moved_permanently
+    assert_redirected_to "http://www.example.com/@#{post.user.username}/blog/#{ERB::Util.url_encode('한글-소식')}"
+  end
 end

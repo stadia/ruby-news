@@ -124,6 +124,13 @@ class ArticleTest < ActiveSupport::TestCase
     assert_includes article.errors[:slug], "이미 존재하는 값입니다"
   end
 
+  test "articles.slug 컬럼은 길이 제한 없는 text다" do
+    column = Article.columns_hash["slug"]
+
+    assert_equal :text, column.type
+    assert_nil column.limit
+  end
+
   test "빈 slug를 허용해야 한다" do
     article = Article.new(
       title: "Test Article",
