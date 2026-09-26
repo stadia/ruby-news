@@ -317,6 +317,8 @@ en:
     show:
       back_to_feed: Back to feed
       title: Post | Ruby-News
+      reply_body: Reply content
+      sign_in_to_reply: Sign in to reply
   profiles:
     activity_tabs:
       boosts: Boosts

@@ -13,13 +13,22 @@ module PostViewing
   private
 
   # Renders the reading page for +post+, or 404s if it is not viewable.
-  def render_post_show(post)
-    raise ActiveRecord::RecordNotFound unless viewable?(post)
-    @posts = build_thread(post.root)
+  def render_post_show(post, reply_post: nil, status: :ok)
+    root = post.root
+    raise ActiveRecord::RecordNotFound unless viewable?(post) && viewable?(root)
+    @posts = build_thread(root)
     @liked_post_ids = current_user ? Like.liked_ids_for(liker: current_user, likeable_type: "Post", likeable_ids: @posts.map(&:id)) : []
     @boosted_post_ids = current_user ? Boost.boosted_ids_for(booster: current_user, boostable_type: "Post", boostable_ids: @posts.map(&:id)) : []
     assign_blog_meta_tags(post) if post.blog?
-    render Views::Posts::Show.new(posts: @posts, liked_post_ids: @liked_post_ids, boosted_post_ids: @boosted_post_ids)
+    render Views::Posts::Show.new(posts: @posts, liked_post_ids: @liked_post_ids, boosted_post_ids: @boosted_post_ids, reply_post: reply_post), status: status
+  end
+
+  # 상세 댓글은 공개된 동일 스레드에만 작성할 수 있다.
+  def published_thread_root(post)
+    root = post.root
+    raise ActiveRecord::RecordNotFound unless root.kept? && root.published?
+
+    root
   end
 
   # 원격 인스턴스(마스토돈 등)는 발행된 Note의 링크를 크롤링해 프리뷰 카드를
@@ -60,7 +69,7 @@ module PostViewing
     ids = [ root.id ] #: Array[Integer]
     queue = [ root.id ] #: Array[Integer]
     while queue.any?
-      children = Post.kept.where(parent_id: queue).pluck(:id) #: Array[Integer]
+      children = Post.visible.where(parent_id: queue).pluck(:id) #: Array[Integer]
       ids.concat(children)
       queue = children
     end

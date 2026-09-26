@@ -317,6 +317,8 @@ ko:
     show:
       back_to_feed: 피드로 돌아가기
       title: 포스트 | Ruby-News
+      reply_body: 댓글 내용
+      sign_in_to_reply: 로그인하고 댓글 쓰기
   profiles:
     activity_tabs:
       boosts: 부스트

@@ -6,6 +6,7 @@ class PostsController < ApplicationController
   include RateLimiting
   include PostViewing
 
+  skip_before_action :authenticate_user!, only: [ :show ]
   before_action :authenticate_user!, only: [ :create, :destroy ]
   # 인증 뒤에 포맷을 본다. 위 `before_action`이 전역 `authenticate_user!`를
   # 다시 등록해 체인 끝으로 옮기므로, concern을 먼저 include하면 미인증 JSON
@@ -84,6 +85,8 @@ class PostsController < ApplicationController
     @post.status = :published
     @post.published_at ||= Time.current
 
+    return create_detail_reply if params[:return_to_post].present?
+
     respond_to do |format|
       if @post.save
         format.turbo_stream { render Views::Posts::CreateTurboStream.new(post: @post) }
@@ -93,6 +96,33 @@ class PostsController < ApplicationController
         format.html { redirect_to feed_path, alert: "포스트 작성에 실패했습니다." }
       end
     end
+  end
+
+  def create_detail_reply
+    parent = Post.visible.find(@post.parent_id)
+    root = published_thread_root(parent)
+    raise ActiveRecord::RecordNotFound unless root.id.to_s == params[:return_to_post].to_s
+
+    if save_detail_reply
+      destination = root.blog? ? user_profile_blog_post_path(username: root.user.username, slug: root) : post_path(root)
+      redirect_to destination, status: :see_other
+    else
+      render_post_show(root, reply_post: @post, status: :unprocessable_entity)
+    end
+  end
+
+  def save_detail_reply
+    if blank_reply_body?(@post.body)
+      @post.errors.add(:body, :blank)
+      return false
+    end
+
+    @post.save
+  end
+
+  def blank_reply_body?(body)
+    fragment = Nokogiri::HTML5.fragment(body.to_s)
+    fragment.text.tr("\u00a0", " ").blank? && fragment.at_css("img[src]").nil?
   end
 
   def set_article
@@ -123,7 +153,7 @@ class PostsController < ApplicationController
   end
 
   def reply_body_with_mention(body:, parent_id:)
-    return body if parent_id.blank?
+    return body if parent_id.blank? || blank_reply_body?(body)
 
     parent = Post.includes(:user, :fedipub_actor).find_by(id: parent_id)
     actor = parent&.user&.fedipub_actor || parent&.fedipub_actor

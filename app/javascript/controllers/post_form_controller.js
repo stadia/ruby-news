@@ -3,6 +3,7 @@ import { resetFormWithCounter } from "utils/form_helpers"
 
 // Connects to data-controller="post-form"
 export default class extends Controller {
+  static values = { defaultParentId: Number, defaultAuthorName: String, defaultBodyPreview: String }
   static targets = ["parentId", "replyBanner", "replyLabel", "replyPreview", "body"]
 
   connect() {
@@ -54,10 +55,10 @@ export default class extends Controller {
   }
 
   clearReplyState() {
-    if (this.hasParentIdTarget) this.parentIdTarget.value = ""
-    if (this.hasReplyLabelTarget) this.replyLabelTarget.textContent = ""
-    if (this.hasReplyPreviewTarget) this.replyPreviewTarget.textContent = ""
-    this.hideReplyBanner()
+    if (this.hasParentIdTarget) this.parentIdTarget.value = this.defaultParentIdValue || ""
+    if (this.hasReplyLabelTarget) this.replyLabelTarget.textContent = this.defaultAuthorNameValue || ""
+    if (this.hasReplyPreviewTarget) this.replyPreviewTarget.textContent = this.defaultBodyPreviewValue || ""
+    this.syncReplyState()
   }
 
   showReplyBanner() {

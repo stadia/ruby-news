@@ -317,6 +317,8 @@ ja:
     show:
       back_to_feed: フィードに戻る
       title: ポスト | Ruby-News
+      reply_body: 返信内容
+      sign_in_to_reply: ログインして返信する
   profiles:
     activity_tabs:
       boosts: ブースト

@@ -8,7 +8,8 @@ class Views::Posts::Show < Views::Base
   include Phlex::Rails::Helpers::Sanitize
   include PhlexIcons
 
-  def initialize(posts:, liked_post_ids: [], boosted_post_ids: [])
+  def initialize(posts:, liked_post_ids: [], boosted_post_ids: [], reply_post: nil)
+    @reply_post = reply_post
     @posts = posts
     @liked_post_ids = liked_post_ids
     @boosted_post_ids = boosted_post_ids
@@ -62,6 +63,8 @@ class Views::Posts::Show < Views::Base
       )
     end
 
+    detail_reply_form(root) if root.published?
+
     # 답글 영역
     replies = @posts[1..] || []
     div(id: "replies_#{root.id}", class: "space-y-4") do
@@ -89,7 +92,27 @@ class Views::Posts::Show < Views::Base
       div(class: "post-content prose prose-lg dark:prose-invert max-w-none text-content wrap-break-word") do
         raw sanitize(root.body.to_s, scrubber: BlogBody::SCRUBBER)
       end
+      blog_reactions(root) if root.published?
       owner_controls(root)
+    end
+  end
+
+  def blog_reactions(root)
+    div(class: "flex items-center gap-4 text-sm text-content-muted") do
+      render Components::Likes::Button.new(likeable: root, liked: @liked_post_ids.include?(root.id))
+      render Components::Boosts::Button.new(boostable: root, boosted: @boosted_post_ids.include?(root.id))
+    end
+  end
+
+  def detail_reply_form(root)
+    if view_context.current_user
+      render Components::Posts::PostForm.new(
+        post: @reply_post || Post.new(parent_id: root.id),
+        thread_post: root
+      )
+    else
+      link_to t("posts.show.sign_in_to_reply"), new_user_session_path,
+        class: "text-sm text-link hover:text-link-hover hover:underline"
     end
   end
 
