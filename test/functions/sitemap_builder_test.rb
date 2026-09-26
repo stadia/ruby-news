@@ -181,7 +181,7 @@ class SitemapBuilderTest < ActiveSupport::TestCase
 
   test "collect_blog_entries가 만든 모든 경로는 blogs#show로 라우팅된다" do
     blog = posts(:blog_published)
-    blog.update_columns(slug: "Railsの設計-입문")
+    blog.update_columns(slug: "railsの設計-입문")
     blog.user.update!(username: "new.author")
     [ "a?b", "100%", "c+d#e" ].each { |slug| create_blog(slug:, user: users(:jane)) }
     entries = SitemapBuilder.collect_blog_entries
@@ -281,7 +281,7 @@ end
 class SitemapBlogUrlTest < ActionDispatch::IntegrationTest
   test "사이트맵이 생성한 다국어 블로그 경로는 비회원에게 공개된다" do
     blog = posts(:blog_published)
-    blog.update_columns(slug: "Rails-레이어-설계")
+    blog.update_columns(slug: "rails-레이어-설계")
     path = Rails.application.routes.url_helpers.user_profile_blog_post_path(username: blog.user.username, slug: blog.slug)
 
     assert_includes SitemapBuilder.collect_blog_entries.map(&:path), path
