@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_25_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_26_000000) do
   create_schema "ra_news", if_not_exists: true
 
   # These are extensions that must be enabled in order to support this database
@@ -314,7 +314,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_000000) do
     t.datetime "updated_at", null: false
     t.string "url", limit: 255
     t.bigint "user_id"
-    t.string "slug", limit: 22
+    t.string "slug", limit: 89
     t.integer "boosters_count", default: 0, null: false
     t.integer "post_type", default: 0, null: false
     t.integer "status", default: 1, null: false

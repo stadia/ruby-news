@@ -849,4 +849,122 @@ class PostTest < ActiveSupport::TestCase
 
     assert_not Post.exists?(post.id)
   end
+
+  # ========== Blog Slug Tests (#1012) ==========
+
+  test "초안 블로그 글은 무작위 slug를 쓴다" do
+    draft = @user.posts.create!(post_type: :blog, status: :draft, title: "루비 입문", body: "<p>본문</p>")
+
+    assert_equal 22, draft.slug.length
+    assert_not_equal "루비-입문", draft.slug
+  end
+
+  test "초안을 발행하면 발행 시점의 제목으로 slug를 만든다" do
+    draft = @user.posts.create!(post_type: :blog, status: :draft, title: "첫 제목", body: "<p>본문</p>")
+    draft.update!(title: "레일즈 8 — 새 기능!")
+
+    draft.publish!
+
+    assert_equal "레일즈-8-새-기능", draft.reload.slug
+  end
+
+  test "초안 없이 바로 발행해도 제목으로 slug를 만든다" do
+    post = @user.posts.new(post_type: :blog, title: "바로 발행", body: "<p>본문</p>")
+
+    post.publish!
+
+    assert_equal "바로-발행", post.reload.slug
+  end
+
+  test "발행된 글의 제목을 바꿔도 slug는 그대로다" do
+    post = @user.posts.new(post_type: :blog, title: "원래 제목", body: "<p>본문</p>")
+    post.publish!
+
+    post.update!(title: "바뀐 제목")
+
+    assert_equal "원래-제목", post.reload.slug
+  end
+
+  test "기존 무작위 slug로 발행된 글은 제목을 바꿔도 slug가 유지된다" do
+    post = posts(:blog_published)
+
+    post.update!(title: "새 제목")
+
+    assert_equal "lf-published-fixture", post.reload.slug
+  end
+
+  test "같은 제목·정규화 결과가 같은 제목은 접미사로 slug를 구분한다" do
+    first = @user.posts.new(post_type: :blog, title: "Ruby 소식", body: "<p>본문</p>")
+    first.publish!
+    second = @user.posts.new(post_type: :blog, title: "ruby  소식!!", body: "<p>본문</p>")
+    second.publish!
+
+    assert_equal "ruby-소식", first.slug
+    assert_match(/\Aruby-소식-[0-9a-z]{#{BlogSlug::SUFFIX_LENGTH}}\z/o, second.reload.slug)
+  end
+
+  test "다른 종류의 Post가 쓰는 slug와도 겹치지 않는다" do
+    @root_post.update_column(:slug, "겹치는-제목")
+    post = @user.posts.new(post_type: :blog, title: "겹치는 제목", body: "<p>본문</p>")
+
+    post.publish!
+
+    assert_not_equal "겹치는-제목", post.reload.slug
+    assert post.slug.start_with?("겹치는-제목-")
+  end
+
+  test "숫자만 있는 제목은 id 조회와 헷갈리지 않도록 접미사를 붙인다" do
+    post = @user.posts.new(post_type: :blog, title: "2026", body: "<p>본문</p>")
+
+    post.publish!
+
+    assert_match(/\A2026-[0-9a-z]+\z/, post.reload.slug)
+  end
+
+  test "긴 제목도 slug 길이 제한 안에서 저장된다" do
+    post = @user.posts.new(post_type: :blog, title: "가" * 255, body: "<p>본문</p>")
+
+    post.publish!
+
+    assert_equal "가" * BlogSlug::BASE_MAX_LENGTH, post.reload.slug
+  end
+
+  test "특수문자만 있는 제목은 무작위 slug로 대체한다" do
+    post = @user.posts.new(post_type: :blog, title: "!!! ??? 🎉", body: "<p>본문</p>")
+
+    post.publish!
+
+    assert_equal 22, post.reload.slug.length
+  end
+
+  test "발행 검증이 실패하면 slug를 저장된 값으로 되돌린다" do
+    draft = posts(:blog_draft)
+    draft.title = ""
+
+    assert_raises(ActiveRecord::RecordInvalid) { draft.publish! }
+    assert_equal "lf-draft-fixture", draft.slug
+  end
+
+  test "단문 포스트는 무작위 slug를 유지한다" do
+    post = @user.posts.create!(body: "단문 포스트", title: "제목이 있는 단문")
+
+    assert_equal 22, post.slug.length
+  end
+
+  test "posts.slug 컬럼은 접미사가 붙은 최대 길이 slug를 담을 수 있다" do
+    column = Post.columns_hash["slug"]
+
+    assert_equal BlogSlug::MAX_LENGTH, column.limit
+    assert_raises(ActiveRecord::ValueTooLong) do
+      @root_post.update_column(:slug, "가" * (BlogSlug::MAX_LENGTH + 1))
+    end
+  end
+
+  test "posts.slug의 유니크 인덱스가 중복 slug를 막는다" do
+    @root_post.update_column(:slug, "중복-slug")
+
+    assert_raises(ActiveRecord::RecordNotUnique) do
+      @reply_post.update_column(:slug, "중복-slug")
+    end
+  end
 end

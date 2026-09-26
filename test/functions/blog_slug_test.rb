@@ -1,0 +1,46 @@
+# frozen_string_literal: true
+
+require "test_helper"
+
+class BlogSlugTest < ActiveSupport::TestCase
+  test "한글 제목은 그대로 두고 공백을 하이픈으로 바꾼다" do
+    assert_equal "루비-온-레일즈-시작하기", BlogSlug.normalize("루비 온 레일즈 시작하기")
+  end
+
+  test "영문은 소문자로 바꾸고 문장부호·특수문자 연속은 하이픈 하나로 줄인다" do
+    assert_equal "hello-world-rails-8-출시", BlogSlug.normalize("  Hello, World!! — Rails 8 출시?! ")
+  end
+
+  test "URL 경로를 깨는 문자(/ . ? # %)를 남기지 않는다" do
+    assert_equal "a-b-c-d-e-f", BlogSlug.normalize("a/b.c?d#e%f")
+  end
+
+  test "NFD로 분해된 한글을 NFC로 합친다" do
+    assert_equal "한글", BlogSlug.normalize("한글".unicode_normalize(:nfd))
+  end
+
+  test "유효한 문자가 없으면 빈 문자열을 돌려준다" do
+    assert_equal "", BlogSlug.normalize("!!! ??? 🎉")
+    assert_equal "", BlogSlug.normalize(nil)
+  end
+
+  test "긴 제목은 BASE_MAX_LENGTH 글자로 자르고 끝의 하이픈을 떼어낸다" do
+    slug = BlogSlug.normalize("가" * 79 + " 나다라마바사")
+
+    assert_equal "가" * 79, slug
+    assert_operator BlogSlug.normalize("가" * 200).length, :<=, BlogSlug::BASE_MAX_LENGTH
+  end
+
+  test "정규화 결과를 다시 정규화해도 같다" do
+    slug = BlogSlug.normalize("Ruby 3.4 — 새 기능")
+
+    assert_equal slug, BlogSlug.normalize(slug)
+  end
+
+  test "충돌 회피용 접미사를 붙여도 MAX_LENGTH를 넘지 않는다" do
+    candidate = BlogSlug.with_suffix(BlogSlug.normalize("가" * 200))
+
+    assert_match(/\A가+-[0-9a-z]{#{BlogSlug::SUFFIX_LENGTH}}\z/o, candidate)
+    assert_operator candidate.length, :<=, BlogSlug::MAX_LENGTH
+  end
+end
