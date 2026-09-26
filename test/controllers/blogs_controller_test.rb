@@ -95,4 +95,24 @@ class BlogsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
   end
+
+  test "redirects a differently cased slug to the canonical URL" do
+    post = users(:john).posts.new(post_type: :blog, title: "Ruby 소식", body: "<p>본문</p>")
+    post.publish!
+
+    get "/@#{post.user.username}/blog/#{ERB::Util.url_encode('RUBY-소식')}"
+
+    assert_response :moved_permanently
+    assert_redirected_to "http://www.example.com/@#{post.user.username}/blog/#{ERB::Util.url_encode('ruby-소식')}"
+  end
+
+  test "redirects an NFD-encoded Korean slug to the canonical NFC URL" do
+    post = users(:john).posts.new(post_type: :blog, title: "한글 소식", body: "<p>본문</p>")
+    post.publish!
+
+    get "/@#{post.user.username}/blog/#{ERB::Util.url_encode('한글-소식'.unicode_normalize(:nfd))}"
+
+    assert_response :moved_permanently
+    assert_redirected_to "http://www.example.com/@#{post.user.username}/blog/#{ERB::Util.url_encode('한글-소식')}"
+  end
 end

@@ -467,6 +467,17 @@ class BlogPostsControllerTest < ActionDispatch::IntegrationTest
     assert_response :redirect
     assert_predicate @draft.reload, :discarded?
   end
+
+  test "관리 경로도 대소문자·NFD가 다른 slug로 글을 찾는다" do
+    sign_in @user
+    @draft.update!(title: "Ruby 관리", body: "<p>본문</p>")
+    @draft.publish!
+
+    get "/blog_posts/#{ERB::Util.url_encode("RUBY-관리".unicode_normalize(:nfd))}/edit"
+
+    assert_response :success
+  end
+
   private
 
   # test.rb pins the cache to :null_store, so any code under test that relies on

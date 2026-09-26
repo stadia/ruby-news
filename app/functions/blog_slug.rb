@@ -27,6 +27,14 @@ module BlogSlug
         .delete_suffix("-")
     end
 
+    # URL로 들어온 slug를 저장 규칙(NFC·소문자)에 맞춰 조회 키로 만든다. normalize와 달리
+    # 절단·기호 치환은 하지 않는다. 저장된 slug는 모두 소문자이므로 대소문자나 NFD로
+    # 달라진 URL도 같은 글을 찾는다.
+    #: (String? slug) -> String
+    def lookup_key(slug)
+      slug.to_s.unicode_normalize(:nfc).downcase
+    end
+
     #: (String base) -> String
     def with_suffix(base)
       "#{base}-#{SecureRandom.alphanumeric(SUFFIX_LENGTH).downcase}"

@@ -49,4 +49,14 @@ class BlogSlugTest < ActiveSupport::TestCase
     assert_equal "é", BlogSlug.normalize("e\u0301")
     assert_equal "", BlogSlug.normalize("\u0301")
   end
+
+  test "lookup_key는 URL로 들어온 slug를 저장 규칙(NFC·소문자)에 맞춘다" do
+    assert_equal "ruby-소식", BlogSlug.lookup_key("RUBY-소식")
+    assert_equal "한글-소식", BlogSlug.lookup_key("한글-소식".unicode_normalize(:nfd))
+    assert_equal "", BlogSlug.lookup_key(nil)
+  end
+
+  test "lookup_key는 절단·기호 치환을 하지 않는다" do
+    assert_equal "a_b.c", BlogSlug.lookup_key("A_B.C")
+  end
 end
