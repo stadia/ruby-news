@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/stadia/federails.git
-  revision: 8f5b7a0109abd57089447eeba860e118bb788646
+  revision: aea38d22cd9acd4839c59f0d1d90ee34d4f7e747
   specs:
     fedipub (0.10.0)
       alba (~> 4.0)
@@ -120,7 +120,7 @@ GEM
     aws-sdk-kms (1.132.0)
       aws-sdk-core (~> 3, >= 3.256.0)
       aws-sigv4 (~> 1.5)
-    aws-sdk-s3 (1.232.1)
+    aws-sdk-s3 (1.232.2)
       aws-sdk-core (~> 3, >= 3.256.0)
       aws-sdk-kms (~> 1)
       aws-sigv4 (~> 1.5)
@@ -298,9 +298,9 @@ GEM
       actionpack (>= 6.0.0)
       activesupport (>= 6.0.0)
       railties (>= 6.0.0)
-    inkmark (0.2.0-aarch64-linux)
-    inkmark (0.2.0-arm64-darwin)
-    inkmark (0.2.0-x86_64-linux)
+    inkmark (0.2.1-aarch64-linux)
+    inkmark (0.2.1-arm64-darwin)
+    inkmark (0.2.1-x86_64-linux)
     io-console (0.9.4)
     irb (1.18.0)
       pp (>= 0.6.0)
@@ -677,7 +677,7 @@ GEM
     reline (0.7.0)
       io-console (~> 0.5)
     require-hooks (0.5.1)
-    resend (1.16.1)
+    resend (1.17.0)
       base64
       httparty (>= 0.22.0)
     responders (3.2.1)
