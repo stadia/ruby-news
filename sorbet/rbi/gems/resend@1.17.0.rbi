@@ -46,16 +46,16 @@ end
 # pkg:gem/resend#lib/resend/version.rb:3
 module Resend
   class << self
-    # pkg:gem/resend#lib/resend.rb:52
+    # pkg:gem/resend#lib/resend.rb:53
     def api_key; end
 
-    # pkg:gem/resend#lib/resend.rb:52
+    # pkg:gem/resend#lib/resend.rb:53
     def api_key=(_arg0); end
 
-    # pkg:gem/resend#lib/resend.rb:58
+    # pkg:gem/resend#lib/resend.rb:59
     def config; end
 
-    # pkg:gem/resend#lib/resend.rb:54
+    # pkg:gem/resend#lib/resend.rb:55
     def configure; end
   end
 end
@@ -194,7 +194,7 @@ end
 
 # @deprecated Use Segments instead
 #
-# pkg:gem/resend#lib/resend.rb:62
+# pkg:gem/resend#lib/resend.rb:63
 Resend::Audiences = Resend::Segments
 
 # automations api wrapper
@@ -1758,6 +1758,18 @@ module Resend::Topics
     #
     # pkg:gem/resend#lib/resend/topics.rb:20
     def update(params = T.unsafe(nil)); end
+  end
+end
+
+# usage api wrapper
+#
+# pkg:gem/resend#lib/resend/usage.rb:5
+module Resend::Usage
+  class << self
+    # https://resend.com/docs/api-reference/usage/get-usage
+    #
+    # pkg:gem/resend#lib/resend/usage.rb:8
+    def get; end
   end
 end
 

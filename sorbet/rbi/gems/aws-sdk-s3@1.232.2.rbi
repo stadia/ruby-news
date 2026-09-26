@@ -38924,16 +38924,16 @@ class Aws::S3::Object
   # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/object.rb:53
   def delete_marker; end
 
-  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/customizations/object.rb:572
+  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/customizations/object.rb:581
   def deprecated_download_file(destination, options = T.unsafe(nil)); end
 
   # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/object.rb:3743
   def deprecated_identifiers; end
 
-  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/customizations/object.rb:495
+  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/customizations/object.rb:501
   def deprecated_upload_file(source, options = T.unsafe(nil)); end
 
-  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/customizations/object.rb:421
+  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/customizations/object.rb:424
   def deprecated_upload_stream(options = T.unsafe(nil), &block); end
 
   # Downloads a file in S3 to a path on disk.
@@ -39002,7 +39002,7 @@ class Aws::S3::Object
   # @see Client#get_object
   # @see Client#head_object
   #
-  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/customizations/object.rb:562
+  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/customizations/object.rb:568
   def download_file(*args, &block); end
 
   # An entity tag (ETag) is an opaque identifier assigned by a web server
@@ -41494,7 +41494,7 @@ class Aws::S3::Object
   # @see Client#complete_multipart_upload
   # @see Client#upload_part
   #
-  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/customizations/object.rb:480
+  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/customizations/object.rb:483
   def upload_file(*args, &block); end
 
   # Uploads a stream in a streaming fashion to the current object in S3.
@@ -41810,10 +41810,10 @@ class Aws::S3::Object::Collection < ::Aws::Resources::Collection
   # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/object.rb:3906
   def batch_delete!(options = T.unsafe(nil)); end
 
-  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/customizations/object.rb:575
+  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/customizations/object.rb:584
   def delete(*args, &block); end
 
-  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/customizations/object.rb:577
+  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/customizations/object.rb:586
   def deprecated_delete(options = T.unsafe(nil)); end
 end
 
@@ -47928,7 +47928,7 @@ class Aws::S3::TransferManager
   # @see Client#get_object
   # @see Client#head_object
   #
-  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/transfer_manager.rb:246
+  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/transfer_manager.rb:248
   def download_file(destination, bucket:, key:, **options); end
 
   # @return [Object]
@@ -48048,7 +48048,7 @@ class Aws::S3::TransferManager
   #   * `:failed_uploads` - Number of files that failed to upload
   #   * `:errors` - Array of error objects for failed uploads (only present when failures occur)
   #
-  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/transfer_manager.rb:361
+  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/transfer_manager.rb:366
   def upload_directory(source, bucket:, **options); end
 
   # Uploads a file from disk to S3.
@@ -48124,7 +48124,7 @@ class Aws::S3::TransferManager
   # @see Client#complete_multipart_upload
   # @see Client#upload_part
   #
-  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/transfer_manager.rb:443
+  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/transfer_manager.rb:450
   def upload_file(source, bucket:, key:, **options); end
 
   # Uploads a stream in a streaming fashion to S3.
@@ -48180,12 +48180,12 @@ class Aws::S3::TransferManager
   # @see Client#complete_multipart_upload
   # @see Client#upload_part
   #
-  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/transfer_manager.rb:512
+  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/transfer_manager.rb:522
   def upload_stream(bucket:, key:, **options, &block); end
 
   private
 
-  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/transfer_manager.rb:528
+  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/transfer_manager.rb:541
   def resolve_http_chunk_size(opts); end
 end
 

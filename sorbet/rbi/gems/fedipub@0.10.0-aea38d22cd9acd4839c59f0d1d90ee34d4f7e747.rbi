@@ -2822,7 +2822,7 @@ module Fediverse::Signature
     # Verifies the request's signature, if it has one.
     #
     # @return [true] when the signature is valid, or when the request is unsigned and signatures are optional
-    # @raise [BadSignature] when the signature is invalid, or missing while required
+    # @raise [BadSignature] when the signature is invalid, missing while required, or its signer cannot be fetched
     #
     # pkg:gem/fedipub#lib/fediverse/signature.rb:24
     def verify!(request:, require_signature: T.unsafe(nil)); end
@@ -2831,7 +2831,7 @@ module Fediverse::Signature
     # key was used to verify it, so callers never have to parse the key id again.
     #
     # @return [Fedipub::Actor, nil] the signer, or nil when the request is unsigned
-    # @raise [BadSignature] when the signature is invalid
+    # @raise [BadSignature] when the signature is invalid or its signer cannot be fetched
     #
     # pkg:gem/fedipub#lib/fediverse/signature.rb:36
     def verify_sender!(request:); end
@@ -2850,41 +2850,41 @@ class Fediverse::Signature::DraftCavage12
     # @return [Fedipub::Actor, false] the signer, or false if the request has no draft-cavage-12 signature
     # @raise [Fediverse::Signature::BadSignature] when the signature is invalid
     #
-    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:26
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:33
     def verify!(request:); end
 
     private
 
-    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:52
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:59
     def check_covered_headers!(request, headers); end
 
-    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:59
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:66
     def check_date!(request); end
 
-    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:92
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:99
     def digest(message); end
 
-    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:68
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:75
     def do_verification(signature, sender, comparison_string); end
 
     # Path and query string, as sent on the wire
     #
-    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:111
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:118
     def request_target_path(request); end
 
-    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:74
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:81
     def set_headers(request); end
 
-    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:128
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:135
     def signature(sender:, request:); end
 
-    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:81
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:88
     def signature_components(request); end
 
-    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:120
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:127
     def signature_headers(request); end
 
-    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:98
+    # pkg:gem/fedipub#lib/fediverse/signature/draft_cavage12.rb:105
     def signature_payload(request:, headers: T.unsafe(nil)); end
   end
 end
