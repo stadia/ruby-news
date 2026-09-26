@@ -18,9 +18,13 @@ module BlogSlug
 
   class << self
     # 유효한 문자가 없으면 빈 문자열을 돌려준다. 멱등이다.
+    # variation selector·ZWJ·soft hyphen 같은 보이지 않는 문자(Default_Ignorable)는
+    # 결합 문자 보존 규칙과 별개로 먼저 지운다. 글자 뒤에 붙으면 \p{M}*에 흡수되어
+    # 화면상 같은 제목이 다른 slug가 되기 때문이다.
     #: (String? title) -> String
     def normalize(title)
       title.to_s.unicode_normalize(:nfc).downcase
+        .gsub(/\p{Default_Ignorable_Code_Point}/, "")
         .gsub(/(?:[\p{L}\p{N}]\p{M}*)|./m) { |part| part.match?(/\A[\p{L}\p{N}]/) ? part : "-" }
         .gsub(/-+/, "-")
         .delete_prefix("-")[0, BASE_MAX_LENGTH].to_s

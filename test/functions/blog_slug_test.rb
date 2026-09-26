@@ -59,4 +59,9 @@ class BlogSlugTest < ActiveSupport::TestCase
   test "lookup_key는 절단·기호 치환을 하지 않는다" do
     assert_equal "a_b.c", BlogSlug.lookup_key("A_B.C")
   end
+
+  test "글자 뒤에 붙은 variation selector와 보이지 않는 서식 문자도 제거한다" do
+    assert_equal "ruby", BlogSlug.normalize("Ruby\uFE0F")
+    assert_equal "ruby-rails", BlogSlug.normalize("Ruby\u200D Ra\u00ADils")
+  end
 end

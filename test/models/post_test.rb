@@ -938,6 +938,19 @@ class PostTest < ActiveSupport::TestCase
     assert_match(/\A[a-z0-9_-]+\z/, post.reload.slug)
   end
 
+  test "새 글 발행이 검증에서 실패하면 slug를 비워 고친 제목으로 다시 만든다" do
+    post = @user.posts.new(post_type: :blog, title: "첫 제목", body: "")
+
+    assert_raises(ActiveRecord::RecordInvalid) { post.publish! }
+    assert_nil post.slug
+
+    post.title = "고친 제목"
+    post.body = "<p>본문</p>"
+    post.publish!
+
+    assert_equal "고친-제목", post.reload.slug
+  end
+
   test "발행 검증이 실패하면 slug를 저장된 값으로 되돌린다" do
     draft = posts(:blog_draft)
     draft.title = ""

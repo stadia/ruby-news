@@ -281,11 +281,12 @@ class Post < ApplicationRecord
   end
 
   # 발행 검증이 실패하면 set_slug가 바꿔 둔 slug를 저장된 값으로 되돌린다. 그대로 두면
-  # 다시 그린 편집 화면의 폼이 저장되지 않은 slug로 향해 404가 난다.
+  # 다시 그린 편집 화면의 폼이 저장되지 않은 slug로 향해 404가 난다. 새 글은 저장된
+  # 값이 없으므로 nil로 비워, 제목을 고쳐 다시 저장할 때 slug를 새로 만들게 한다.
   # FriendlyId는 slug 자체의 오류만 복원하므로 본문·제목 오류도 여기서 복원한다.
   #: () -> void
   def restore_slug_if_invalid
-    return if errors.empty? || new_record? || !slug_changed?
+    return if errors.empty? || !slug_changed?
 
     self.slug = slug_in_database
   end
