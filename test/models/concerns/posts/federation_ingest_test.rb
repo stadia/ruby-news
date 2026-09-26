@@ -508,6 +508,64 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
     assert_nil without_id[:federated_url]
   end
 
+  # ── object/array/Link inReplyTo ─────────────────────────────────────
+  #
+  # AS2 의 inReplyTo 는 URL 문자열 외에 Object({"id" => ...}), Link({"href" => ...}),
+  # 그리고 그 배열로도 온다. 해시를 그대로 to_s 하면 파싱 불가 URL이 되어 정상
+  # 답글이 거부되므로, 모든 모양이 문자열과 같은 결과를 내야 한다(#1017).
+
+  {
+    "object" => ->(url) { { "id" => url, "type" => "Note" } },
+    "Link" => ->(url) { { "type" => "Link", "href" => url } },
+    "array of strings" => ->(url) { [ url ] },
+    "array of objects" => ->(url) { [ { "id" => url, "type" => "Note" } ] },
+    "array with leading blanks" => ->(url) { [ "", { "id" => "" }, url ] },
+    "object with blank href" => ->(url) { { "href" => "", "id" => url } }
+  }.each do |shape, wrap|
+    test "#{shape} inReplyTo to a local article resolves like a string" do
+      hash = { "id" => "https://remote.example.com/notes/#{shape.parameterize}", "content" => "댓글",
+               "inReplyTo" => wrap.call("https://#{@local_host}/articles/#{@article.id}") }
+
+      assert Post.send(:handle_federated_object?, hash)
+      result = Post.from_activitypub_object(hash)
+
+      assert_equal @article.id, result[:article_id]
+      assert_nil result[:parent_id]
+      assert_equal :comment, result[:post_type]
+    end
+
+    test "#{shape} inReplyTo to a federated parent resolves like a string" do
+      parent = Post.create!(body: "원격 부모", fedipub_actor: fedipub_actors(:john_actor),
+                            federated_url: "https://hackers.pub/ap/notes/#{shape.parameterize}", article: @article)
+      hash = { "id" => "https://hackers.pub/ap/notes/#{shape.parameterize}-reply", "content" => "답글",
+               "inReplyTo" => wrap.call(parent.federated_url) }
+
+      assert Post.send(:handle_federated_object?, hash)
+      result = Post.from_activitypub_object(hash)
+
+      assert_equal parent.id, result[:parent_id]
+      assert_equal @article.id, result[:article_id]
+      assert_equal :comment, result[:post_type]
+    end
+  end
+
+  test "an empty inReplyTo array is treated as an original post" do
+    hash = { "id" => "https://remote.example.com/notes/empty-array", "content" => "원문", "inReplyTo" => [] }
+
+    assert Post.send(:handle_federated_object?, hash)
+    assert_not Post.from_activitypub_object(hash).key?(:parent_id)
+  end
+
+  # 답글 대상을 줬지만 URL을 뽑을 수 없으면 원문으로 수락하지 않는다. 받아들이면
+  # 잘못된 답글이 최상위 포스트로 노출된다.
+  [ {}, { "type" => "Note" }, [ { "type" => "Note" } ] ].each do |in_reply_to|
+    test "structured inReplyTo without href or id #{in_reply_to.inspect} is rejected" do
+      hash = { "id" => "https://remote.example.com/notes/no-target-url", "content" => "답글", "inReplyTo" => in_reply_to }
+
+      assert_not Post.send(:handle_federated_object?, hash)
+    end
+  end
+
   # ── no inReplyTo → no reply attributes ──────────────────────────────
 
   test "an object without inReplyTo carries no reply attributes" do
