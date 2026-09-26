@@ -1,0 +1,17 @@
+# Packwerk 계층 경계 검사 설정. 배경과 규칙은 docs/architecture-layers.md를 본다.
+include:
+  - "{app,lib}/**/*.{rb,rake}"
+exclude:
+  - "{bin,node_modules,script,tmp,vendor}/**/*"
+
+# 위에서 아래로만 의존할 수 있다(같은 층끼리는 허용).
+layers:
+  - presentation
+  - application
+  - domain
+  - infrastructure
+
+require:
+  - packwerk/layer/checker
+
+cache: true

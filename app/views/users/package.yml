@@ -1,0 +1,4 @@
+# OAuth 로그인 흐름 — Presentation: 사용자 인증 화면(Phlex).
+enforce_dependencies: false
+enforce_layers: true
+layer: presentation

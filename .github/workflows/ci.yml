@@ -114,6 +114,33 @@ jobs:
       - name: Check gem RBIs match Gemfile.lock
         run: bundle exec tapioca gem --verify
 
+  # Packwerk 계층 경계 검사. 규칙과 기존 위반 목록은 docs/architecture-layers.md를 본다.
+  # DB 없이 돈다. packwerk가 Zeitwerk 로드 경로를 얻으려고 config/environment만 부팅한다.
+  boundaries:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Validate package configuration
+        run: bin/packwerk validate
+
+      # package_todo.yml에 없는 새 위반과, 고쳤는데 목록에 남은 stale 항목 모두에서 실패한다.
+      - name: Check layer boundaries
+        run: bin/packwerk check
+
+      # 설정 오타로 검사가 조용히 꺼지면 위 단계는 초록으로 남는다.
+      # 상위 계층을 참조하는 임시 파일을 넣어 실제로 실패하는지 확인한다.
+      - name: Check layer boundaries reject upward references
+        run: bin/packwerk-layer-probe
+
   test:
     runs-on: ubuntu-latest
 

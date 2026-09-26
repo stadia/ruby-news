@@ -1,0 +1,51 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+# rbs_inline: disabled
+
+# 계층 검사가 실제로 위반을 잡는지 확인하는 음성 테스트.
+# 하위 계층 패키지에 상위 계층을 참조하는 임시 파일을 만들고 `packwerk check`가
+# 실패하는지 본 뒤 파일을 지운다. 설정 오타로 검사가 조용히 꺼지는 것을 막는다.
+# (docs/architecture-layers.md)
+
+require "open3"
+
+ROOT = File.expand_path("..", __dir__)
+
+# [파일 경로, 파일 내용, 기대하는 위반 상수]
+PROBES = [
+  [
+    "app/functions/oauth_accounts/layer_probe.rb",
+    "module OauthAccounts\n  LayerProbe = Users::OmniauthCallbacksController\nend\n",
+    "::Users::OmniauthCallbacksController"
+  ],
+  [
+    "app/models/model_layer_probe.rb",
+    "ModelLayerProbe = OauthAccounts::Callbacks\n",
+    "::OauthAccounts::Callbacks"
+  ],
+  [
+    "app/clients/client_layer_probe.rb",
+    "ClientLayerProbe = OauthAccounts::Registration\n",
+    "::OauthAccounts::Registration"
+  ]
+].freeze
+
+paths = PROBES.map { |path, _, _| File.join(ROOT, path) }
+abort "probe 파일이 이미 있다: #{paths.select { File.exist?(_1) }.join(", ")}" if paths.any? { File.exist?(_1) }
+
+begin
+  PROBES.each { |path, body, _| File.write(File.join(ROOT, path), body) }
+  output, status = Open3.capture2e("bin/packwerk", "check", *PROBES.map(&:first), chdir: ROOT)
+ensure
+  paths.each { File.delete(_1) if File.exist?(_1) }
+end
+
+missing = PROBES.map(&:last).reject { |constant| output.include?("Layer violation: '#{constant}'") }
+
+if status.success? || missing.any?
+  warn output
+  warn "packwerk가 상위 계층 참조를 잡지 못했다: #{missing.join(", ")}"
+  exit 1
+end
+
+puts "packwerk가 상위 계층 참조 #{PROBES.size}건을 모두 위반으로 잡았다."

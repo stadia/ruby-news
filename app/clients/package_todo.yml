@@ -1,0 +1,25 @@
+# This file contains a list of dependencies that are not part of the long term plan for the
+# 'app/clients' package.
+# We should generally work to reduce this list over time.
+#
+# You can regenerate this file using the following command:
+#
+# bin/packwerk update-todo
+---
+app/models:
+  "::Configs::Discord":
+    violations:
+    - layer
+    files:
+    - app/clients/discord_client.rb
+  "::Configs::Slack":
+    violations:
+    - layer
+    files:
+    - app/clients/slack_client.rb
+  "::Preference":
+    violations:
+    - layer
+    files:
+    - app/clients/mastodon_client.rb
+    - app/clients/twitter_client.rb

@@ -1,0 +1,4 @@
+# OAuth 로그인 흐름 — Presentation: params·session·current_user·Devise 컨트롤러.
+enforce_dependencies: false
+enforce_layers: true
+layer: presentation

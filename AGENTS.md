@@ -45,6 +45,7 @@ AI 에이전트를 위한 프로젝트 룰북입니다.
   - varchar 컬럼에 `IN (...)` CHECK 제약을 걸지 않는다. 마이그레이션으로 만든 DB와 schema.rb로 만든 DB에서 역파싱 결과가 달라 schema.rb가 흔들린다. `column::text = ANY (ARRAY[...]::text[])`로 쓴다(`20260925000000_normalize_oauth_accounts_provider_check`).
   - 앱 테이블은 `ra_news` 스키마에 있다(`20260330052833_create_ra_news_schema`). schema.rb의 `create_schema ... if_not_exists: true`는 `config/initializers/schema_dumper_create_schema.rb`가 붙인다.
   - `.dockerignore`는 의도적으로 `/db/schema.rb`를 이미지에서 뺀다. 그래서 프로덕션의 새 DB `db:prepare`는 항상 마이그레이션 경로를 탄다.
+- **계층 경계는 Packwerk로 검사한다(`docs/architecture-layers.md`).** `package.yml`에 `layer`를 둔 패키지는 같은 층이나 아래 층(presentation → application → domain → infrastructure)만 참조한다. `bin/packwerk check`가 새 위반에서 실패하면 `update-todo`로 덮지 말고 의존 방향을 고친다. 패키지 설정을 바꾸면 `bin/packwerk-layer-probe`로 검사가 살아 있는지 확인한다.
 - 관련 배경 문서가 필요하면 `docs/CLAUDE_WORKFLOW.md`, `docs/postgresql-extensions.md`를 우선 참고한다.
 - 뷰 클래스는 `Views::Base`를, 컴포넌트 클래스는 `Components::Base`를 상속한다.
 - `OperationService`(`Dry::Operation`)의 `call` 메서드에서 `return Failure(:x)`를 직접 반환하면 `Dry::Operation`이 이를 `Success(Failure(:x))`로 감싸버린다. `Failure`를 반환하려면 반드시 `step`을 통해야 한다. guard clause도 `step validate_something(...)` 형태로 호출한다.

@@ -1,0 +1,4 @@
+# OAuth 로그인 흐름 — Application: 콜백 매칭·가입 트랜잭션.
+enforce_dependencies: false
+enforce_layers: true
+layer: application
