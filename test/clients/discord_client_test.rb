@@ -95,4 +95,91 @@ class DiscordClientTest < ActiveSupport::TestCase
       [ DiscordClient::TOKEN_URL, 5, 10 ]
     ], timeout_values
   end
+  test "OAuth verification accepts the actual webhook target and applies timeouts" do
+    Configs::Discord.stub(:client_id, "12345") do
+      Faraday.stub(:get, lambda { |url, &block|
+        assert_equal "https://discord.com/api/v10/webhooks/123/token", url
+        request = Struct.new(:options).new(Struct.new(:open_timeout, :timeout).new)
+        block.call(request)
+
+        assert_equal 5, request.options.open_timeout
+        assert_equal 10, request.options.timeout
+        webhook_response(verified_webhook)
+      }) { DiscordClient.verify_oauth_target!(approved_oauth) }
+    end
+  end
+
+  test "OAuth verification rejects mismatched guild channel application and webhook identity" do
+    { "guild_id" => "other", "channel_id" => "other", "application_id" => "other", "id" => "other", "type" => 2 }.each do |key, value|
+      response = webhook_response(verified_webhook.merge(key => value))
+      Configs::Discord.stub(:client_id, "12345") do
+        with_webhook_response(response) do
+          assert_raises(DiscordClient::ApiError) { DiscordClient.verify_oauth_target!(approved_oauth) }
+        end
+      end
+    end
+  end
+
+  test "OAuth verification rejects unsafe URLs without sending any requests" do
+    [ "http://discord.com/api/webhooks/123/token", "https://discord.com.attacker.test/api/webhooks/123/token",
+      "https://discord.com/api/webhooks/123/token?wait=true", "https://user@discord.com/api/webhooks/123/token" ].each do |url|
+      oauth = approved_oauth
+      oauth[:webhook][:url] = url
+
+      Faraday.stub(:get, ->(*) { flunk "Invalid webhook must not trigger a request" }) do
+        assert_raises(DiscordClient::ApiError) { DiscordClient.verify_oauth_target!(oauth) }
+      end
+    end
+  end
+
+  test "OAuth verification rejects disagreement between the approved guild and webhook guild" do
+    oauth = approved_oauth
+    oauth[:webhook][:guild_id] = "other"
+
+    Faraday.stub(:get, ->(*) { flunk "Mismatched guild must not trigger a request" }) do
+      assert_raises(DiscordClient::ApiError) { DiscordClient.verify_oauth_target!(oauth) }
+    end
+  end
+
+  test "OAuth verification rejects unsuccessful or malformed provider responses" do
+    responses = [ Struct.new(:success?, :status, :body).new(false, 404, ""),
+                  Struct.new(:success?, :status, :body).new(true, 200, "not JSON"), webhook_response([]) ]
+    responses.each do |response|
+      with_webhook_response(response) do
+        assert_raises(DiscordClient::ApiError) { DiscordClient.verify_oauth_target!(approved_oauth) }
+      end
+    end
+  end
+
+  test "exchange_code rejects JSON responses without an OAuth object" do
+    response = Struct.new(:success?, :status, :body).new(true, 200, "[]")
+
+    Faraday.stub(:post, ->(*) { response }) do
+      assert_raises(DiscordClient::ApiError) do
+        DiscordClient.exchange_code("code", redirect_uri: "https://example.com/callback")
+      end
+    end
+  end
+
+  private
+
+  def approved_oauth
+    { guild: { id: "G123" }, webhook: { guild_id: "G123", channel_id: "C123", url: "https://discord.com/api/webhooks/123/token" } }.with_indifferent_access
+  end
+
+  def verified_webhook
+    { "id" => "123", "type" => 1, "guild_id" => "G123", "channel_id" => "C123", "application_id" => "12345" }
+  end
+
+  def webhook_response(body)
+    Struct.new(:success?, :status, :body).new(true, 200, body.to_json)
+  end
+
+  def with_webhook_response(response)
+    Faraday.stub(:get, ->(_url, &block) {
+      request = Struct.new(:options).new(Struct.new(:open_timeout, :timeout).new)
+      block.call(request)
+      response
+    }) { yield }
+  end
 end

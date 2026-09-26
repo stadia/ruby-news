@@ -6,6 +6,7 @@ class DiscordController < ApplicationController
   include OauthStateVerification
 
   protect_from_forgery except: [ :callback ]
+  skip_before_action :authenticate_user!, only: :callback
 
   def callback
     unless valid_oauth_state?(:discord_oauth_state)
@@ -28,29 +29,31 @@ class DiscordController < ApplicationController
       return
     end
 
-    guild_id = webhook[:guild_id].presence || guild[:id]
+    DiscordClient.verify_oauth_target!(oauth)
+    guild_id = guild[:id]
     webhook_url = webhook[:url]
     channel = DiscordChannel.find_or_initialize_by(remote_id: guild_id)
-    channel.assign_attributes(
-      name: guild[:name],
-      webhook_url: webhook_url,
-      channel_id: webhook[:channel_id],
-      channel_name: webhook[:name].presence || "unknown",
-      status: :active,
-      last_verified_at: Time.current
-    )
-
     begin
-      DiscordChannel.transaction do
+      channel.with_lock do
+        channel.ensure_relink_allowed!(webhook[:channel_id])
+        channel.assign_attributes(
+          name: guild[:name],
+          webhook_url: webhook_url,
+          channel_id: webhook[:channel_id],
+          channel_name: webhook[:name].presence || "unknown",
+          last_verified_at: Time.current
+        )
         channel.save!
       end
-    rescue ActiveRecord::RecordInvalid
-      cleanup_discord_webhook(webhook_url)
+    rescue NotificationChannel::RelinkRejected, ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
+      cleanup_discord_webhook(webhook_url) unless DiscordChannel.exists?(webhook_url:)
       raise
     end
 
     redirect_to oauth_result_path(provider: "discord", success: "true", channel_name: channel.channel_name)
-  rescue DiscordClient::ApiError, ActiveRecord::RecordInvalid => e
+  rescue NotificationChannel::RelinkRejected
+    redirect_to oauth_result_path(provider: "discord", success: "false", error: t("oauth.errors.relink_not_allowed"))
+  rescue DiscordClient::ApiError, ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
     logger.warn("Discord OAuth callback failed: #{e.class}: #{e.message}")
     redirect_to oauth_result_path(provider: "discord", success: "false", error: t("oauth.errors.provider_failure"))
   end
@@ -62,6 +65,6 @@ class DiscordController < ApplicationController
 
     DiscordClient.delete_webhook(webhook_url)
   rescue DiscordClient::ApiError => e
-    logger.warn("Failed to cleanup Discord webhook #{webhook_url}: #{e.message}")
+    logger.warn("Failed to cleanup Discord webhook: #{e.class}")
   end
 end

@@ -84,6 +84,26 @@ class SlackClient
       raise ApiError, "#{e.class}: #{e.message}"
     end
 
+    # 발급 토큰의 workspace를 Slack에 조회해 저장할 대상과 대조한다.
+    # channel_id와 webhook URL은 같은 OAuth 응답에서만 가져온다.
+    #: (Hash[untyped, untyped] oauth) -> void
+    def verify_oauth_target!(oauth)
+      team = oauth["team"]
+      webhook = oauth["incoming_webhook"]
+      token = oauth["access_token"]
+      unless team.is_a?(Hash) && webhook.is_a?(Hash) && token.is_a?(String) && token.present? &&
+          team["id"].is_a?(String) && team["id"].present? &&
+          webhook["channel_id"].is_a?(String) && webhook["channel_id"].present? &&
+          webhook["url"].is_a?(String) && webhook["url"].match?(%r{\Ahttps://hooks\.slack\.com/services/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+\z})
+        raise ApiError, "Invalid Slack OAuth target"
+      end
+
+      identity = oauth_client(token).auth_test.to_h.with_indifferent_access
+      raise ApiError, "Slack workspace mismatch" unless identity[:team_id] == team["id"]
+    rescue Slack::Web::Api::Errors::SlackError, Faraday::Error => e
+      raise ApiError, "Slack target verification failed: #{e.class}"
+    end
+
     #: (?String? token) -> Slack::Web::Client
     def oauth_client(token = nil)
       Slack::Web::Client.new(

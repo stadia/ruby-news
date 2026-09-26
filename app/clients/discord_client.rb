@@ -74,7 +74,10 @@ class DiscordClient
         raise ApiError, "Discord OAuth 토큰 교환에 실패했습니다. HTTP #{response.status}"
       end
 
-      parse_json(response.body).with_indifferent_access
+      parsed = parse_json(response.body)
+      raise ApiError, "Invalid Discord OAuth response" unless parsed.is_a?(Hash)
+
+      parsed.with_indifferent_access
     rescue Faraday::Error => e
       raise ApiError, "#{e.class}: #{e.message}"
     end
@@ -92,7 +95,39 @@ class DiscordClient
       raise ApiError, "#{e.class}: #{e.message}"
     end
 
+    #: (Hash[untyped, untyped] oauth) -> void
+    def verify_oauth_target!(oauth)
+      guild = oauth[:guild]
+      webhook = oauth[:webhook]
+      validate_oauth_target!(guild, webhook)
+
+      match = %r{\Ahttps://discord\.com/api(?:/v10)?/webhooks/(\d+)/([A-Za-z0-9._-]+)\z}.match(webhook[:url])
+      raise ApiError, "Invalid Discord webhook URL" unless match
+
+      # 공급자 호스트에 고정한 URL로만 조회하며 리다이렉트를 따라가지 않는다.
+      response = Faraday.get("#{API_BASE}/webhooks/#{match[1]}/#{match[2]}") { |req| apply_timeouts(req) }
+      raise ApiError, "Discord webhook verification failed" unless response.success?
+
+      verified = parse_json(response.body)
+      expected = { "id" => match[1], "type" => 1, "guild_id" => guild[:id],
+                   "channel_id" => webhook[:channel_id], "application_id" => Configs::Discord.client_id }
+      unless Configs::Discord.client_id.present? && verified.is_a?(Hash) && expected.all? { |key, value| verified[key] == value }
+        raise ApiError, "Discord webhook target mismatch"
+      end
+    rescue Faraday::Error => e
+      raise ApiError, "Discord target verification failed: #{e.class}"
+    end
+
     private
+
+    #: (untyped guild, untyped webhook) -> void
+    def validate_oauth_target!(guild, webhook)
+      unless guild.is_a?(Hash) && webhook.is_a?(Hash) &&
+          guild[:id].is_a?(String) && guild[:id].present? && webhook[:guild_id] == guild[:id] &&
+          webhook[:channel_id].is_a?(String) && webhook[:channel_id].present? && webhook[:url].is_a?(String)
+        raise ApiError, "Invalid Discord OAuth target"
+      end
+    end
 
     #: (String body) -> untyped
     def parse_json(body)

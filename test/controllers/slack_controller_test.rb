@@ -4,25 +4,12 @@ require "test_helper"
 require "uri"
 
 class SlackControllerTest < ActionDispatch::IntegrationTest
-  test "GET callback requires login before checking state or exchanging code" do
+  test "anonymous callback still requires a valid install state" do
     refuse_code_exchange do
       get slack_oauth_callback_path, params: { code: "anonymous-code", state: "anonymous-state" }
     end
 
-    assert_redirected_to new_user_session_path
-  end
-
-  test "GET callback cannot finish an install after logout" do
-    sign_in_as(users(:john))
-    state = start_slack_install
-    sign_out users(:john)
-
-    refuse_code_exchange do
-      get slack_oauth_callback_path, params: { code: "after-logout", state: }
-    end
-
-    assert_redirected_to new_user_session_path
-    assert_nil SlackChannel.find_by(remote_id: "TCALLBACK")
+    assert_redirected_to oauth_result_path(provider: "slack", success: "false", error: I18n.t("oauth.errors.invalid_state"))
   end
 
   test "POST events rejects when signing secret is blank" do
@@ -56,14 +43,11 @@ class SlackControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "GET install redirects with alert when not configured" do
-    sign_in_as(users(:john))
-
     Configs::Slack.stub(:configured?, false) do
       get "/slack/install"
     end
 
-    assert_redirected_to edit_user_registration_path
-    assert_equal "Slack 연동이 아직 설정되지 않았습니다. 관리자에게 문의해 주세요.", flash[:alert]
+    assert_redirected_to oauth_result_path(provider: "slack", success: "false", error: I18n.t("oauth.errors.slack_not_configured"))
   end
 
   test "GET callback redirects to failure result when code exchange fails" do
@@ -164,9 +148,7 @@ class SlackControllerTest < ActionDispatch::IntegrationTest
     expect_invalid_state_rejection
   end
 
-  test "GET callback stores workspace webhook configuration and redirects to result page" do
-    sign_in_as(users(:john))
-
+  test "anonymous callback stores an approved slack channel" do
     state = start_slack_install
 
     oauth_response = {
@@ -180,7 +162,7 @@ class SlackControllerTest < ActionDispatch::IntegrationTest
       }
     }
 
-    SlackClient.stub(:exchange_code, oauth_response) do
+    with_approved_slack_target(oauth_response) do
       get slack_oauth_callback_path, params: { code: "oauth-code", state: state }
     end
 
@@ -194,23 +176,23 @@ class SlackControllerTest < ActionDispatch::IntegrationTest
     assert_equal "hada-news", channel.channel_name
   end
 
-  test "another logged-in user can relink a site-wide workspace" do
+  test "an existing workspace cannot be redirected to another channel" do
     channel = SlackChannel.create!(remote_id: "TCALLBACK", name: "Old Team", webhook_url: "https://hooks.slack.com/services/old",
                                    channel_id: "COLD", channel_name: "old", status: :active)
-    sign_in_as(users(:jane))
     state = start_slack_install
     oauth_response = {
+      "access_token" => "new-token",
       "team" => { "id" => "TCALLBACK", "name" => "New Team" },
-      "incoming_webhook" => { "url" => "https://hooks.slack.com/services/new", "channel" => "new", "channel_id" => "CNEW" }
+      "incoming_webhook" => { "url" => "https://hooks.slack.com/services/TCALLBACK/BNEW/newtoken", "channel" => "new", "channel_id" => "CNEW" }
     }
 
-    SlackClient.stub(:exchange_code, oauth_response) do
+    with_approved_slack_target(oauth_response) do
       get slack_oauth_callback_path, params: { code: "new-code", state: }
     end
 
-    assert_redirected_to oauth_result_path(provider: "slack", success: "true", channel_name: "new")
+    assert_redirected_to oauth_result_path(provider: "slack", success: "false", error: I18n.t("oauth.errors.relink_not_allowed"))
     assert_equal channel.id, SlackChannel.find_by!(remote_id: "TCALLBACK").id
-    assert_equal "https://hooks.slack.com/services/new", channel.reload.webhook_url
+    assert_equal "https://hooks.slack.com/services/old", channel.reload.webhook_url
   end
 
   test "POST events accepts url verification without login when signature is valid" do
@@ -233,7 +215,64 @@ class SlackControllerTest < ActionDispatch::IntegrationTest
     assert_equal "challenge-token", response.parsed_body["challenge"]
   end
 
+  test "anonymous renewal of the same channel preserves inactive status" do
+    channel = SlackChannel.create!(remote_id: "TCALLBACK", name: "Old", webhook_url: "https://example.com/old",
+                                 channel_id: "CNEW", channel_name: "old", status: :inactive)
+    state = start_slack_install
+
+    with_approved_slack_target(approved_slack_oauth) do
+      get slack_oauth_callback_path, params: { code: "renew", state: }
+    end
+
+    assert_redirected_to oauth_result_path(provider: "slack", success: "true", channel_name: "new")
+    assert_equal "https://hooks.slack.com/services/TCALLBACK/BNEW/newtoken", channel.reload.webhook_url
+    assert_predicate channel, :inactive?
+  end
+
+  test "anonymous OAuth cannot restore a discarded channel" do
+    channel = SlackChannel.create!(remote_id: "TCALLBACK", name: "Old", webhook_url: "https://example.com/old",
+                                 channel_id: "CNEW", channel_name: "old", status: :active)
+    channel.discard!
+    state = start_slack_install
+
+    with_approved_slack_target(approved_slack_oauth) do
+      get slack_oauth_callback_path, params: { code: "restore", state: }
+    end
+
+    assert_redirected_to oauth_result_path(provider: "slack", success: "false", error: I18n.t("oauth.errors.relink_not_allowed"))
+    assert_predicate channel.reload, :discarded?
+    assert_equal "https://example.com/old", channel.webhook_url
+  end
+
+  test "mismatched provider verification cannot create a channel" do
+    state = start_slack_install
+
+    with_approved_slack_target(approved_slack_oauth, team_id: "OTHER") do
+      get slack_oauth_callback_path, params: { code: "mismatch", state: }
+    end
+
+    assert_redirected_to oauth_result_path(provider: "slack", success: "false", error: I18n.t("oauth.errors.provider_failure"))
+    assert_nil SlackChannel.find_by(remote_id: "TCALLBACK")
+  end
+
   private
+
+  def approved_slack_oauth
+    { "access_token" => "new-token", "team" => { "id" => "TCALLBACK", "name" => "New Team" },
+      "incoming_webhook" => { "url" => "https://hooks.slack.com/services/TCALLBACK/BNEW/newtoken", "channel" => "new", "channel_id" => "CNEW" } }
+  end
+
+
+  def with_approved_slack_target(oauth_response, team_id: "TCALLBACK")
+    api = Struct.new(:response) do
+      def auth_test
+        response
+      end
+    end.new({ "team_id" => team_id })
+    SlackClient.stub(:oauth_client, api) do
+      SlackClient.stub(:exchange_code, oauth_response) { yield }
+    end
+  end
 
   # 세션에 저장된 state를 얻으려면 install을 거쳐야 한다.
   def start_slack_install
