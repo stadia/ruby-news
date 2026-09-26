@@ -951,13 +951,14 @@ class PostTest < ActiveSupport::TestCase
     assert_equal 22, post.slug.length
   end
 
-  test "posts.slug 컬럼은 접미사가 붙은 최대 길이 slug를 담을 수 있다" do
+  test "posts.slug 컬럼은 길이 제한 없는 text이고 길이는 BlogSlug가 정한다" do
     column = Post.columns_hash["slug"]
 
-    assert_equal BlogSlug::MAX_LENGTH, column.limit
-    assert_raises(ActiveRecord::ValueTooLong) do
-      @root_post.update_column(:slug, "가" * (BlogSlug::MAX_LENGTH + 1))
-    end
+    assert_equal :text, column.type
+    assert_nil column.limit
+    @root_post.update_column(:slug, "가" * (BlogSlug::MAX_LENGTH + 1))
+
+    assert_equal BlogSlug::MAX_LENGTH + 1, @root_post.reload.slug.length
   end
 
   test "posts.slug의 유니크 인덱스가 중복 slug를 막는다" do

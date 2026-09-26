@@ -64,7 +64,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_000000) do
     t.integer "posts_count", default: 0, null: false
     t.datetime "published_at"
     t.bigint "site_id"
-    t.string "slug"
+    t.text "slug"
     t.jsonb "social_post_ids", default: {}
     t.text "summary_body", comment: "원문 상세 요약"
     t.jsonb "summary_detail"
@@ -314,7 +314,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_000000) do
     t.datetime "updated_at", null: false
     t.string "url", limit: 255
     t.bigint "user_id"
-    t.string "slug", limit: 89
+    t.text "slug"
     t.integer "boosters_count", default: 0, null: false
     t.integer "post_type", default: 0, null: false
     t.integer "status", default: 1, null: false
