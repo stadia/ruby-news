@@ -14,7 +14,7 @@ module Posts::FederationIngest
   class_methods do
     #: (Hash[String, untyped]) -> Hash[Symbol, untyped]
     def from_activitypub_object(hash)
-      in_reply_to = hash["inReplyTo"].to_s
+      in_reply_to = in_reply_to_url(hash)
 
       # 이중 방어선. id 없는 객체는 handle_federated_object? 에서 이미 거부되므로
       # 여기 도달하면 인박스 필터를 우회한 호출이다(직접 호출 또는 필터 회귀).
@@ -46,6 +46,17 @@ module Posts::FederationIngest
     end
 
     private
+
+    # AS2 의 inReplyTo 는 URL 문자열 외에 Object({"id" => ...})나 Link({"href" => ...}),
+    # 또는 그 배열로도 온다(Misskey 계열, 일부 브리지). 해시를 그대로 to_s 하면
+    # 파싱 불가 URL이 되어 정상 답글이 거부되므로, 인박스 필터와 속성 파싱이 같은
+    # 값을 보도록 여기서만 정규화한다. 여러 개면 첫 값을 쓴다(#1017).
+    #: (Hash[String, untyped]) -> String
+    def in_reply_to_url(hash)
+      Array.wrap(hash["inReplyTo"])
+        .filter_map { |value| value.is_a?(Hash) ? (value["href"] || value["id"]) : value }
+        .first.to_s
+    end
 
     # Resolves the reply target (article comment, post reply, or federated
     # parent) from an inReplyTo URL into attributes for from_activitypub_object.
@@ -178,7 +189,7 @@ module Posts::FederationIngest
         return false
       end
 
-      in_reply_to = hash["inReplyTo"].to_s
+      in_reply_to = in_reply_to_url(hash)
 
       # inReplyTo가 없으면 원문 → 수락
       return true if in_reply_to.blank?
