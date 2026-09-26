@@ -50,11 +50,12 @@ module Posts::FederationIngest
     # AS2 의 inReplyTo 는 URL 문자열 외에 Object({"id" => ...})나 Link({"href" => ...}),
     # 또는 그 배열로도 온다(Misskey 계열, 일부 브리지). 해시를 그대로 to_s 하면
     # 파싱 불가 URL이 되어 정상 답글이 거부되므로, 인박스 필터와 속성 파싱이 같은
-    # 값을 보도록 여기서만 정규화한다. 여러 개면 첫 값을 쓴다(#1017).
+    # 값을 보도록 여기서만 정규화한다. 여러 개면 비어 있지 않은 첫 값을 쓴다.
+    # 빈 값을 남기면 뒤따르는 유효한 URL 대신 ""가 선택되어 답글이 원문으로 수락된다(#1017).
     #: (Hash[String, untyped]) -> String
     def in_reply_to_url(hash)
       Array.wrap(hash["inReplyTo"])
-        .filter_map { |value| value.is_a?(Hash) ? (value["href"] || value["id"]) : value }
+        .filter_map { |value| (value.is_a?(Hash) ? (value["href"].presence || value["id"]) : value).presence }
         .first.to_s
     end
 

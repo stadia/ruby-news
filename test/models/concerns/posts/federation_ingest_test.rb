@@ -432,7 +432,9 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
     "object" => ->(url) { { "id" => url, "type" => "Note" } },
     "Link" => ->(url) { { "type" => "Link", "href" => url } },
     "array of strings" => ->(url) { [ url ] },
-    "array of objects" => ->(url) { [ { "id" => url, "type" => "Note" } ] }
+    "array of objects" => ->(url) { [ { "id" => url, "type" => "Note" } ] },
+    "array with leading blanks" => ->(url) { [ "", { "id" => "" }, url ] },
+    "object with blank href" => ->(url) { { "href" => "", "id" => url } }
   }.each do |shape, wrap|
     test "#{shape} inReplyTo to a local article resolves like a string" do
       hash = { "id" => "https://remote.example.com/notes/#{shape.parameterize}", "content" => "댓글",
