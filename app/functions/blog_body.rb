@@ -63,22 +63,35 @@ module BlogBody
       figure
     end
 
-    # image_figure의 역변환. img가 없는 figure(표를 감싼 것 등)는 nil — 그대로 둔다.
+    # image_figure가 만든 모양(img 하나 + figcaption 0~1개)의 figure만 첨부로 되돌린다.
+    # 그 밖의 figure(표를 감싼 것, img가 여럿이거나 다른 내용이 섞인 것)는 nil — 통째로
+    # 바꾸면 나머지 내용이 사라지므로 그대로 둔다. 안쪽 이미지 figure는 따로 변환된다.
+    # image_figure가 캡션으로 채운 alt는 비워 넘겨, 캡션을 고치면 alt도 다시 따라가게 한다.
     #: (Nokogiri::XML::Element) -> Nokogiri::XML::Element?
     def image_attachment(figure)
-      img = figure.at_css("img")
-      return unless img
+      return unless image_figure_shape?(figure)
 
+      img, figcaption = figure.element_children.to_a
+      caption = figcaption&.text.to_s.strip
       src = img["src"].to_s
+      alt = img["alt"].to_s
       figure.document.create_element(
         "action-text-attachment",
         "url" => src,
-        "alt" => img["alt"].to_s,
-        "caption" => figure.at_css("figcaption")&.text.to_s.strip,
+        "alt" => alt == caption ? "" : alt,
+        "caption" => caption,
         "content-type" => "image/*",
         "filename" => src.split(/[?#]/).first.to_s.split("/").last.to_s,
         "presentation" => "gallery"
       )
+    end
+
+    #: (Nokogiri::XML::Element) -> bool
+    def image_figure_shape?(figure)
+      return false if figure.children.any? { |child| child.text? && child.text.strip.present? }
+
+      names = figure.element_children.map(&:name)
+      names.first == "img" && (names.drop(1) == [] || names.drop(1) == [ "figcaption" ])
     end
   end
 end
