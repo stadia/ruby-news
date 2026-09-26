@@ -75,4 +75,68 @@ class BlogBodyTest < ActiveSupport::TestCase
     assert_equal "", BlogBody.sanitize(nil)
     assert_equal "", BlogBody.sanitize("")
   end
+
+  test "에디터 값: 저장된 이미지 figure를 캡션이 붙은 첨부로 되돌린다" do
+    saved = BlogBody.sanitize(attachment(url: "https://cdn.example/a.webp?v=1", alt: "대체 텍스트", caption: "사진 설명"))
+    node = Nokogiri::HTML5.fragment(BlogBody.editor_value(saved)).at_css("action-text-attachment")
+
+    assert_not_nil node
+    assert_equal "https://cdn.example/a.webp?v=1", node["url"]
+    assert_equal "대체 텍스트", node["alt"]
+    assert_equal "사진 설명", node["caption"]
+    assert_equal "a.webp", node["filename"]
+    assert node["content-type"].start_with?("image")
+    assert_not_includes BlogBody.editor_value(saved), "figcaption"
+  end
+
+  test "에디터 값을 다시 저장해도 본문이 그대로다 — 저장할 때마다 캡션이 늘지 않는다" do
+    saved = BlogBody.sanitize(
+      "<p>앞</p>" + attachment(url: "https://cdn.example/a.webp", caption: "설명") +
+      attachment(url: "/rails/active_storage/blobs/redirect/abc/b.png", alt: "b.png") + "<p>뒤</p>"
+    )
+
+    resaved = 3.times.reduce(saved) { |body, _| BlogBody.sanitize(BlogBody.editor_value(body)) }
+
+    assert_equal saved, resaved
+  end
+
+  test "에디터 값: 이미지 figure가 든 표 wrapper는 표째 바꾸지 않고 안쪽 이미지만 첨부로 되돌린다" do
+    saved = BlogBody.sanitize(
+      %(<figure class="lexxy-content__table-wrapper"><table><tr><td>셀 텍스트</td><td>) +
+      attachment(url: "/a.png", caption: "캡션") + %(</td></tr></table></figure>)
+    )
+    value = Nokogiri::HTML5.fragment(BlogBody.editor_value(saved))
+
+    assert_includes value.text, "셀 텍스트"
+    assert_equal "캡션", value.at_css("figure.lexxy-content__table-wrapper > action-text-attachment")&.[]("caption"), value.to_html
+  end
+
+  test "에디터 값: img·figcaption 말고 다른 내용이 있는 figure는 그대로 둔다" do
+    [
+      %(<figure><img src="/a.png" alt="a"><img src="/b.png" alt="b"><figcaption>둘</figcaption></figure>),
+      %(<figure><a href="/x"><img src="/a.png" alt="a"></a></figure>),
+      %(<figure><img src="/a.png" alt="a"><p>덧붙인 문단</p></figure>)
+    ].each do |html|
+      assert_equal html, BlogBody.editor_value(html)
+    end
+  end
+
+  test "에디터 값: 캡션에서 채운 alt는 비워 넘겨, 캡션을 고치면 alt도 따라간다" do
+    saved = BlogBody.sanitize(attachment(url: "https://cdn.example/a.webp", caption: "설명"))
+    value = BlogBody.editor_value(saved)
+
+    assert_equal "", Nokogiri::HTML5.fragment(value).at_css("action-text-attachment")["alt"]
+
+    resaved = BlogBody.sanitize(value.sub('caption="설명"', 'caption="새 설명"'))
+
+    assert_equal "새 설명", Nokogiri::HTML5.fragment(resaved).at_css("img")["alt"]
+  end
+
+  test "에디터 값: 이미지가 없는 figure와 figure 없는 본문은 그대로 둔다" do
+    table = %(<figure class="lexxy-content__table-wrapper"><p>표</p></figure>)
+
+    assert_equal table, BlogBody.editor_value(table)
+    assert_equal "<p>본문</p>", BlogBody.editor_value("<p>본문</p>")
+    assert_equal "", BlogBody.editor_value(nil)
+  end
 end

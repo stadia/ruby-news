@@ -124,6 +124,7 @@ class Components::Posts::BlogEditor < Components::Base
         toolbar: true,
         placeholder: t("posts.blog.body_placeholder"),
         autocomplete: "off",
+        value: BlogBody.editor_value(@post.body),
         data: {
           action: "lexxy:change->blog-autosave#markDirty input->blog-autosave#markDirty"
         }

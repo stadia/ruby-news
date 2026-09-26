@@ -67,6 +67,32 @@ class BlogPostsTest < ApplicationSystemTestCase
     assert_no_text posts(:blog_published).title
   end
 
+  test "editing a post with a captioned image does not duplicate the caption" do
+    draft = posts(:blog_draft)
+    draft.update!(body: %(<figure><img src="/favicon-32x32.png" alt="대체 텍스트"><figcaption>사진 설명</figcaption></figure><p>본문 끝</p>))
+
+    2.times do |round|
+      visit edit_blog_post_path(draft)
+
+      assert_selector ".post-composer-editor .lexxy-editor__content", wait: 10
+
+      # Lexxy가 본문을 다시 직렬화하도록 실제로 한 글자 고친다.
+      find(".post-composer-editor .lexxy-editor__content p", text: "본문 끝").click
+      send_keys :end, round.to_s
+
+      click_button I18n.t("posts.blog.preview")
+
+      assert_no_selector "lexxy-editor", wait: 10
+      assert_selector "figcaption", text: "사진 설명", count: 1
+
+      body = Nokogiri::HTML5.fragment(draft.reload.body)
+
+      assert_equal 1, body.css("figure img").size, draft.body
+      assert_equal [ "사진 설명" ], body.css("figcaption").map(&:text)
+      assert_equal [ "본문 끝#{(0..round).to_a.join}" ], body.css("p").map(&:text), draft.body
+    end
+  end
+
   private
 
   # Lexxy 커스텀 엘리먼트를 구동한다. `<lexxy-editor>` 는 form-associated 이고

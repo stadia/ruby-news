@@ -161,6 +161,19 @@ class BlogPostsControllerTest < ActionDispatch::IntegrationTest
     assert_select "button", "발행"
   end
 
+  test "edit page hands saved image figures to the editor as captioned attachments" do
+    @draft.update!(body: %(<figure><img src="/a.png" alt="대체 텍스트"><figcaption>사진 설명</figcaption></figure>))
+    sign_in @user
+
+    get edit_blog_post_url(@draft)
+
+    assert_response :success
+    value = Nokogiri::HTML5.fragment(css_select("lexxy-editor").first["value"])
+
+    assert_equal "사진 설명", value.at_css("action-text-attachment")&.[]("caption"), value.to_html
+    assert_nil value.at_css("figcaption"), value.to_html
+  end
+
   test "does not allow editing another user's draft" do
     @draft.update!(user: @other_user)
     sign_in @user
