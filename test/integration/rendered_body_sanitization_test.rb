@@ -44,6 +44,27 @@ class RenderedBodySanitizationTest < ActionDispatch::IntegrationTest
     assert_not_includes response.body, DISALLOWED_MARKER
   end
 
+  # 서식(취소선·밑줄·색·표·코드 언어)은 렌더링 시점 정제에서도 살아남되,
+  # Lexxy 팔레트가 아닌 style과 허용하지 않는 요소는 여전히 지운다.
+  test "blog show keeps editor formatting while pruning unsafe styles" do
+    body = %(<p><s>struck</s><u>under</u><mark style="color: var(--highlight-2);">colored</mark>) +
+      %(<mark style="position: fixed; color: red">spoofed</mark></p>) +
+      %(<pre data-language="ruby">puts 1</pre><table><tbody><tr><th>head</th><td>cell</td></tr></tbody></table>) + PAYLOAD
+    posts(:blog_published).update_column(:body, body)
+
+    get user_profile_blog_post_url(username: users(:john).username, slug: "lf-published-fixture")
+
+    assert_response :success
+    assert_select ".post-content s", text: "struck"
+    assert_select ".post-content u", text: "under"
+    assert_select ".post-content mark[style='color: var(--highlight-2);']", text: "colored"
+    assert_select ".post-content mark:not([style])", text: "spoofed"
+    assert_select ".post-content pre[data-language='ruby']", text: "puts 1"
+    assert_select ".post-content table th", text: "head"
+    assert_not_includes response.body, "position: fixed"
+    assert_not_includes response.body, DISALLOWED_MARKER
+  end
+
   test "post show (Components::Posts::PostCard) sanitizes the body at render time" do
     posts(:short_with_article).update_column(:body, PAYLOAD)
 

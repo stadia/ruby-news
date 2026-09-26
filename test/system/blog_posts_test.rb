@@ -43,6 +43,48 @@ class BlogPostsTest < ApplicationSystemTestCase
     assert_text "시스템 테스트 본문입니다."
   end
 
+  test "toolbar formatting survives saving and re-editing" do
+    draft = posts(:blog_draft)
+    # 툴바 버튼마다 Lexxy 0.9.33이 실제로 내보내는 HTML.
+    formatted = <<~HTML.delete("\n")
+      <h2>큰 제목</h2>
+      <p>a <s>취소선</s> <u>밑줄</u> <mark style="color: var(--highlight-1);">글자색</mark>
+      <mark style="background-color: var(--highlight-bg-1);">배경색</mark></p>
+      <pre data-language="ruby" data-highlight-language="ruby">puts 1</pre>
+      <figure class="lexxy-content__table-wrapper"><table><tbody><tr>
+      <th class="lexxy-content__table-cell--header"><p>머리</p></th><td><p>칸</p></td>
+      </tr></tbody></table></figure>
+      <p>본문 끝</p>
+    HTML
+
+    visit edit_blog_post_path(draft)
+    fill_lexxy ".post-composer-editor", formatted
+
+    2.times do |round|
+      if round.positive?
+        visit edit_blog_post_path(draft)
+
+        assert_selector ".post-composer-editor .lexxy-editor__content", wait: 10
+        find(".post-composer-editor .lexxy-editor__content p", text: "본문 끝").click
+        send_keys :end, "!"
+      end
+
+      click_button I18n.t("posts.blog.preview")
+
+      assert_no_selector "lexxy-editor", wait: 10
+      within ".post-content" do
+        assert_selector "h2", text: "큰 제목"
+        assert_selector "s", text: "취소선"
+        assert_selector "u", text: "밑줄"
+        assert_selector "mark[style='color: var(--highlight-1);']", text: "글자색"
+        assert_selector "mark[style='background-color: var(--highlight-bg-1);']", text: "배경색"
+        assert_selector "pre[data-language='ruby']", text: "puts 1"
+        assert_selector "table th", text: "머리"
+        assert_selector "table td", text: "칸"
+      end
+    end
+  end
+
   test "owner re-opens a draft, edits, and deletes a published post" do
     draft = posts(:blog_draft)
 

@@ -31,6 +31,7 @@ body select {
 
 lexxy-editor.post-composer-editor {
     --lexxy-color-canvas: var(--color-bg-secondary);
+    --lexxy-color-ink: var(--color-text-primary);
     --lexxy-color-text: var(--color-text-primary);
     --lexxy-color-text-subtle: var(--color-text-muted);
     --lexxy-color-ink-lighter: var(--color-border-light);
@@ -39,6 +40,8 @@ lexxy-editor.post-composer-editor {
     --lexxy-color-selected-hover: var(--color-bg-hover);
     --lexxy-color-selected-dark: var(--color-info);
     --lexxy-color-link: var(--semantic-link);
+    --lexxy-color-table-header-bg: var(--color-bg-hover);
+    --lexxy-color-table-cell-border: var(--color-border-light);
     --lexxy-focus-ring-color: var(--color-info);
     --lexxy-editor-padding: 0;
     --lexxy-editor-rows: 5lh;
@@ -81,6 +84,21 @@ lexxy-editor.post-composer-editor.lexxy-editor--empty .lexxy-editor__content::be
 
 .post-content :where(p):has(> br:only-child) + * {
     margin-top: 0;
+}
+
+/* Lexxy colors text with <mark style="color|background-color: var(--highlight-…)">.
+   Without this the browser's default <mark> (yellow background, black text)
+   shows under a color-only highlight. The inline style still wins. Same reset as
+   lexxy-content.css, which only applies inside .lexxy-content. */
+.post-content mark {
+    background-color: transparent;
+    color: inherit;
+}
+
+/* Lexxy puts a paragraph inside every table cell; prose paragraph margins
+   would make each row several lines tall. */
+.post-content :where(th, td) > p {
+    margin-block: 0;
 }
 
 .feed-scroll-sentinel {
