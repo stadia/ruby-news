@@ -4,9 +4,10 @@
 
 class SlackController < ApplicationController
   include OauthStateVerification
+  include OauthCallbackFailures
 
   protect_from_forgery except: [ :events, :callback ]
-  skip_before_action :authenticate_user!
+  skip_before_action :authenticate_user!, only: [ :events, :callback ]
   before_action :verify_slack_signature, only: [ :events ]
 
   def callback
@@ -15,7 +16,10 @@ class SlackController < ApplicationController
       return
     end
 
+    return if redirect_provider_error?("slack")
+
     oauth = SlackClient.exchange_code(params[:code], redirect_uri: slack_oauth_callback_url)
+    SlackClient.verify_oauth_target!(oauth)
     team = oauth.fetch("team")
     incoming_webhook = oauth.fetch("incoming_webhook")
 
@@ -26,21 +30,23 @@ class SlackController < ApplicationController
     # not. `find_or_initialize_by` only reads, so it does not need to be in the
     # transaction; the write below still is.
     channel = SlackChannel.find_or_initialize_by(remote_id: team.fetch("id"))
-    SlackChannel.transaction do
+    channel.with_lock do
+      channel.ensure_relink_allowed!(incoming_webhook.fetch("channel_id"))
       channel.assign_attributes(
         name: team.fetch("name"),
         webhook_url: incoming_webhook.fetch("url"),
         channel_id: incoming_webhook.fetch("channel_id"),
         channel_name: incoming_webhook.fetch("channel"),
-        status: :active,
         last_verified_at: Time.current
       )
       channel.save!
     end
 
     redirect_to oauth_result_path(provider: "slack", success: "true", channel_name: channel.channel_name)
-  rescue KeyError, SlackClient::ApiError, ActiveRecord::RecordInvalid => e
-    redirect_to oauth_result_path(provider: "slack", success: "false", error: e.message)
+  rescue NotificationChannel::RelinkRejected => e
+    redirect_relink_rejected("slack", e)
+  rescue KeyError, SlackClient::ApiError, ActiveRecord::ActiveRecordError => e
+    redirect_callback_failure("slack", e)
   end
 
   def events

@@ -233,9 +233,12 @@ ko:
       footer: 이 메일은 계정 확인을 위해 발송되었습니다.
   oauth:
     errors:
+      cancelled: 연동을 취소했습니다.
       discord_missing_webhook: Discord OAuth 응답에 webhook 정보가 없습니다.
       discord_not_configured: Discord 연동이 아직 설정되지 않았습니다. 관리자에게 문의해 주세요.
       invalid_state: OAuth 인증 요청이 유효하지 않습니다. 연동을 처음부터 다시 시도해 주세요.
+      provider_failure: 연동을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.
+      relink_not_allowed: 기존 연동과 같은 채널만 다시 연동할 수 있습니다. 삭제된 연동은 복구할 수 없습니다.
       slack_not_configured: Slack 연동이 아직 설정되지 않았습니다. 관리자에게 문의해 주세요.
       unsupported_provider: 지원하지 않는 연동입니다.
     result:

@@ -39,4 +39,74 @@ class SlackClientTest < ActiveSupport::TestCase
 
     assert_includes error.message, "execution expired"
   end
+  test "OAuth verification accepts the token workspace and approved webhook" do
+    api = Struct.new(:response) { def auth_test = response }.new({ "team_id" => "T123" })
+
+    SlackClient.stub(:oauth_client, api) { assert_nil SlackClient.verify_oauth_target!(approved_oauth) }
+  end
+
+  test "OAuth verification rejects a token for another workspace" do
+    api = Struct.new(:response) { def auth_test = response }.new({ "team_id" => "OTHER" })
+
+    SlackClient.stub(:oauth_client, api) do
+      assert_raises(SlackClient::ApiError) { SlackClient.verify_oauth_target!(approved_oauth) }
+    end
+  end
+
+  test "OAuth verification rejects unsafe webhook URLs before making API requests" do
+    urls = [ "http://hooks.slack.com/services/T123/B123/token", "https://hooks.slack.com.attacker.test/services/T123/B123/token",
+             "https://hooks.slack.com/services/T123/B123/token?redirect=evil", "https://user@hooks.slack.com/services/T123/B123/token" ]
+    urls.each do |url|
+      oauth = approved_oauth
+      oauth["incoming_webhook"]["url"] = url
+
+      SlackClient.stub(:oauth_client, ->(*) { flunk "Invalid webhook must not trigger verification requests" }) do
+        assert_raises(SlackClient::ApiError) { SlackClient.verify_oauth_target!(oauth) }
+      end
+    end
+  end
+
+  test "OAuth verification rejects incomplete target information" do
+    [ "access_token", "team", "incoming_webhook" ].each do |key|
+      oauth = approved_oauth.except(key)
+      assert_raises(SlackClient::ApiError) { SlackClient.verify_oauth_target!(oauth) }
+    end
+  end
+
+  test "OAuth verification wraps Slack API errors with the error code" do
+    api = Struct.new(:error) { def auth_test = raise(error) }.new(Slack::Web::Api::Errors::SlackError.new("invalid_auth"))
+
+    SlackClient.stub(:oauth_client, api) do
+      error = assert_raises(SlackClient::ApiError) { SlackClient.verify_oauth_target!(approved_oauth) }
+
+      assert_includes error.message, "invalid_auth"
+    end
+  end
+
+  test "OAuth verification wraps network errors" do
+    api = Struct.new(:error) { def auth_test = raise(error) }.new(Faraday::TimeoutError.new("execution expired"))
+
+    SlackClient.stub(:oauth_client, api) do
+      error = assert_raises(SlackClient::ApiError) { SlackClient.verify_oauth_target!(approved_oauth) }
+
+      assert_includes error.message, "Faraday::TimeoutError"
+    end
+  end
+
+  test "OAuth verification names the invalid target fields" do
+    oauth = approved_oauth
+    oauth["incoming_webhook"]["channel_id"] = ""
+
+    error = assert_raises(SlackClient::ApiError) { SlackClient.verify_oauth_target!(oauth) }
+
+    assert_includes error.message, "incoming_webhook.channel_id"
+    refute_includes error.message, "team.id"
+  end
+
+  private
+
+  def approved_oauth
+    { "access_token" => "oauth-token", "team" => { "id" => "T123" },
+      "incoming_webhook" => { "channel_id" => "C123", "url" => "https://hooks.slack.com/services/T123/B123/token" } }
+  end
 end

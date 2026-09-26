@@ -14,17 +14,17 @@ class OauthController < ApplicationController
     when "slack"
       # slack
       unless Configs::Slack.configured?
-        redirect_to edit_user_registration_path, alert: t("oauth.errors.slack_not_configured")
+        redirect_to oauth_result_path(provider:, success: "false", error: t("oauth.errors.slack_not_configured"))
         return
       end
     when "discord"
       # discord
       unless Configs::Discord.configured?
-        redirect_to edit_user_registration_path, alert: t("oauth.errors.discord_not_configured")
+        redirect_to oauth_result_path(provider:, success: "false", error: t("oauth.errors.discord_not_configured"))
         return
       end
     else
-      redirect_to edit_user_registration_path, alert: t("oauth.errors.unsupported_provider")
+      redirect_to oauth_result_path(provider:, success: "false", error: t("oauth.errors.unsupported_provider"))
       return
     end
 

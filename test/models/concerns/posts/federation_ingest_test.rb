@@ -240,6 +240,92 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
     assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
   end
 
+  test "an existing remote comment can update after its local article is hard deleted" do
+    article_url = "https://#{@local_host}/articles/#{@article.id}"
+    reply = Post.create!(body: "원래 본문", fedipub_actor: fedipub_actors(:john_actor),
+                         federated_url: "https://remote.example.com/notes/orphan-update",
+                         article: @article, post_type: :comment)
+    @article.destroy!
+
+    assert_nil reply.reload.article_id
+
+    hash = { "id" => reply.federated_url, "type" => "Note", "content" => "수정된 본문", "inReplyTo" => article_url }
+
+    assert Post.send(:handle_federated_object?, hash)
+    Post.handle_incoming_fediverse_data("type" => "Update", "object" => hash)
+
+    assert_equal "수정된 본문", reply.reload.body
+    assert_nil reply.article_id
+  end
+
+  # 원격 서버는 대개 fedipub이 발행한 기사 객체 id를 inReplyTo로 쓴다.
+  test "an existing remote comment can update through the published article URL after a hard delete" do
+    article_url = published_url("articles", @article.id)
+    reply = Post.create!(body: "원래 본문", fedipub_actor: fedipub_actors(:john_actor),
+                         federated_url: "https://remote.example.com/notes/orphan-published-update",
+                         article: @article, post_type: :comment)
+    @article.destroy!
+    hash = { "id" => reply.federated_url, "type" => "Note", "content" => "수정된 본문", "inReplyTo" => article_url }
+
+    assert Post.send(:handle_federated_object?, hash)
+    Post.handle_incoming_fediverse_data("type" => "Update", "object" => hash)
+
+    assert_equal "수정된 본문", reply.reload.body
+    assert_nil reply.article_id
+  end
+
+  test "a discarded orphaned comment cannot use the orphaned comment exception" do
+    article_url = "https://#{@local_host}/articles/#{@article.id}"
+    reply = Post.create!(body: "원래 본문", fedipub_actor: fedipub_actors(:john_actor),
+                         federated_url: "https://remote.example.com/notes/orphan-discarded",
+                         article: @article, post_type: :comment)
+    @article.destroy!
+    reply.reload.discard!
+    hash = { "id" => reply.federated_url, "content" => "되살리려는 수정", "inReplyTo" => article_url }
+
+    assert_not Post.send(:handle_federated_object?, hash)
+    assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
+    assert_equal "원래 본문", reply.reload.body
+  end
+
+  test "a new remote comment to a hard-deleted local article is still rejected" do
+    article_url = "https://#{@local_host}/articles/#{@article.id}"
+    @article.destroy!
+    hash = { "id" => "https://remote.example.com/notes/orphan-create", "content" => "새 댓글",
+             "inReplyTo" => article_url }
+
+    assert_not Post.send(:handle_federated_object?, hash)
+    assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
+    assert_raises(ActiveRecord::RecordNotFound) do
+      Fedipub::Utils::Object.find_or_initialize!(hash.merge("type" => "Note"))
+    end
+  end
+
+  test "an existing short post cannot use the orphaned comment exception" do
+    article_url = "https://#{@local_host}/articles/#{@article.id}"
+    post = Post.create!(body: "원격 원문", fedipub_actor: fedipub_actors(:john_actor),
+                        federated_url: "https://remote.example.com/notes/not-a-comment")
+    @article.destroy!
+    hash = { "id" => post.federated_url, "content" => "수정된 본문", "inReplyTo" => article_url }
+
+    assert_not Post.send(:handle_federated_object?, hash)
+    assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
+  end
+
+  test "an orphaned comment cannot retarget an absent local post" do
+    reply = Post.create!(body: "원래 본문", fedipub_actor: fedipub_actors(:john_actor),
+                         federated_url: "https://remote.example.com/notes/orphan-post-retarget",
+                         article: @article, post_type: :comment)
+    @article.destroy!
+    missing_post_id = Post.maximum(:id).to_i + 1_000
+    hash = { "id" => reply.federated_url, "content" => "잘못된 수정",
+             "inReplyTo" => "https://#{@local_host}/posts/#{missing_post_id}" }
+
+    assert_not Post.send(:handle_federated_object?, hash)
+    assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
+    assert_equal "원래 본문", reply.reload.body
+  end
+
   # Article 은 default_scope 없이 discard 하므로 삭제된 기사도 행이 남아 있다.
   # FK 관점에서 유효한 대상이므로 댓글로 받는다(#937).
   test "a reply to a discarded local article still resolves to a comment" do
