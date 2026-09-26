@@ -28,6 +28,8 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
     assert_equal @article.id, result[:article_id]
     assert_kind_of Integer, result[:article_id]
     assert_equal :comment, result[:post_type]
+    assert result.key?(:parent_id)
+    assert_nil result[:parent_id]
   end
 
   test "article_id from a federated parent is an Integer" do
@@ -128,6 +130,8 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
     hash = { "id" => "https://remote.example.com/notes/gone", "content" => "답글",
              "inReplyTo" => "https://#{@local_host}/posts/#{missing_id}" }
 
+    # 부재 단언만으로는 호스트 분류가 깨져 원격으로 판정되는 회귀를 못 잡는다(#939).
+    assert Post.send(:local_reply_target?, hash["inReplyTo"])
     assert_not Post.send(:handle_federated_object?, hash)
     assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
   end
@@ -236,6 +240,23 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
     assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
   end
 
+  # Article 은 default_scope 없이 discard 하므로 삭제된 기사도 행이 남아 있다.
+  # FK 관점에서 유효한 대상이므로 댓글로 받는다(#937).
+  test "a reply to a discarded local article still resolves to a comment" do
+    @article.discard!
+    hash = { "id" => "https://remote.example.com/notes/discarded-article", "content" => "댓글",
+             "inReplyTo" => "https://#{@local_host}/articles/#{@article.id}" }
+
+    assert Post.send(:handle_federated_object?, hash)
+    result = Post.from_activitypub_object(hash)
+
+    assert_equal @article.id, result[:article_id]
+
+    reply = Post.create!(result.merge(fedipub_actor: fedipub_actors(:john_actor)))
+
+    assert_equal @article, reply.article
+  end
+
   test "a local article public slug URL resolves to a comment" do
     hash = { "id" => "https://remote.example.com/notes/article-slug-reply", "content" => "답글",
              "inReplyTo" => Rails.application.routes.url_helpers.article_url(@article) }
@@ -264,6 +285,109 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
 
     assert_not Post.send(:handle_federated_object?, hash)
     assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
+  end
+
+  # ── unparseable inReplyTo ───────────────────────────────────────────
+  #
+  # 파싱할 수 없는 URL은 로컬 대상일 수 없으므로 원격으로 분류되고, 그런 원격
+  # 부모도 없으므로 인박스가 거부한다. from_activitypub_object 를 직접 불러도
+  # 답글 속성은 생기지 않는다(#939).
+
+  [ "https://exa mple.com/posts/1", "http://[bad/posts/1", "not a url" ].each do |in_reply_to|
+    test "unparseable inReplyTo #{in_reply_to.inspect} is not local and yields no reply attributes" do
+      hash = { "id" => "https://remote.example.com/notes/unparseable", "content" => "본문",
+               "inReplyTo" => in_reply_to }
+
+      assert_not Post.send(:local_reply_target?, in_reply_to)
+      assert_not Post.send(:handle_federated_object?, hash)
+      result = Post.from_activitypub_object(hash)
+
+      assert_not result.key?(:parent_id)
+      assert_not result.key?(:article_id)
+    end
+  end
+
+  # ── federated parent without an article ─────────────────────────────
+  #
+  # fedipub 는 이 해시를 Update 수신(data_entity.rb assign_attributes)과 원격
+  # 재동기화(update!)에도 그대로 쓴다. 키가 빠지면 기존 article_id 가 남으므로,
+  # 부모에 기사가 없으면 nil 을 명시해 답글의 article_id 가 부모를 따르게 한다(#939).
+
+  test "a federated parent without an article yields an explicit nil article_id" do
+    parent = Post.create!(body: "기사 없는 원격 원문", fedipub_actor: fedipub_actors(:john_actor),
+                          federated_url: "https://hackers.pub/ap/notes/no-article")
+    hash = { "id" => "https://hackers.pub/ap/notes/no-article-reply", "content" => "답글",
+             "inReplyTo" => "https://hackers.pub/ap/notes/no-article" }
+    result = Post.from_activitypub_object(hash)
+
+    assert_equal parent.id, result[:parent_id]
+    assert result.key?(:article_id)
+    assert_nil result[:article_id]
+  end
+
+  # 기사 연결이 끊기면 post_type 도 :comment 에서 내려야 한다. Post#type_article_post_as_comment
+  # 는 생성 시에만 돌므로, Update 에서는 이 해시가 post_type 을 명시해야 한다.
+  test "an Update clears a stale article_id and comment type when the parent has no article" do
+    parent = Post.create!(body: "기사 없는 원격 원문", fedipub_actor: fedipub_actors(:john_actor),
+                          federated_url: "https://hackers.pub/ap/notes/detached")
+    reply = Post.create!(body: "답글", fedipub_actor: fedipub_actors(:john_actor), parent:,
+                         federated_url: "https://hackers.pub/ap/notes/detached-reply", article: @article)
+
+    assert_predicate reply, :comment?
+    hash = { "id" => reply.federated_url, "content" => "수정된 답글", "inReplyTo" => parent.federated_url }
+
+    reply.update!(Post.from_activitypub_object(hash))
+    reply.reload
+
+    assert_nil reply.article_id
+    assert_equal parent.id, reply.parent_id
+    assert_predicate reply, :short?
+  end
+
+  test "a local post without an article yields an explicit nil article_id and short type" do
+    assert_nil @root_post.article_id
+    hash = { "id" => "https://remote.example.com/notes/local-no-article", "content" => "답글",
+             "inReplyTo" => "https://#{@local_host}/posts/#{@root_post.id}" }
+    result = Post.from_activitypub_object(hash)
+
+    assert_equal @root_post.id, result[:parent_id]
+    assert result.key?(:article_id)
+    assert_nil result[:article_id]
+    assert_equal :short, result[:post_type]
+  end
+
+  test "an Update retargeted from a post to an article clears the stale parent_id" do
+    parent = Post.create!(body: "원격 원문", fedipub_actor: fedipub_actors(:john_actor),
+                          federated_url: "https://hackers.pub/ap/notes/retarget-parent")
+    reply = Post.create!(body: "답글", fedipub_actor: fedipub_actors(:john_actor), parent:,
+                         federated_url: "https://hackers.pub/ap/notes/retarget-reply")
+    hash = { "id" => reply.federated_url, "content" => "기사에 단 댓글로 수정",
+             "inReplyTo" => "https://#{@local_host}/articles/#{@article.id}" }
+
+    reply.update!(Post.from_activitypub_object(hash))
+    reply.reload
+
+    assert_nil reply.parent_id
+    assert_equal @article.id, reply.article_id
+    assert_predicate reply, :comment?
+  end
+
+  # 원격 부모를 일시적으로 못 찾는 것(삭제·미수신)만으로 기존 연결을 끊지 않는다.
+  # 새로 받는 객체는 부모 없이 저장되고, Update 는 기존 parent/article 을 유지한다.
+  test "an Update with an unresolved inReplyTo keeps the existing parent and article" do
+    parent = Post.create!(body: "원격 원문", fedipub_actor: fedipub_actors(:john_actor),
+                          federated_url: "https://hackers.pub/ap/notes/keep-parent", article: @article)
+    reply = Post.create!(body: "답글", fedipub_actor: fedipub_actors(:john_actor), parent:, article: @article,
+                         federated_url: "https://hackers.pub/ap/notes/keep-reply")
+    hash = { "id" => reply.federated_url, "content" => "수정된 답글",
+             "inReplyTo" => "https://hackers.pub/ap/notes/unknown-parent" }
+
+    reply.update!(Post.from_activitypub_object(hash))
+    reply.reload
+
+    assert_equal parent.id, reply.parent_id
+    assert_equal @article.id, reply.article_id
+    assert_predicate reply, :comment?
   end
 
   # ── hashtag parsing ─────────────────────────────────────────────────

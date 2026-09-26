@@ -51,36 +51,42 @@ module Posts::FederationIngest
     # parent) from an inReplyTo URL into attributes for from_activitypub_object.
     # Inbound replies to an article are typed :comment so they stay in the
     # `comments` scope instead of defaulting to :short.
-    #: (String) -> Hash[Symbol, (Integer | Symbol)]
+    # 대상이 해석되면 post_type 도 article_id 에 맞춰 명시한다. Post 의
+    # type_article_post_as_comment 는 생성 시에만 돌므로, Update 에서 기사 연결이
+    # 끊길 때 :comment 가 남지 않게 하려면 여기서 :short 로 내려야 한다.
+    #: (String) -> Hash[Symbol, untyped]
     def reply_attributes(in_reply_to)
       attrs = reply_target_attributes(in_reply_to)
-      return attrs if attrs[:article_id].blank?
+      return attrs if attrs.empty?
 
-      attrs.merge(post_type: :comment)
+      attrs.merge(post_type: attrs[:article_id].present? ? :comment : :short)
     end
 
-    # 모든 분기가 Integer id를 돌려준다: 정규식 캡처(String)와 DB 컬럼(Integer)이
-    # 섞이면 호출부에서 타입이 갈리므로 여기서 정규화한다.
-    #: (String) -> Hash[Symbol, Integer]
+    # 대상이 해석되면 parent_id 와 article_id 키를 nil이라도 항상 담는다. fedipub은
+    # 이 해시를 Update 수신·원격 재동기화에서 assign_attributes/update!로도 쓰므로,
+    # 키를 빼면 이전 대상의 값이 답글에 남는다. id는 조회한 레코드에서 꺼내므로
+    # Integer다. 원격 부모를 찾지 못하면 빈 해시를 돌려 기존 연결을 건드리지 않는다.
+    #: (String) -> Hash[Symbol, untyped]
     def reply_target_attributes(in_reply_to)
-      if reply_target_host_kind(in_reply_to) == :local
+      if local_reply_target?(in_reply_to)
         target = local_reply_target(in_reply_to)
         unless target
           logger.warn { "reply_target_attributes: missing local inReplyTo #{in_reply_to.inspect}; refusing to store as standalone" }
           raise ActiveRecord::RecordNotFound, "Local reply target not found: #{in_reply_to.truncate(200)}"
         end
 
-        return { article_id: target.id } if target.is_a?(Article)
+        return { parent_id: nil, article_id: target.id } if target.is_a?(Article)
 
-        return { parent_id: target.id, article_id: target.article_id }.compact
+        return { parent_id: target.id, article_id: target.article_id }
       end
 
       if (parent = Post.find_by(federated_url: in_reply_to))
-        { parent_id: parent.id, article_id: parent.article_id }.compact
+        { parent_id: parent.id, article_id: parent.article_id }
       else
-        # Unresolved inReplyTo: stored standalone — orphan은 프로덕션에서도
-        # 보여야 하므로 debug가 아니라 warn으로 남긴다.
-        logger.warn { "reply_target_attributes: unresolved inReplyTo #{in_reply_to.inspect}; storing reply without parent/article" }
+        # Unresolved inReplyTo: 새 객체는 부모 없이 저장되고, Update는 기존
+        # parent/article을 유지한다. orphan은 프로덕션에서도 보여야 하므로
+        # debug가 아니라 warn으로 남긴다.
+        logger.warn { "reply_target_attributes: unresolved inReplyTo #{in_reply_to.inspect}; leaving parent/article unset (kept as-is on update)" }
         {}
       end
     end
@@ -118,31 +124,22 @@ module Posts::FederationIngest
     # (ruby-news.dev.attacker.example) must not count as local. The app serves
     # both locale hosts, so Hosts.local_host? is authoritative; the configured
     # routing host is a fallback for envs served elsewhere (test on example.com).
-    # 술어(bool)가 아니라 분류 결과를 돌려준다: :remote 하나에 뭉뚱그리면
-    # "정말 원격"인지 "판정 불가라 원격 취급"인지가 반환값에서 사라진다.
-    # 두 실패 모드는 로그를 남기므로 호출부가 아니라 반환값에 드러나야 한다.
-    # 반환값: :local | :remote | :misconfigured | :invalid
-    # (Sorbet이 RBS 리터럴 타입을 지원하지 않아 시그니처는 Symbol로 둔다.)
-    #: (String) -> Symbol
-    def reply_target_host_kind(in_reply_to)
+    # 비어 있는 routing host는 부팅 시점에 막는다(config/initializers/routes_default_host.rb).
+    # 호출부는 로컬 여부만 구별하므로 bool로 돌려준다. 파싱 불가 URL만 로그를
+    # 남기고, 호스트가 없는 URL(상대 경로 등)은 조용히 원격으로 본다.
+    #: (String) -> bool
+    def local_reply_target?(in_reply_to)
       host = URI.parse(in_reply_to).host
-      return :remote if host.blank?
-      return :local if Hosts.local_host?(host)
+      return false if host.blank?
 
-      configured_host = Rails.application.routes.default_url_options[:host]
       # Hosts.local_host? 와 같은 이유로 대소문자 비구분 비교 (호스트명은 DNS 규격상
       # 대소문자를 구분하지 않고 URI.parse 는 입력 대소문자를 보존한다).
-      return (host.casecmp?(configured_host) ? :local : :remote) if configured_host.present?
-
-      # Blank routing host is a misconfiguration; log so local replies aren't
-      # silently reclassified as remote and orphaned.
-      logger.error { "reply_target_host_kind cannot classify #{in_reply_to.inspect}: #{host.inspect} is not a known app host and default_url_options[:host] is blank" }
-      :misconfigured
+      Hosts.local_host?(host) || host.casecmp?(Rails.application.routes.default_url_options[:host].to_s)
     rescue URI::InvalidURIError => e
       # 파싱 불가 URL은 원격으로 처리되지만, 조용히 삼키면 잘못된 발신자를
       # 추적할 수 없다.
-      logger.warn { "reply_target_host_kind: unparseable inReplyTo #{in_reply_to.inspect}: #{e.message}" }
-      :invalid
+      logger.warn { "local_reply_target?: unparseable inReplyTo #{in_reply_to.inspect}: #{e.message}" }
+      false
     end
 
     # 본문 우선순위 체인 (앞쪽이 이길수록 원문에 가깝다):
@@ -188,7 +185,7 @@ module Posts::FederationIngest
 
       # 로컬 답글은 실제 대상이 있을 때만 수락한다. 문자열 포함 여부만 검사하면
       # 없는 대상을 가리키는 답글이 부모 없는 최상위 포스트로 저장된다.
-      if reply_target_host_kind(in_reply_to) == :local
+      if local_reply_target?(in_reply_to)
         return true if local_reply_target(in_reply_to)
 
         logger.warn { "handle_federated_object?: rejecting missing local inReplyTo #{in_reply_to.inspect}" }
