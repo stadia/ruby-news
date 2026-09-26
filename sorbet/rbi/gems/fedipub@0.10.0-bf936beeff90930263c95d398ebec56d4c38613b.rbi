@@ -2209,8 +2209,23 @@ class Fedipub::Utils::Object
     # @param federated_url [String] Object identifier
     # @return [Fedipub::Actor, Fedipub::DataEntity, Fedipub::Following, nil]
     #
-    # pkg:gem/fedipub#lib/fedipub/utils/object.rb:32
+    # pkg:gem/fedipub#lib/fedipub/utils/object.rb:56
     def find_distant_object_in_all(federated_url); end
+
+    # Finds an already stored entity from an object or its ID, without dereferencing distant objects.
+    #
+    # Unlike .find_or_initialize, this never fetches remote data nor returns unsaved instances.
+    # Hash objects matching a configured data type are looked up in that type first; every lookup
+    # also searches actors, followings and all data entities, so an entity stored under another
+    # class than the current type handler is still found.
+    #
+    # @param object_or_id [String, Hash] String identifier or incoming object
+    #
+    # @return [ActiveRecord::Base, nil] Stored data entity, Fedipub::Actor or Fedipub::Following; nil when not
+    #   found locally
+    #
+    # pkg:gem/fedipub#lib/fedipub/utils/object.rb:37
+    def find_existing(object_or_id); end
 
     # Finds or create an entity from an ActivityPub object or id
     #
@@ -2223,7 +2238,7 @@ class Fedipub::Utils::Object
     #
     # @return [ApplicationRecord, nil] Entity or nil when invalid/not found
     #
-    # pkg:gem/fedipub#lib/fedipub/utils/object.rb:76
+    # pkg:gem/fedipub#lib/fedipub/utils/object.rb:100
     def find_or_create!(object_or_id); end
 
     # Finds data from an object or its ID.
@@ -2246,7 +2261,7 @@ class Fedipub::Utils::Object
     #
     # @return [ApplicationRecord, nil] Entity or nil when invalid/not found
     #
-    # pkg:gem/fedipub#lib/fedipub/utils/object.rb:59
+    # pkg:gem/fedipub#lib/fedipub/utils/object.rb:83
     def find_or_initialize!(object_or_id); end
 
     # Returns the timestamps to use from an ActivityPub object
@@ -2255,7 +2270,7 @@ class Fedipub::Utils::Object
     #
     # @return [Hash] Hash with timestamps
     #
-    # pkg:gem/fedipub#lib/fedipub/utils/object.rb:97
+    # pkg:gem/fedipub#lib/fedipub/utils/object.rb:121
     def timestamp_attributes(hash); end
 
     private
@@ -2265,14 +2280,14 @@ class Fedipub::Utils::Object
     # expects a String, so normalize to the first URL. Passing the raw Array
     # would raise `NoMethodError: undefined method 'match?' for an Array`.
     #
-    # pkg:gem/fedipub#lib/fedipub/utils/object.rb:158
+    # pkg:gem/fedipub#lib/fedipub/utils/object.rb:182
     sig { params(attributed_to: ::Fedipub::Utils::Object).returns(T.nilable(::String)) }
     def attributed_to_url(attributed_to); end
 
-    # pkg:gem/fedipub#lib/fedipub/utils/object.rb:125
+    # pkg:gem/fedipub#lib/fedipub/utils/object.rb:149
     def fallback_local_config(route_path_segment); end
 
-    # pkg:gem/fedipub#lib/fedipub/utils/object.rb:135
+    # pkg:gem/fedipub#lib/fedipub/utils/object.rb:159
     sig do
       params(
         federated_url: T.any(::String, T::Hash[::String, T.untyped])
@@ -2280,11 +2295,11 @@ class Fedipub::Utils::Object
     end
     def from_distant_server(federated_url); end
 
-    # pkg:gem/fedipub#lib/fedipub/utils/object.rb:116
+    # pkg:gem/fedipub#lib/fedipub/utils/object.rb:140
     sig { params(route: T::Hash[::Symbol, ::String]).returns(T.nilable(::ActiveRecord::Base)) }
     def from_local_route(route); end
 
-    # pkg:gem/fedipub#lib/fedipub/utils/object.rb:107
+    # pkg:gem/fedipub#lib/fedipub/utils/object.rb:131
     sig { params(url: ::String).returns(T.nilable(T::Hash[::Symbol, ::String])) }
     def local_route(url); end
   end
@@ -2394,9 +2409,10 @@ class Fediverse::Inbox
     def addressed_local_collections(payload); end
 
     # Resolves the entity (polymorphic object) for a processed activity record.
-    # Falls back to actor when the actual object cannot be resolved.
+    # Only already stored entities are used: the record is a processing log and must not
+    # fetch or persist distant objects (e.g. a boosted distant Note). Falls back to actor otherwise.
     #
-    # pkg:gem/fedipub#lib/fediverse/inbox.rb:207
+    # pkg:gem/fedipub#lib/fediverse/inbox.rb:208
     sig do
       params(
         payload: T::Hash[::String, T.untyped],
@@ -2425,7 +2441,7 @@ class Fediverse::Inbox
     def local_object_reference?(url); end
 
     # Best-effort recording of processed activity for de-duplication.
-    # Uses actor as fallback entity when the actual object cannot be resolved.
+    # Uses actor as fallback entity when the object is not already stored locally.
     # Failures here must not propagate since the activity was already handled successfully.
     #
     # pkg:gem/fedipub#lib/fediverse/inbox.rb:101
@@ -2450,7 +2466,7 @@ class Fediverse::Inbox
     sig { params(actor_url: T.nilable(::String), object_url: T.nilable(::String)).returns(T::Boolean) }
     def same_origin?(actor_url, object_url); end
 
-    # pkg:gem/fedipub#lib/fediverse/inbox.rb:221
+    # pkg:gem/fedipub#lib/fediverse/inbox.rb:222
     sig { params(activity: ::Fedipub::Activity, payload: T::Hash[::String, T.untyped]).void }
     def update_processed_activity!(activity, payload); end
   end
@@ -2625,17 +2641,17 @@ class Fediverse::Notifier
     # @param activity [Fedipub::Activity]
     # @param inbox_url [String]
     #
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:31
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:35
     def deliver_to_inbox(activity, inbox_url); end
 
     # Enqueues a separate delivery job for each recipient inbox.
     #
     # @param activity [Fedipub::Activity]
     #
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:17
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:21
     def enqueue_deliveries(activity); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:60
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:64
     sig do
       params(
         payload: T::Hash[::String, T.untyped],
@@ -2649,24 +2665,24 @@ class Fediverse::Notifier
     #
     # @param activity [Fedipub::Activity]
     #
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:42
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:46
     def post_to_inboxes(activity); end
 
     private
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:142
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:146
     sig { params(actor_url: T.nilable(::String)).returns(T.nilable(::String)) }
     def actor_inbox_for(actor_url); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:257
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:261
     sig { params(url: ::String).returns(T.nilable(T::Array[::Fedipub::Actor])) }
     def actors_for_local_collection(url); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:119
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:123
     sig { params(url: ::String, max_depth: ::Integer).returns(T::Array[::Fedipub::Actor]) }
     def collection_to_actors(url, max_depth: T.unsafe(nil)); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:205
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:209
     sig do
       params(
         inbox_url: ::String,
@@ -2678,7 +2694,7 @@ class Fediverse::Notifier
     end
     def delivery_error_message(inbox_url:, status:, body:, retry_after:, permanent:); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:151
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:155
     sig { params(collection_urls: T::Array[::String]).returns(T.nilable(::Fedipub::Actor)) }
     def forwarding_sender_for(collection_urls); end
 
@@ -2686,25 +2702,25 @@ class Fediverse::Notifier
     #
     # @return [Array<String>] inbox URLs (preferring shared inboxes), excluding the sender's own and blocking actors' inboxes
     #
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:84
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:88
     def inboxes_for(activity); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:235
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:239
     sig { params(activity: ::Fedipub::Activity, json: T::Hash[::Symbol, T.untyped]).returns(::String) }
     def invalid_payload_message(activity, json); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:163
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:167
     sig { params(activity: ::Fedipub::Activity).returns(::String) }
     def payload(activity); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:200
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:204
     sig { params(status: ::Integer).returns(T::Boolean) }
     def permanent_delivery_status?(status); end
 
     # Extension point: host apps may override this to filter deliveries (e.g. moderation).
     # Must return a Faraday::Response or raise a Fedipub::*DeliveryError.
     #
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:173
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:177
     sig do
       params(
         inbox_url: ::String,
@@ -2714,15 +2730,15 @@ class Fediverse::Notifier
     end
     def post_to_inbox(inbox_url:, message:, from: T.unsafe(nil)); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:230
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:234
     sig { params(json: T::Hash[::Symbol, T.untyped]).returns(T::Boolean) }
     def update_object_id_missing?(json); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:252
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:256
     sig { params(activity: ::Fedipub::Activity, message: ::String).void }
     def validate_message!(activity, message); end
 
-    # pkg:gem/fedipub#lib/fediverse/notifier.rb:218
+    # pkg:gem/fedipub#lib/fediverse/notifier.rb:222
     sig { params(activity: ::Fedipub::Activity, json: T::Hash[::Symbol, T.untyped]).void }
     def validate_payload!(activity, json); end
   end
@@ -2738,6 +2754,13 @@ Fediverse::Notifier::MAX_COLLECTION_DEPTH = T.let(T.unsafe(nil), Integer)
 #
 # pkg:gem/fedipub#lib/fediverse/notifier.rb:11
 Fediverse::Notifier::PERMANENT_DELIVERY_STATUS_CODES = T.let(T.unsafe(nil), Array)
+
+# Client errors that can clear on their own, as in Mastodon's DeliveryWorker.
+# 401: Fedify rejects with "The signer and the actor do not match." whenever it cannot fetch
+# the sender's actor document to confirm key ownership, including on a timeout.
+#
+# pkg:gem/fedipub#lib/fediverse/notifier.rb:15
+Fediverse::Notifier::RETRYABLE_CLIENT_ERROR_STATUS_CODES = T.let(T.unsafe(nil), Array)
 
 # pkg:gem/fedipub#lib/fediverse/request.rb:7
 class Fediverse::Request
