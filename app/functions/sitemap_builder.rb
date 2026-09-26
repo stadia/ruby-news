@@ -21,7 +21,7 @@ module SitemapBuilder
 
   # 사이트맵에 등재할 문서 1건의 경량 표현. DB를 한 번만 순회해 이 값들을 모아
   # ko/ja 빌드가 공유한다(AR 객체를 로케일마다 다시 읽지 않는다).
-  #   available: 번역이 존재하는 로케일 키 배열(예: ["ko", "ja"] 또는 ["ko"])
+  #   available: 등재할 로케일 키 배열(기사는 번역이 있는 로케일, 블로그는 ["ko"] 고정)
   # 멤버 타입: sorbet/rbi/shims/data_definitions.rbi
   Entry = Data.define(:path, :lastmod, :available)
 
@@ -32,6 +32,14 @@ module SitemapBuilder
 
   # 본문·제목·연관 객체 전체를 읽지 않고 공개 경로와 날짜만 수집한다.
   BLOG_COLUMNS = %i[id slug published_at updated_at].freeze
+  BLOG_BATCH_SIZE = 500
+
+  # 라우트 `/@:username/blog/:slug`가 받는 경로 조각. username은 라우트 제약(/[^\/]+/),
+  # slug는 Rails 기본 세그먼트 규칙이라 "/"와 "."을 받지 않는다("v1.0" → RoutingError).
+  # 이를 벗어난 값은 404 URL이 되거나(slug), UrlGenerationError로 빌드 전체를 멈추거나
+  # (username), 빈 값이면 목록 경로(/@u/blog/)가 되므로 등재 전에 거른다.
+  BLOG_USERNAME_SEGMENT = %r{\A[^/]+\z}
+  BLOG_SLUG_SEGMENT = %r{\A[^/.]+\z}
 
   class << self
     # Sorbet은 `include`에 상수 리터럴만 허용해 런타임에 만들어지는 라우트 헬퍼
@@ -39,11 +47,11 @@ module SitemapBuilder
     send(:include, Rails.application.routes.url_helpers)
 
     # lastmod는 실제 문서 변경 시점을 나타내야 하므로 published_at만 쓰면
-    # 발행 이후 제목/요약/번역 수정이 검색엔진에 전달되지 않는다.
+    # 발행 이후의 수정(기사의 제목·요약·번역, 블로그 본문 등)이 검색엔진에 전달되지 않는다.
     # 별도 content_updated_at이 없으므로 안전한 published_at/updated_at 중 최신값을 사용한다.
     #: (Article | Post) -> String?
-    def lastmod_for(article)
-      [ article.published_at, article.updated_at ]
+    def lastmod_for(record)
+      [ record.published_at, record.updated_at ]
         .compact
         .select { |candidate| realistic_lastmod?(candidate) }
         .max
@@ -63,7 +71,8 @@ module SitemapBuilder
     # Sitemaps.org 프로토콜의 "한 사이트맵의 URL은 단일 호스트" 원칙도 준수한다.
     #: () -> void
     def build
-      # 문서별로 한 번씩 수집한 경량 배열을 ko/ja 빌드가 공유한다.
+      # 기사·블로그를 각각 DB에서 한 번씩 순회해 모은 경량 배열을 ko/ja 빌드가 공유한다
+      # (로케일마다 테이블을 다시 스캔하지 않는다).
       entries = collect_article_entries.concat(collect_blog_entries)
       HREFLANG_HOSTS.each { |locale, host| build_locale(locale, host, entries) }
     end
@@ -95,21 +104,21 @@ module SitemapBuilder
       entries
     end
 
-    # 작성자가 없는 원격 글은 /@:username/blog/:slug로 공개할 수 없어 제외한다.
-    # users와의 일대일 조인 및 posts.slug의 UNIQUE 제약으로 URL 중복도 발생하지 않는다.
-    #: () -> Array[Entry]
-    def collect_blog_entries
+    # 작성자가 없는 원격 글은 /@:username/blog/:slug로 공개할 수 없어 `joins(:user)`
+    # (INNER JOIN)로 제외한다. users와는 belongs_to(N:1) 조인이라 행이 불어나지 않고,
+    # posts.slug가 전역 UNIQUE라 URL도 중복되지 않는다.
+    #: (?batch_size: Integer) -> Array[Entry]
+    def collect_blog_entries(batch_size: BLOG_BATCH_SIZE)
       entries = []
       Post.published_blog.kept
           .joins(:user)
           .select(BLOG_COLUMNS)
           .select(User.arel_table[:username].as("sitemap_username"))
-          .find_in_batches(batch_size: 500) do |batch|
+          .find_in_batches(batch_size:) do |batch|
         batch.each do |post|
           username = post.read_attribute("sitemap_username")
           slug = post.slug
-          next unless valid_blog_segment?(username) && valid_blog_segment?(slug)
-          next if [ ".", ".." ].include?(slug)
+          next unless username.to_s.match?(BLOG_USERNAME_SEGMENT) && slug.to_s.match?(BLOG_SLUG_SEGMENT)
 
           entries << Entry.new(
             path: user_profile_blog_post_path(username:, slug:),
@@ -119,14 +128,6 @@ module SitemapBuilder
         end
       end
       entries
-    end
-
-    # URL 헬퍼가 유니코드 등을 이스케이프하지만 경로 구분자는 별도로 제외한다.
-    #: (String?) -> bool
-    def valid_blog_segment?(value)
-      return false if value.nil? || value.blank?
-
-      !value.include?("/")
     end
 
     # 단일 로케일/호스트에 대한 자기 완결 사이트맵(인덱스 + 샤드)을 생성한다.

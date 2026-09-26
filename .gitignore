@@ -40,6 +40,7 @@
 node_modules
 .yarn
 public/sitemap.xml.gz
+/public/sitemaps/
 
 # ClaudeOnRails
 .claude-on-rails/sessions/
