@@ -4,6 +4,7 @@
 
 class SlackController < ApplicationController
   include OauthStateVerification
+  include OauthCallbackFailures
 
   protect_from_forgery except: [ :events, :callback ]
   skip_before_action :authenticate_user!, only: [ :events, :callback ]
@@ -15,11 +16,7 @@ class SlackController < ApplicationController
       return
     end
 
-    if params[:error].present? || params[:code].blank?
-      error_key = params[:error] == "access_denied" ? "oauth.errors.cancelled" : "oauth.errors.provider_failure"
-      redirect_to oauth_result_path(provider: "slack", success: "false", error: t(error_key))
-      return
-    end
+    return if redirect_provider_error?("slack")
 
     oauth = SlackClient.exchange_code(params[:code], redirect_uri: slack_oauth_callback_url)
     SlackClient.verify_oauth_target!(oauth)
@@ -46,11 +43,10 @@ class SlackController < ApplicationController
     end
 
     redirect_to oauth_result_path(provider: "slack", success: "true", channel_name: channel.channel_name)
-  rescue NotificationChannel::RelinkRejected
-    redirect_to oauth_result_path(provider: "slack", success: "false", error: t("oauth.errors.relink_not_allowed"))
-  rescue KeyError, SlackClient::ApiError, ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
-    logger.warn("Slack OAuth callback failed: #{e.class}: #{e.message}")
-    redirect_to oauth_result_path(provider: "slack", success: "false", error: t("oauth.errors.provider_failure"))
+  rescue NotificationChannel::RelinkRejected => e
+    redirect_relink_rejected("slack", e)
+  rescue KeyError, SlackClient::ApiError, ActiveRecord::ActiveRecordError => e
+    redirect_callback_failure("slack", e)
   end
 
   def events

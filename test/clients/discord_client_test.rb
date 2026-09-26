@@ -151,6 +151,69 @@ class DiscordClientTest < ActiveSupport::TestCase
     end
   end
 
+  test "OAuth verification refuses to trust a webhook when client_id is not configured" do
+    response = webhook_response(verified_webhook.except("application_id"))
+
+    Configs::Discord.stub(:client_id, nil) do
+      with_webhook_response(response) do
+        error = assert_raises(DiscordClient::ApiError) { DiscordClient.verify_oauth_target!(approved_oauth) }
+
+        assert_includes error.message, "client_id"
+      end
+    end
+  end
+
+  test "OAuth verification compares application_id as a string" do
+    Configs::Discord.stub(:client_id, 12345) do
+      with_webhook_response(webhook_response(verified_webhook)) do
+        assert_nil DiscordClient.verify_oauth_target!(approved_oauth)
+      end
+    end
+  end
+
+  test "OAuth verification names the mismatched fields" do
+    response = webhook_response(verified_webhook.merge("channel_id" => "other", "type" => 2))
+
+    Configs::Discord.stub(:client_id, "12345") do
+      with_webhook_response(response) do
+        error = assert_raises(DiscordClient::ApiError) { DiscordClient.verify_oauth_target!(approved_oauth) }
+
+        assert_includes error.message, "channel_id"
+        assert_includes error.message, "type"
+        refute_includes error.message, "guild_id"
+      end
+    end
+  end
+
+  test "OAuth verification reports the HTTP status of a failed lookup" do
+    Configs::Discord.stub(:client_id, "12345") do
+      with_webhook_response(Struct.new(:success?, :status, :body).new(false, 429, "")) do
+        error = assert_raises(DiscordClient::ApiError) { DiscordClient.verify_oauth_target!(approved_oauth) }
+
+        assert_includes error.message, "429"
+      end
+    end
+  end
+
+  test "OAuth verification wraps network errors without leaking the webhook token" do
+    Configs::Discord.stub(:client_id, "12345") do
+      Faraday.stub(:get, ->(*) { raise Faraday::ConnectionFailed, "Failed to open https://discord.com/api/v10/webhooks/123/token" }) do
+        error = assert_raises(DiscordClient::ApiError) { DiscordClient.verify_oauth_target!(approved_oauth) }
+
+        assert_includes error.message, "Faraday::ConnectionFailed"
+        refute_includes error.message, "/123/token"
+      end
+    end
+  end
+
+  test "provider_webhook_url? accepts only Discord webhook URLs" do
+    assert DiscordClient.provider_webhook_url?("https://discord.com/api/webhooks/123/token")
+    assert DiscordClient.provider_webhook_url?("https://discord.com/api/v10/webhooks/123/token")
+    assert_not DiscordClient.provider_webhook_url?("https://discord.com.attacker.test/api/webhooks/123/token")
+    assert_not DiscordClient.provider_webhook_url?("https://discord.com/api/webhooks/123/token?wait=true")
+    assert_not DiscordClient.provider_webhook_url?(nil)
+  end
+
   test "exchange_code rejects JSON responses without an OAuth object" do
     response = Struct.new(:success?, :status, :body).new(true, 200, "[]")
 

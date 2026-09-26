@@ -222,7 +222,9 @@ class DiscordControllerTest < ActionDispatch::IntegrationTest
     assert_equal "https://example.com/old", channel.webhook_url
   end
 
-  test "mismatched provider verification cannot create a channel" do
+  # 새 webhook URL은 공급자 토큰 응답에서 온 값이라, 공급자 형식이 맞으면
+  # 확인에 실패해도 지워야 사용자 서버에 webhook이 쌓이지 않는다.
+  test "mismatched provider verification cleans up the new webhook without creating a channel" do
     state = start_discord_install
 
     cleanup_urls = []
@@ -232,7 +234,130 @@ class DiscordControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to oauth_result_path(provider: "discord", success: "false", error: I18n.t("oauth.errors.provider_failure"))
     assert_nil DiscordChannel.find_by(remote_id: "G_SETUP")
+    assert_equal [ approved_discord_oauth[:webhook][:url] ], cleanup_urls
+  end
+
+  test "a transient verification failure cleans up the new webhook" do
+    state = start_discord_install
+    cleanup_urls = []
+
+    with_approved_discord_target(approved_discord_oauth, cleanup_urls:,
+                                 verification: Struct.new(:success?, :status, :body).new(false, 429, "")) do
+      get discord_oauth_callback_path, params: { code: "rate-limited", state: }
+    end
+
+    assert_redirected_to oauth_result_path(provider: "discord", success: "false", error: I18n.t("oauth.errors.provider_failure"))
+    assert_equal [ approved_discord_oauth[:webhook][:url] ], cleanup_urls
+  end
+
+  test "a webhook URL outside Discord is never sent a cleanup request" do
+    state = start_discord_install
+    cleanup_urls = []
+    oauth = approved_discord_oauth
+    oauth[:webhook][:url] = "https://attacker.example/api/webhooks/124/newtoken"
+
+    with_approved_discord_target(oauth, cleanup_urls:) do
+      get discord_oauth_callback_path, params: { code: "foreign", state: }
+    end
+
+    assert_redirected_to oauth_result_path(provider: "discord", success: "false", error: I18n.t("oauth.errors.provider_failure"))
     assert_empty cleanup_urls
+  end
+
+  test "a concurrent first install that loses the unique race cleans up and fails softly" do
+    # 다른 요청이 먼저 같은 길드를 저장한 상황: 이 요청은 조회 시점에 행을 보지 못했다.
+    winner = DiscordChannel.create!(remote_id: "G_SETUP", name: "Winner", webhook_url: "https://discord.com/api/webhooks/9/wintoken",
+                                    channel_id: "CNEW", channel_name: "winner", status: :active)
+    state = start_discord_install
+    cleanup_urls = []
+
+    DiscordChannel.stub(:find_or_initialize_by, ->(*) { DiscordChannel.new(remote_id: "G_SETUP") }) do
+      with_approved_discord_target(approved_discord_oauth, channel_id: "CNEW", cleanup_urls:) do
+        get discord_oauth_callback_path, params: { code: "race", state: }
+      end
+    end
+
+    assert_redirected_to oauth_result_path(provider: "discord", success: "false", error: I18n.t("oauth.errors.provider_failure"))
+    assert_equal [ approved_discord_oauth[:webhook][:url] ], cleanup_urls
+    assert_equal "https://discord.com/api/webhooks/9/wintoken", winner.reload.webhook_url
+  end
+
+  test "a response with a webhook but no guild cleans up the webhook and logs the shape" do
+    state = start_discord_install
+    cleanup_urls = []
+    oauth = approved_discord_oauth.except(:guild)
+
+    warnings = capture_warnings do
+      with_approved_discord_target(oauth, cleanup_urls:) do
+        get discord_oauth_callback_path, params: { code: "no-guild", state: }
+      end
+    end
+
+    assert_redirected_to oauth_result_path(provider: "discord", success: "false", error: I18n.t("oauth.errors.discord_missing_webhook"))
+    assert_equal [ approved_discord_oauth[:webhook][:url] ], cleanup_urls
+    assert(warnings.any? { |message| message.include?("guild=false") })
+    warnings.each { |message| refute_includes message, "newtoken" }
+  end
+
+  test "a rejected relink logs the reason and channel identifiers without the webhook token" do
+    DiscordChannel.create!(remote_id: "G_SETUP", name: "Old", webhook_url: "https://discord.com/api/webhooks/1/oldtoken",
+                           channel_id: "COLD", channel_name: "old", status: :active)
+    state = start_discord_install
+
+    warnings = capture_warnings do
+      with_approved_discord_target(approved_discord_oauth, channel_id: "CNEW") do
+        get discord_oauth_callback_path, params: { code: "relink", state: }
+      end
+    end
+
+    rejection = warnings.find { |message| message.include?("relink rejected") }
+
+    assert rejection, "relink 거절 로그가 남아야 합니다: #{warnings.inspect}"
+    assert_includes rejection, "reason=channel_changed"
+    assert_includes rejection, "existing_channel_id=COLD"
+    assert_includes rejection, "incoming_channel_id=CNEW"
+    refute_includes rejection, "newtoken"
+  end
+
+  test "GET callback checks state before handling a provider error" do
+    state = start_discord_install
+
+    refuse_code_exchange do
+      get discord_oauth_callback_path, params: { error: "access_denied", state: "mismatched-state" }
+    end
+
+    expect_invalid_state_rejection
+
+    refuse_code_exchange do
+      get discord_oauth_callback_path, params: { error: "access_denied", state: }
+    end
+
+    expect_invalid_state_rejection
+  end
+
+  test "GET callback without code or error fails without exchanging a code" do
+    state = start_discord_install
+
+    warnings = capture_warnings do
+      refuse_code_exchange do
+        get discord_oauth_callback_path, params: { state: }
+      end
+    end
+
+    assert_redirected_to oauth_result_path(provider: "discord", success: "false", error: I18n.t("oauth.errors.provider_failure"))
+    assert(warnings.any? { |message| message.include?("code_present=false") })
+  end
+
+  test "GET callback logs provider errors other than a user cancellation" do
+    state = start_discord_install
+
+    warnings = capture_warnings do
+      refuse_code_exchange do
+        get discord_oauth_callback_path, params: { error: "invalid_scope", error_description: "scope not allowed", state: }
+      end
+    end
+
+    assert(warnings.any? { |message| message.include?("invalid_scope") && message.include?("scope not allowed") })
   end
 
   test "rejected relink never deletes a webhook already stored by the site" do
@@ -259,11 +384,11 @@ class DiscordControllerTest < ActionDispatch::IntegrationTest
   end
 
 
-  def with_approved_discord_target(oauth_response, guild_id: "G_SETUP", channel_id: "C_PICK", cleanup_urls: [])
+  def with_approved_discord_target(oauth_response, guild_id: "G_SETUP", channel_id: "C_PICK", cleanup_urls: [], verification: nil)
     webhook = oauth_response[:webhook] || {}
     body = { id: URI.parse(webhook[:url].to_s).path.split("/")[-2], guild_id:, channel_id:,
              application_id: "dc-123", type: 1 }.to_json
-    response = Struct.new(:success?, :status, :body).new(true, 200, body)
+    response = verification || Struct.new(:success?, :status, :body).new(true, 200, body)
     Configs::Discord.stub(:client_id, "dc-123") do
       Faraday.stub(:get, ->(_url, &block) {
         request = Struct.new(:options).new(Struct.new(:open_timeout, :timeout).new)
@@ -294,5 +419,11 @@ class DiscordControllerTest < ActionDispatch::IntegrationTest
 
   def expect_invalid_state_rejection
     assert_redirected_to oauth_result_path(provider: "discord", success: "false", error: I18n.t("oauth.errors.invalid_state"))
+  end
+
+  def capture_warnings(&)
+    warnings = []
+    DiscordController.logger.stub(:warn, ->(message = nil, &block) { warnings << (message || block&.call).to_s }, &)
+    warnings
   end
 end

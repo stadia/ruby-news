@@ -73,6 +73,36 @@ class SlackClientTest < ActiveSupport::TestCase
     end
   end
 
+  test "OAuth verification wraps Slack API errors with the error code" do
+    api = Struct.new(:error) { def auth_test = raise(error) }.new(Slack::Web::Api::Errors::SlackError.new("invalid_auth"))
+
+    SlackClient.stub(:oauth_client, api) do
+      error = assert_raises(SlackClient::ApiError) { SlackClient.verify_oauth_target!(approved_oauth) }
+
+      assert_includes error.message, "invalid_auth"
+    end
+  end
+
+  test "OAuth verification wraps network errors" do
+    api = Struct.new(:error) { def auth_test = raise(error) }.new(Faraday::TimeoutError.new("execution expired"))
+
+    SlackClient.stub(:oauth_client, api) do
+      error = assert_raises(SlackClient::ApiError) { SlackClient.verify_oauth_target!(approved_oauth) }
+
+      assert_includes error.message, "Faraday::TimeoutError"
+    end
+  end
+
+  test "OAuth verification names the invalid target fields" do
+    oauth = approved_oauth
+    oauth["incoming_webhook"]["channel_id"] = ""
+
+    error = assert_raises(SlackClient::ApiError) { SlackClient.verify_oauth_target!(oauth) }
+
+    assert_includes error.message, "incoming_webhook.channel_id"
+    refute_includes error.message, "team.id"
+  end
+
   private
 
   def approved_oauth

@@ -197,3 +197,12 @@ module OauthStateVerification
 
   requires_ancestor { ApplicationController }
 end
+
+# SlackController와 DiscordController가 include한다. 상속받은 `params`,
+# `logger`, `redirect_to`, `t`와 라우트 헬퍼만 쓰므로 ApplicationController를
+# self로 선언한다.
+module OauthCallbackFailures
+  extend T::Helpers
+
+  requires_ancestor { ApplicationController }
+end
