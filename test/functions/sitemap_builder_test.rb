@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "tmpdir"
+require "zlib"
 
 class SitemapBuilderTest < ActiveSupport::TestCase
   # add(path, options) 호출을 기록하는 테스트용 DSL 스텁.
@@ -128,5 +130,165 @@ class SitemapBuilderTest < ActiveSupport::TestCase
     queries.each do |sql|
       assert_no_match(/"articles"\.\*|embedding|"body"|summary_body/, sql)
     end
+  end
+
+  test "실제 gzip 사이트맵은 블로그를 한국어 호스트에만 한 번 등재하고 기존 기사를 유지한다" do
+    blog = posts(:blog_published)
+    article = articles(:ruby_article)
+    article.update!(summary_key_ja: [ "要点" ])
+    factory = SitemapGenerator::LinkSet.method(:new)
+    Dir.mktmpdir("blog-sitemap") do |directory|
+      SitemapGenerator::LinkSet.stub(:new, ->(**options) { factory.call(**options, public_path: directory) }) do
+        capture_io { SitemapBuilder.build }
+      end
+
+      urls = %w[ko ja].to_h do |locale|
+        nodes = Dir.glob("#{directory}/sitemaps/#{locale}/*.xml.gz").flat_map do |file|
+          Nokogiri::XML(Zlib::GzipReader.open(file, &:read)).xpath("//*[local-name()='url']")
+        end
+        [ locale, nodes.map { |url| [ url.at_xpath("*[local-name()='loc']").text, url.at_xpath("*[local-name()='lastmod']")&.text ] } ]
+      end
+      ko_host = SitemapBuilder::HREFLANG_HOSTS.fetch("ko")
+      blog_locs = urls.fetch("ko").select { |loc, _| loc == "#{ko_host}#{blog_path(blog)}" }
+
+      assert_equal [ [ "#{ko_host}#{blog_path(blog)}", SitemapBuilder.lastmod_for(blog) ] ], blog_locs
+      refute urls.fetch("ja").any? { |loc, _| loc.include?("/blog/") }
+      %w[ko ja].each do |locale|
+        host = SitemapBuilder::HREFLANG_HOSTS.fetch(locale)
+        locs = urls.fetch(locale).map(&:first)
+
+        assert_includes locs, "#{host}/articles/#{article.slug}"
+        assert_equal [ URI(host).host ], locs.map { |loc| URI(loc).host }.uniq, "#{locale} 사이트맵은 자기 호스트만 담아야 한다"
+      end
+    end
+  end
+
+  test "collect_blog_entries는 발행된 미삭제 글과 실제 작성자만 수집한다" do
+    kept = posts(:blog_published)
+    deleted = create_blog(slug: "deleted-blog")
+    deleted.discard!
+    remote = create_blog(slug: "remote-blog")
+    remote.update_columns(user_id: nil, fedipub_actor_id: fedipub_actors(:john_actor).id)
+    entries = SitemapBuilder.collect_blog_entries
+    paths = entries.map(&:path)
+
+    assert_includes paths, blog_path(kept)
+    assert_equal [ "ko" ], entries.find { |entry| entry.path == blog_path(kept) }.available
+    [ deleted.slug, remote.slug, posts(:blog_draft).slug ].each do |slug|
+      refute paths.any? { |path| path.end_with?("/blog/#{slug}") }, "제외 대상: #{slug}"
+    end
+  end
+
+  test "collect_blog_entries가 만든 모든 경로는 blogs#show로 라우팅된다" do
+    blog = posts(:blog_published)
+    blog.update_columns(slug: "railsの設計-입문")
+    blog.user.update!(username: "new.author")
+    [ "a?b", "100%", "c+d#e" ].each { |slug| create_blog(slug:, user: users(:jane)) }
+    entries = SitemapBuilder.collect_blog_entries
+
+    assert_includes entries.map(&:path), blog_path(blog.reload)
+    assert_equal 4, entries.count { |entry| entry.path.include?("/blog/") }
+    entries.each do |entry|
+      params = Rails.application.routes.recognize_path(entry.path, method: :get)
+
+      assert_equal [ "blogs", "show" ], params.values_at(:controller, :action), entry.path
+    end
+    # recognize_path만 UTF-8 디코딩 결과를 바이너리 문자열로 돌려주므로 .b로 비교한다
+    # (실제 요청의 params는 UTF-8이다. SitemapBlogUrlTest 참고).
+    params = Rails.application.routes.recognize_path(blog_path(blog), method: :get)
+
+    assert_equal "new.author", params[:username]
+    assert_equal blog.slug.b, params[:slug].b
+  end
+
+  test "collect_blog_entries는 라우트가 받지 않는 경로 조각을 제외한다" do
+    blog = posts(:blog_published)
+    others = SitemapBuilder.collect_blog_entries.map(&:path) - [ blog_path(blog) ]
+    # slug는 Rails 기본 세그먼트 규칙이라 "."도 받지 않는다(v1.0 → RoutingError).
+    [ nil, "", "bad/slug", ".", "..", "v1.0-release" ].each do |slug|
+      blog.update_columns(slug:)
+
+      assert_equal others, SitemapBuilder.collect_blog_entries.map(&:path), "invalid slug: #{slug.inspect}"
+    end
+
+    blog.update_columns(slug: "valid-blog")
+    [ "", "bad/name" ].each do |username|
+      blog.user.update_columns(username:)
+
+      assert_equal others, SitemapBuilder.collect_blog_entries.map(&:path), "invalid username: #{username.inspect}"
+    end
+  end
+
+  test "점으로 된 username은 @ 접두사가 있어 상대 경로가 아니므로 수집한다" do
+    blog = posts(:blog_published)
+    blog.user.update!(username: "..")
+
+    assert_includes SitemapBuilder.collect_blog_entries.map(&:path), "/@../blog/#{blog.slug}"
+  end
+
+  test "블로그 lastmod는 수집 시점의 발행·변경 시각 중 최신 유효값이다" do
+    travel_to Time.zone.local(2026, 9, 26, 12) do
+      blog = posts(:blog_published)
+      published_at = 2.days.ago
+      blog.update_columns(published_at:, updated_at: 1.day.ago)
+
+      assert_equal 1.day.ago.iso8601, blog_entry(blog).lastmod
+
+      blog.update_columns(updated_at: 1.day.from_now)
+
+      assert_equal published_at.iso8601, blog_entry(blog).lastmod
+    end
+  end
+
+  test "collect_blog_entries는 배치 경계를 넘어도 모든 글을 한 번씩 수집한다" do
+    create_blog(slug: "batch-two", user: users(:jane))
+    create_blog(slug: "batch-three")
+    expected = SitemapBuilder.collect_blog_entries.map(&:path)
+
+    assert_operator expected.size, :>=, 3
+    assert_equal expected, SitemapBuilder.collect_blog_entries(batch_size: 1).map(&:path)
+  end
+
+  test "collect_blog_entries는 작성자별 추가 쿼리 없이 필요한 컬럼만 조회한다" do
+    create_blog(slug: "second-blog", user: users(:jane))
+    queries = []
+    callback = ->(*, payload) { queries << payload[:sql] if payload[:sql].start_with?("SELECT") }
+    ActiveSupport::Notifications.subscribed(callback, "sql.active_record") do
+      SitemapBuilder.collect_blog_entries
+    end
+
+    assert_equal 1, queries.size, queries.join("\n")
+    assert_match(/"users"\."username"/, queries.first)
+    assert_no_match(/"(?:posts|users)"\.\*|"body"|"title"|"metadata"/, queries.first)
+  end
+
+  private
+
+  def create_blog(slug:, user: users(:john))
+    Post.create!(user:, slug:, title: "サイトマップ用ブログ", body: "<p>公開本文</p>",
+                 post_type: :blog, status: :published, published_at: 1.day.ago)
+  end
+
+  def blog_path(post)
+    Rails.application.routes.url_helpers.user_profile_blog_post_path(username: post.user.username, slug: post.slug)
+  end
+
+  def blog_entry(post)
+    SitemapBuilder.collect_blog_entries.find { |entry| entry.path == blog_path(post) }
+  end
+end
+
+class SitemapBlogUrlTest < ActionDispatch::IntegrationTest
+  test "사이트맵이 생성한 다국어 블로그 경로는 비회원에게 공개된다" do
+    blog = posts(:blog_published)
+    blog.update_columns(slug: "rails-레이어-설계")
+    path = Rails.application.routes.url_helpers.user_profile_blog_post_path(username: blog.user.username, slug: blog.slug)
+
+    assert_includes SitemapBuilder.collect_blog_entries.map(&:path), path
+
+    get path
+
+    assert_response :success
+    assert_includes response.body, blog.title
   end
 end
