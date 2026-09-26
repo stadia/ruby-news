@@ -468,6 +468,16 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
     assert_not Post.from_activitypub_object(hash).key?(:parent_id)
   end
 
+  # 답글 대상을 줬지만 URL을 뽑을 수 없으면 원문으로 수락하지 않는다. 받아들이면
+  # 잘못된 답글이 최상위 포스트로 노출된다.
+  [ {}, { "type" => "Note" }, [ { "type" => "Note" } ] ].each do |in_reply_to|
+    test "structured inReplyTo without href or id #{in_reply_to.inspect} is rejected" do
+      hash = { "id" => "https://remote.example.com/notes/no-target-url", "content" => "답글", "inReplyTo" => in_reply_to }
+
+      assert_not Post.send(:handle_federated_object?, hash)
+    end
+  end
+
   # ── no inReplyTo → no reply attributes ──────────────────────────────
 
   test "an object without inReplyTo carries no reply attributes" do

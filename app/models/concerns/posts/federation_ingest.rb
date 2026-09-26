@@ -191,8 +191,15 @@ module Posts::FederationIngest
 
       in_reply_to = in_reply_to_url(hash)
 
-      # inReplyTo가 없으면 원문 → 수락
-      return true if in_reply_to.blank?
+      if in_reply_to.blank?
+        # inReplyTo가 없으면 원문 → 수락
+        return true if Array.wrap(hash["inReplyTo"]).none?(Hash)
+
+        # 대상 객체는 왔지만 href/id가 없어 URL을 뽑지 못했다. 원문으로 받으면
+        # 답글이 부모 없는 최상위 포스트로 노출되므로 거부한다.
+        logger.warn { "handle_federated_object?: rejecting inReplyTo without href or id #{hash['inReplyTo'].inspect.truncate(200)}" }
+        return false
+      end
 
       # 로컬 답글은 실제 대상이 있을 때만 수락한다. 문자열 포함 여부만 검사하면
       # 없는 대상을 가리키는 답글이 부모 없는 최상위 포스트로 저장된다.
