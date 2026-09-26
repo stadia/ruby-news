@@ -29,6 +29,14 @@ module BlogBody
   CODE_LANGUAGE = /\A[a-z0-9+#-]{1,32}\z/i
   CELL_SPAN = /\A[1-9][0-9]?\z/
 
+  # ELEMENT_ATTRIBUTES 중 값 형식을 확인하는 속성. style은 scrub_css_attribute가 따로 본다.
+  ATTRIBUTE_VALUES = {
+    "data-language" => CODE_LANGUAGE,
+    "data-highlight-language" => CODE_LANGUAGE,
+    "colspan" => CELL_SPAN,
+    "rowspan" => CELL_SPAN
+  }.freeze
+
   # Rails 기본 허용 속성에 ELEMENT_ATTRIBUTES를 요소별로 더하는 스크러버.
   class Scrubber < Rails::Html::PermitScrubber
     ELEMENT_ONLY = ELEMENT_ATTRIBUTES.values.flatten.uniq.freeze
@@ -45,8 +53,7 @@ module BlogBody
     def scrub_attributes(node)
       allowed = ELEMENT_ATTRIBUTES.fetch(node.name, [])
       (ELEMENT_ONLY - allowed).each { |name| node.remove_attribute(name) }
-      %w[data-language data-highlight-language].each { |name| drop_unless(node, name, CODE_LANGUAGE) }
-      %w[colspan rowspan].each { |name| drop_unless(node, name, CELL_SPAN) }
+      ATTRIBUTE_VALUES.each { |name, pattern| normalize_value(node, name, pattern) }
       super
     end
 
@@ -67,10 +74,13 @@ module BlogBody
 
     private
 
+    # 앞뒤 공백을 뺀 값이 형식에 맞으면 그 값으로 다시 쓰고, 아니면 속성을 지운다.
     #: (Nokogiri::XML::Node, String, Regexp) -> void
-    def drop_unless(node, name, pattern)
-      value = node[name]
-      node.remove_attribute(name) if value && !value.strip.match?(pattern)
+    def normalize_value(node, name, pattern)
+      value = node[name]&.strip
+      return if value.nil?
+
+      value.match?(pattern) ? node[name] = value : node.remove_attribute(name)
     end
   end
 

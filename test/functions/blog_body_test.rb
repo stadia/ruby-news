@@ -108,6 +108,17 @@ class BlogBodyTest < ActiveSupport::TestCase
     assert_equal "<p>f</p>", fragment.css("p").last.to_html
   end
 
+  test "코드 블록 언어와 표 셀 병합 값의 앞뒤 공백은 지워서 남긴다" do
+    html = BlogBody.sanitize(
+      %(<pre data-language=" ruby " data-highlight-language="ruby\n">a</pre>) +
+      %(<table><tbody><tr><td colspan=" 2 " rowspan="3 ">b</td></tr></tbody></table>)
+    )
+    fragment = Nokogiri::HTML5.fragment(html)
+
+    assert_equal %w[ruby ruby], [ fragment.at_css("pre")["data-language"], fragment.at_css("pre")["data-highlight-language"] ]
+    assert_equal %w[2 3], [ fragment.at_css("td")["colspan"], fragment.at_css("td")["rowspan"] ]
+  end
+
   test "서식이 있는 본문을 다시 정제해도 그대로다" do
     once = BlogBody.sanitize(
       %(<h2>제목</h2><p><s>a</s><u>b</u><mark style="color: var(--highlight-4);">c</mark></p>) +
@@ -168,7 +179,7 @@ class BlogBodyTest < ActiveSupport::TestCase
     value = Nokogiri::HTML5.fragment(BlogBody.editor_value(saved))
 
     assert_includes value.text, "셀 텍스트"
-    assert_equal "캡션", value.at_css("figure.lexxy-content__table-wrapper > action-text-attachment")&.[]("caption"), value.to_html
+    assert_equal "캡션", value.at_css("figure.lexxy-content__table-wrapper table td > action-text-attachment")&.[]("caption"), value.to_html
   end
 
   test "에디터 값: img·figcaption 말고 다른 내용이 있는 figure는 그대로 둔다" do
