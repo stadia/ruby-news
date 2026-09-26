@@ -4,6 +4,27 @@ require "test_helper"
 require "uri"
 
 class DiscordControllerTest < ActionDispatch::IntegrationTest
+  test "GET callback requires login before checking state or exchanging code" do
+    refuse_code_exchange do
+      get discord_oauth_callback_path, params: { code: "anonymous-code", state: "anonymous-state" }
+    end
+
+    assert_redirected_to new_user_session_path
+  end
+
+  test "GET callback cannot finish an install after logout" do
+    sign_in_as(users(:john))
+    state = start_discord_install
+    sign_out users(:john)
+
+    refuse_code_exchange do
+      get discord_oauth_callback_path, params: { code: "after-logout", state: }
+    end
+
+    assert_redirected_to new_user_session_path
+    assert_nil DiscordChannel.find_by(remote_id: "G_SETUP")
+  end
+
   test "GET install redirects with alert when not configured" do
     sign_in_as(users(:john))
 
@@ -37,7 +58,31 @@ class DiscordControllerTest < ActionDispatch::IntegrationTest
       get discord_oauth_callback_path, params: { code: "invalid-code", state: }
     end
 
-    assert_redirected_to oauth_result_path(provider: "discord", success: "false", error: "Token exchange failed")
+    assert_redirected_to oauth_result_path(provider: "discord", success: "false", error: "연동을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.")
+  end
+
+  test "GET callback handles access_denied without exchanging a code" do
+    sign_in_as(users(:john))
+    state = start_discord_install
+
+    refuse_code_exchange do
+      get discord_oauth_callback_path, params: { error: "access_denied", state: }
+    end
+
+    assert_redirected_to oauth_result_path(provider: "discord", success: "false", error: "연동을 취소했습니다.")
+    assert_nil DiscordChannel.find_by(remote_id: "G_SETUP")
+  end
+
+  test "GET callback hides other provider errors and skips code exchange" do
+    sign_in_as(users(:john))
+    state = start_discord_install
+
+    refuse_code_exchange do
+      get discord_oauth_callback_path, params: { error: "server_error", error_description: "secret upstream details", state: }
+    end
+
+    assert_redirected_to oauth_result_path(provider: "discord", success: "false", error: "연동을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.")
+    refute_includes response.location, "secret upstream details"
   end
 
   test "GET callback rejects when state does not match the session" do
@@ -127,6 +172,26 @@ class DiscordControllerTest < ActionDispatch::IntegrationTest
     assert_equal "https://discord.com/api/webhooks/WH123/whtoken", channel.webhook_url
     assert_equal "C_PICK", channel.channel_id
     assert_equal "ruby-news", channel.channel_name
+  end
+
+  test "another logged-in user can relink a site-wide guild" do
+    channel = DiscordChannel.create!(remote_id: "G_SETUP", name: "Old Guild", webhook_url: "https://discord.com/api/webhooks/old",
+                                     channel_id: "COLD", channel_name: "old", status: :active)
+    sign_in_as(users(:jane))
+    state = start_discord_install
+    oauth_response = {
+      "guild" => { "id" => "G_SETUP", "name" => "New Guild" },
+      "webhook" => { "guild_id" => "G_SETUP", "channel_id" => "CNEW", "name" => "new",
+                     "url" => "https://discord.com/api/webhooks/new" }
+    }.with_indifferent_access
+
+    DiscordClient.stub(:exchange_code, oauth_response) do
+      get discord_oauth_callback_path, params: { code: "new-code", state: }
+    end
+
+    assert_redirected_to oauth_result_path(provider: "discord", success: "true", channel_name: "new")
+    assert_equal channel.id, DiscordChannel.find_by!(remote_id: "G_SETUP").id
+    assert_equal "https://discord.com/api/webhooks/new", channel.reload.webhook_url
   end
 
   test "GET callback fails when oauth response has no webhook" do

@@ -4,6 +4,27 @@ require "test_helper"
 require "uri"
 
 class SlackControllerTest < ActionDispatch::IntegrationTest
+  test "GET callback requires login before checking state or exchanging code" do
+    refuse_code_exchange do
+      get slack_oauth_callback_path, params: { code: "anonymous-code", state: "anonymous-state" }
+    end
+
+    assert_redirected_to new_user_session_path
+  end
+
+  test "GET callback cannot finish an install after logout" do
+    sign_in_as(users(:john))
+    state = start_slack_install
+    sign_out users(:john)
+
+    refuse_code_exchange do
+      get slack_oauth_callback_path, params: { code: "after-logout", state: }
+    end
+
+    assert_redirected_to new_user_session_path
+    assert_nil SlackChannel.find_by(remote_id: "TCALLBACK")
+  end
+
   test "POST events rejects when signing secret is blank" do
     Configs::Slack.stub(:signing_secret, "") do
       post slack_events_path,
@@ -53,7 +74,31 @@ class SlackControllerTest < ActionDispatch::IntegrationTest
       get slack_oauth_callback_path, params: { code: "invalid-code", state: }
     end
 
-    assert_redirected_to oauth_result_path(provider: "slack", success: "false", error: "invalid_code")
+    assert_redirected_to oauth_result_path(provider: "slack", success: "false", error: "연동을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.")
+  end
+
+  test "GET callback handles access_denied without exchanging a code" do
+    sign_in_as(users(:john))
+    state = start_slack_install
+
+    refuse_code_exchange do
+      get slack_oauth_callback_path, params: { error: "access_denied", state: }
+    end
+
+    assert_redirected_to oauth_result_path(provider: "slack", success: "false", error: "연동을 취소했습니다.")
+    assert_nil SlackChannel.find_by(remote_id: "TCALLBACK")
+  end
+
+  test "GET callback hides other provider errors and skips code exchange" do
+    sign_in_as(users(:john))
+    state = start_slack_install
+
+    refuse_code_exchange do
+      get slack_oauth_callback_path, params: { error: "server_error", error_description: "secret upstream details", state: }
+    end
+
+    assert_redirected_to oauth_result_path(provider: "slack", success: "false", error: "연동을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.")
+    refute_includes response.location, "secret upstream details"
   end
 
   test "GET callback rejects when state does not match the session" do
@@ -147,6 +192,25 @@ class SlackControllerTest < ActionDispatch::IntegrationTest
     assert_equal "https://hooks.slack.com/services/TCALLBACK/B123/abc", channel.webhook_url
     assert_equal "CCALLBACK", channel.channel_id
     assert_equal "hada-news", channel.channel_name
+  end
+
+  test "another logged-in user can relink a site-wide workspace" do
+    channel = SlackChannel.create!(remote_id: "TCALLBACK", name: "Old Team", webhook_url: "https://hooks.slack.com/services/old",
+                                   channel_id: "COLD", channel_name: "old", status: :active)
+    sign_in_as(users(:jane))
+    state = start_slack_install
+    oauth_response = {
+      "team" => { "id" => "TCALLBACK", "name" => "New Team" },
+      "incoming_webhook" => { "url" => "https://hooks.slack.com/services/new", "channel" => "new", "channel_id" => "CNEW" }
+    }
+
+    SlackClient.stub(:exchange_code, oauth_response) do
+      get slack_oauth_callback_path, params: { code: "new-code", state: }
+    end
+
+    assert_redirected_to oauth_result_path(provider: "slack", success: "true", channel_name: "new")
+    assert_equal channel.id, SlackChannel.find_by!(remote_id: "TCALLBACK").id
+    assert_equal "https://hooks.slack.com/services/new", channel.reload.webhook_url
   end
 
   test "POST events accepts url verification without login when signature is valid" do

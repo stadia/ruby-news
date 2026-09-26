@@ -3,6 +3,18 @@
 require "test_helper"
 
 class OauthControllerTest < ActionDispatch::IntegrationTest
+  test "GET Slack install requires login" do
+    Configs::Slack.stub(:configured?, true) { get "/slack/install" }
+
+    assert_redirected_to new_user_session_path
+  end
+
+  test "GET Discord install requires login" do
+    Configs::Discord.stub(:configured?, true) { get "/discord/install" }
+
+    assert_redirected_to new_user_session_path
+  end
+
   test "GET result renders success page" do
     get "/slack/result?success=true&channel_name=general"
 
@@ -38,6 +50,7 @@ class OauthControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "GET install redirects with alert for unsupported provider" do
+    sign_in_as(users(:john))
     get "/unknown/install"
 
     assert_redirected_to edit_user_registration_path

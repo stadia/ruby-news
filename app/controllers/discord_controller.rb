@@ -6,11 +6,16 @@ class DiscordController < ApplicationController
   include OauthStateVerification
 
   protect_from_forgery except: [ :callback ]
-  skip_before_action :authenticate_user!
 
   def callback
     unless valid_oauth_state?(:discord_oauth_state)
       redirect_to oauth_result_path(provider: "discord", success: "false", error: t("oauth.errors.invalid_state"))
+      return
+    end
+
+    if params[:error].present? || params[:code].blank?
+      error_key = params[:error] == "access_denied" ? "oauth.errors.cancelled" : "oauth.errors.provider_failure"
+      redirect_to oauth_result_path(provider: "discord", success: "false", error: t(error_key))
       return
     end
 
@@ -19,7 +24,8 @@ class DiscordController < ApplicationController
     webhook = oauth[:webhook]
 
     unless guild.present? && webhook.present?
-      raise DiscordClient::ApiError, t("oauth.errors.discord_missing_webhook")
+      redirect_to oauth_result_path(provider: "discord", success: "false", error: t("oauth.errors.discord_missing_webhook"))
+      return
     end
 
     guild_id = webhook[:guild_id].presence || guild[:id]
@@ -45,7 +51,8 @@ class DiscordController < ApplicationController
 
     redirect_to oauth_result_path(provider: "discord", success: "true", channel_name: channel.channel_name)
   rescue DiscordClient::ApiError, ActiveRecord::RecordInvalid => e
-    redirect_to oauth_result_path(provider: "discord", success: "false", error: e.message)
+    logger.warn("Discord OAuth callback failed: #{e.class}: #{e.message}")
+    redirect_to oauth_result_path(provider: "discord", success: "false", error: t("oauth.errors.provider_failure"))
   end
 
   private

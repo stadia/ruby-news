@@ -5,7 +5,7 @@
 class OauthController < ApplicationController
   include WebOnlyFormats
 
-  skip_before_action :authenticate_user!
+  skip_before_action :authenticate_user!, only: :result
 
   def install
     provider = params[:provider].presence || "slack"

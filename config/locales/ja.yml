@@ -233,9 +233,11 @@ ja:
       footer: このメールはアカウント確認のために送信されました。
   oauth:
     errors:
+      cancelled: 連携をキャンセルしました。
       discord_missing_webhook: Discord OAuthレスポンスにwebhook情報がありません。
       discord_not_configured: Discord連携がまだ設定されていません。管理者にお問い合わせください。
       invalid_state: OAuth認証リクエストが無効です。連携を最初からやり直してください。
+      provider_failure: 連携を完了できませんでした。しばらくしてからもう一度お試しください。
       slack_not_configured: Slack連携がまだ設定されていません。管理者にお問い合わせください。
       unsupported_provider: サポートされていない連携です。
     result:

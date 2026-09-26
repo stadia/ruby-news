@@ -6,12 +6,18 @@ class SlackController < ApplicationController
   include OauthStateVerification
 
   protect_from_forgery except: [ :events, :callback ]
-  skip_before_action :authenticate_user!
+  skip_before_action :authenticate_user!, only: :events
   before_action :verify_slack_signature, only: [ :events ]
 
   def callback
     unless valid_oauth_state?(:slack_oauth_state)
       redirect_to oauth_result_path(provider: "slack", success: "false", error: t("oauth.errors.invalid_state"))
+      return
+    end
+
+    if params[:error].present? || params[:code].blank?
+      error_key = params[:error] == "access_denied" ? "oauth.errors.cancelled" : "oauth.errors.provider_failure"
+      redirect_to oauth_result_path(provider: "slack", success: "false", error: t(error_key))
       return
     end
 
@@ -40,7 +46,8 @@ class SlackController < ApplicationController
 
     redirect_to oauth_result_path(provider: "slack", success: "true", channel_name: channel.channel_name)
   rescue KeyError, SlackClient::ApiError, ActiveRecord::RecordInvalid => e
-    redirect_to oauth_result_path(provider: "slack", success: "false", error: e.message)
+    logger.warn("Slack OAuth callback failed: #{e.class}: #{e.message}")
+    redirect_to oauth_result_path(provider: "slack", success: "false", error: t("oauth.errors.provider_failure"))
   end
 
   def events

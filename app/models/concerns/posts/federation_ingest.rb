@@ -31,7 +31,7 @@ module Posts::FederationIngest
         body: extract_body_from_activitypub_object(hash, attachments:)
       }
 
-      object.merge!(reply_attributes(in_reply_to)) if in_reply_to.present?
+      object.merge!(reply_attributes(in_reply_to, federated_url: hash["id"])) if in_reply_to.present?
 
       # Mastodon 이미지 첨부 파싱
       object[:media_attachments] = attachments.map do |a|
@@ -54,9 +54,9 @@ module Posts::FederationIngest
     # 대상이 해석되면 post_type 도 article_id 에 맞춰 명시한다. Post 의
     # type_article_post_as_comment 는 생성 시에만 돌므로, Update 에서 기사 연결이
     # 끊길 때 :comment 가 남지 않게 하려면 여기서 :short 로 내려야 한다.
-    #: (String) -> Hash[Symbol, untyped]
-    def reply_attributes(in_reply_to)
-      attrs = reply_target_attributes(in_reply_to)
+    #: (String, federated_url: String?) -> Hash[Symbol, untyped]
+    def reply_attributes(in_reply_to, federated_url:)
+      attrs = reply_target_attributes(in_reply_to, federated_url:)
       return attrs if attrs.empty?
 
       attrs.merge(post_type: attrs[:article_id].present? ? :comment : :short)
@@ -66,11 +66,16 @@ module Posts::FederationIngest
     # 이 해시를 Update 수신·원격 재동기화에서 assign_attributes/update!로도 쓰므로,
     # 키를 빼면 이전 대상의 값이 답글에 남는다. id는 조회한 레코드에서 꺼내므로
     # Integer다. 원격 부모를 찾지 못하면 빈 해시를 돌려 기존 연결을 건드리지 않는다.
-    #: (String) -> Hash[Symbol, untyped]
-    def reply_target_attributes(in_reply_to)
+    #: (String, federated_url: String?) -> Hash[Symbol, untyped]
+    def reply_target_attributes(in_reply_to, federated_url:)
       if local_reply_target?(in_reply_to)
         target = local_reply_target(in_reply_to)
         unless target
+          if orphaned_comment_for?(in_reply_to, federated_url)
+            logger.warn { "reply_target_attributes: missing local inReplyTo #{in_reply_to.inspect}; preserving existing orphaned comment" }
+            return {}
+          end
+
           logger.warn { "reply_target_attributes: missing local inReplyTo #{in_reply_to.inspect}; refusing to store as standalone" }
           raise ActiveRecord::RecordNotFound, "Local reply target not found: #{in_reply_to.truncate(200)}"
         end
@@ -89,6 +94,16 @@ module Posts::FederationIngest
         logger.warn { "reply_target_attributes: unresolved inReplyTo #{in_reply_to.inspect}; leaving parent/article unset (kept as-is on update)" }
         {}
       end
+    end
+
+    #: (String, String?) -> bool
+    def orphaned_comment_for?(in_reply_to, federated_url)
+      return false if federated_url.blank?
+      path = URI.parse(in_reply_to).path.to_s
+      return false unless path.match?(%r{\A/federation/published/articles/\d+/?\z}) ||
+        path.match?(%r{\A/articles/[^/.]+(?:\.(?:html|md))?/?\z})
+
+      Post.kept.comments.where(article_id: nil).exists?(federated_url: federated_url)
     end
 
     # Only routes we publish or serve locally may resolve to a local target.
@@ -187,6 +202,7 @@ module Posts::FederationIngest
       # 없는 대상을 가리키는 답글이 부모 없는 최상위 포스트로 저장된다.
       if local_reply_target?(in_reply_to)
         return true if local_reply_target(in_reply_to)
+        return true if orphaned_comment_for?(in_reply_to, hash["id"])
 
         logger.warn { "handle_federated_object?: rejecting missing local inReplyTo #{in_reply_to.inspect}" }
         return false
