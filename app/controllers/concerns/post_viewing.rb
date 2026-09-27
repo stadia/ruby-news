@@ -12,14 +12,24 @@ module PostViewing
 
   private
 
-  # Renders the reading page for +post+, or 404s if it is not viewable.
-  def render_post_show(post)
-    raise ActiveRecord::RecordNotFound unless viewable?(post)
-    @posts = build_thread(post.root)
+  # 글과 root가 모두 공개 또는 작성자 미리보기 가능한 경우에만 렌더링한다.
+  # reply_post와 status로 실패한 입력과 HTTP 오류 상태를 보존한다.
+  def render_post_show(post, reply_post: nil, status: :ok)
+    root = post.root
+    raise ActiveRecord::RecordNotFound unless viewable?(post) && viewable?(root)
+    @posts = build_thread(root)
     @liked_post_ids = current_user ? Like.liked_ids_for(liker: current_user, likeable_type: "Post", likeable_ids: @posts.map(&:id)) : []
     @boosted_post_ids = current_user ? Boost.boosted_ids_for(booster: current_user, boostable_type: "Post", boostable_ids: @posts.map(&:id)) : []
     assign_blog_meta_tags(post) if post.blog?
-    render Views::Posts::Show.new(posts: @posts, liked_post_ids: @liked_post_ids, boosted_post_ids: @boosted_post_ids)
+    render Views::Posts::Show.new(posts: @posts, liked_post_ids: @liked_post_ids, boosted_post_ids: @boosted_post_ids, reply_post: reply_post), status: status
+  end
+
+  # 댓글을 받을 root가 발행되고 삭제되지 않았는지 확인한다. 스레드 일치는 호출부가 검사한다.
+  def published_thread_root(post)
+    root = post.root
+    raise ActiveRecord::RecordNotFound unless root.kept? && root.published?
+
+    root
   end
 
   # 원격 인스턴스(마스토돈 등)는 발행된 Note의 링크를 크롤링해 프리뷰 카드를
@@ -56,11 +66,11 @@ module PostViewing
   end
 
   def build_thread(root)
-    # parent_id 기반으로 안전하게 스레드 수집
+    # 초안 자식은 작성자에게도 공개 스레드에서 노출하지 않는다.
     ids = [ root.id ] #: Array[Integer]
     queue = [ root.id ] #: Array[Integer]
     while queue.any?
-      children = Post.kept.where(parent_id: queue).pluck(:id) #: Array[Integer]
+      children = Post.visible.where(parent_id: queue).pluck(:id) #: Array[Integer]
       ids.concat(children)
       queue = children
     end

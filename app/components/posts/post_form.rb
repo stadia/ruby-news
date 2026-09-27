@@ -3,10 +3,12 @@
 
 class Components::Posts::PostForm < Components::Base
   include Phlex::Rails::Helpers::FormWith
+  include Phlex::Rails::Helpers::HiddenFieldTag
   include PhlexIcons
 
-  def initialize(post: Post.new)
+  def initialize(post: Post.new, thread_post: nil)
     @post = post
+    @thread_post = thread_post
   end
 
   def view_template
@@ -15,8 +17,11 @@ class Components::Posts::PostForm < Components::Base
       class: "mb-6",
       data: {
         controller: "character-counter post-form",
+        post_form_default_parent_id_value: @thread_post&.id,
+        post_form_default_author_name_value: @thread_post && author_label(@thread_post),
+        post_form_default_body_preview_value: thread_preview,
         character_counter_max_length_value: ::Post::MAX_BODY_LENGTH.to_s,
-        action: "turbo:submit-end->post-form#reset post-form:reply@window->post-form#activateReply"
+        action: "submit->post-form#submit turbo:submit-end->post-form#reset post-form:reply@window->post-form#activateReply"
       }
     ) do
       render RubyUI::Card.new(class: "bg-surface border-border-muted shadow-sm") do
@@ -25,8 +30,11 @@ class Components::Posts::PostForm < Components::Base
             model: @post,
             url: view_context.posts_path,
             class: "space-y-3",
-            autocomplete: "off"
+            autocomplete: "off",
+            # 상세는 전체 스레드를 다시 렌더링해 실패한 입력과 오류를 보존한다.
+            data: { turbo: @thread_post.nil? }
           ) do |f|
+            hidden_field_tag :return_to_post, @thread_post.id if @thread_post
             error_messages if @post.errors.any?
             reply_state_banner
             f.hidden_field :parent_id, value: @post.parent_id, data: { post_form_target: "parentId" }
@@ -41,18 +49,22 @@ class Components::Posts::PostForm < Components::Base
   private
 
   def error_messages
-    div(class: "text-sm text-danger-text") do
+    div(class: "text-sm text-danger-text", role: "alert") do
       @post.errors.full_messages.each { |msg| p { msg } }
     end
   end
 
   def body_field(f)
+    if @thread_post
+      render RubyUI::FormFieldLabel.new(for: "post_body", class: "sr-only") { t("posts.show.reply_body") }
+    end
     raw(
       f.lexxy_rich_textarea(
         :body,
         class: "post-composer-editor w-full text-content",
         rows: 3,
         toolbar: false,
+        attachments: "false",
         placeholder: t("helpers.placeholder.post.body"),
         autocomplete: "off",
         data: {
@@ -104,13 +116,15 @@ class Components::Posts::PostForm < Components::Base
         # redirects to the GET editor, which Turbo renders. The draft row is
         # created lazily on first autosave — switching to blog from an empty
         # composer never persists an empty draft.
-        render RubyUI::Button.new(
-          type: :submit,
-          formaction: view_context.new_blog_post_path,
-          formmethod: :post,
-          variant: :secondary,
-          class: "text-content-secondary"
-        ) { t("posts.post_form.blog") }
+        unless @thread_post
+          render RubyUI::Button.new(
+            type: :submit,
+            formaction: view_context.new_blog_post_path,
+            formmethod: :post,
+            variant: :secondary,
+            class: "text-content-secondary"
+          ) { t("posts.post_form.blog") }
+        end
         f.submit submit_label,
           class: "inline-flex items-center px-5 py-2 bg-info-solid hover:bg-info-solid-hover text-brand-foreground text-sm font-medium rounded-lg transition-colors duration-200 cursor-pointer"
       end
@@ -130,7 +144,11 @@ class Components::Posts::PostForm < Components::Base
   def reply_target_label
     return unless parent_post.present?
 
-    parent_post.user&.name || parent_post.fedipub_actor&.name || parent_post.author_name
+    author_label(parent_post)
+  end
+
+  def author_label(post)
+    post.user&.name || post.fedipub_actor&.name || post.author_name
   end
 
   def reply_preview_text
@@ -139,10 +157,16 @@ class Components::Posts::PostForm < Components::Base
     view_context.truncate(view_context.strip_tags(parent_post.body.to_s).squish, length: 120)
   end
 
+  def thread_preview
+    return unless @thread_post
+
+    view_context.truncate(view_context.strip_tags(@thread_post.body.to_s).squish, length: 120)
+  end
+
   def parent_post
     return @parent_post if defined?(@parent_post)
     return @parent_post = nil if @post.parent_id.blank?
 
-    @parent_post = Post.includes(:user, :fedipub_actor).find_by(id: @post.parent_id)
+    @parent_post = Post.visible.includes(:user, :fedipub_actor).find_by(id: @post.parent_id)
   end
 end

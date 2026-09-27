@@ -262,6 +262,8 @@ ko:
       heading: 비밀번호를 잊으셨나요?
       submit: 재설정 메일 보내기
   posts:
+    rate_limit_exceeded: 너무 자주 작성했습니다. 잠시 후 다시 시도해 주세요.
+    reply_parent_unavailable: 답글을 달 원본 글을 더 이상 볼 수 없습니다.
     blog:
       autosave_failed: 저장 실패
       autosave_idle: 자동 저장 준비됨
@@ -317,6 +319,8 @@ ko:
     show:
       back_to_feed: 피드로 돌아가기
       title: 포스트 | Ruby-News
+      reply_body: 댓글 내용
+      sign_in_to_reply: 로그인하고 댓글 쓰기
   profiles:
     activity_tabs:
       blog: 블로그

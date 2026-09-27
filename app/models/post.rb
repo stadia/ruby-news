@@ -50,6 +50,7 @@ class Post < ApplicationRecord
   validates :body, presence: true, unless: :draft_blog?
   validates :title, presence: true, if: :published_blog?
   validates :slug, uniqueness: true, allow_nil: true
+  validate :body_has_visible_content, unless: :draft_blog?
   validate :validate_user_or_actor
   validate :validate_parent_post
 
@@ -88,6 +89,13 @@ class Post < ApplicationRecord
   on_fedipub_undelete_requested :undiscard!
 
   # ── Public Instance Methods ──────────────────────────────────────────
+
+  # 단문·댓글은 텍스트가 필요하다. 정제 후 사라지는 태그나 공백은 본문이 아니다.
+  #: () -> bool
+  def visible_body?
+    html = Rails::Html::SafeListSanitizer.new.sanitize(body.to_s, tags: HtmlSanitizable::ALLOWED_TAGS)
+    Nokogiri::HTML5.fragment(html).text.tr("\u00a0", " ").present?
+  end
 
   #: () -> (User | Fedipub::Actor)?
   def federation_actor_entity
@@ -241,6 +249,13 @@ class Post < ApplicationRecord
     return if federation_actor_entity.nil?
 
     super
+  end
+
+  #: () -> void
+  def body_has_visible_content
+    return if body.blank? || blog? || visible_body?
+
+    errors.add(:body, :blank)
   end
 
   #: () -> void

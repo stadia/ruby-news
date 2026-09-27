@@ -16,11 +16,19 @@ module RateLimiting
     current_count = Rails.cache.read(cache_key) || 0
 
     if current_count >= rate_limit_threshold
-      render json: { error: "Rate limit exceeded" }, status: :too_many_requests
+      render_rate_limit_error
       return
     end
 
     Rails.cache.write(cache_key, current_count + 1, expires_in: 1.hour)
+  end
+
+  def render_rate_limit_error
+    if request.format.symbol == :html
+      redirect_back fallback_location: root_path, alert: I18n.t("posts.rate_limit_exceeded")
+    else
+      render json: { error: "Rate limit exceeded" }, status: :too_many_requests
+    end
   end
 
   def rate_limit_threshold

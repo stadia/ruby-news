@@ -262,6 +262,8 @@ en:
       heading: Forgot your password?
       submit: Send reset email
   posts:
+    rate_limit_exceeded: Too many posts. Please try again later.
+    reply_parent_unavailable: The reply target is no longer available.
     blog:
       autosave_failed: Save failed
       autosave_idle: Autosave ready
@@ -317,6 +319,8 @@ en:
     show:
       back_to_feed: Back to feed
       title: Post | Ruby-News
+      reply_body: Reply content
+      sign_in_to_reply: Sign in to reply
   profiles:
     activity_tabs:
       blog: Blog

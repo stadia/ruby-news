@@ -3,6 +3,7 @@ import { resetFormWithCounter } from "utils/form_helpers"
 
 // Connects to data-controller="post-form"
 export default class extends Controller {
+  static values = { defaultParentId: Number, defaultAuthorName: String, defaultBodyPreview: String }
   static targets = ["parentId", "replyBanner", "replyLabel", "replyPreview", "body"]
 
   connect() {
@@ -15,6 +16,17 @@ export default class extends Controller {
     document.removeEventListener("turbo:before-cache", this.beforeCache)
   }
 
+  submit(event) {
+    const form = event.target
+    if (form.dataset.turbo !== "false") return
+    if (this.submitting) {
+      event.preventDefault()
+      return
+    }
+    this.submitting = true
+    form.querySelectorAll("[type='submit']").forEach(button => { button.disabled = true })
+  }
+
   reset(event) {
     if (!event?.detail?.success) return
 
@@ -23,6 +35,8 @@ export default class extends Controller {
   }
 
   beforeCache() {
+    this.submitting = false
+    this.element.querySelectorAll("[type='submit']").forEach(button => { button.disabled = false })
     resetFormWithCounter(this.element)
     this.clearReplyState()
   }
@@ -54,10 +68,11 @@ export default class extends Controller {
   }
 
   clearReplyState() {
-    if (this.hasParentIdTarget) this.parentIdTarget.value = ""
-    if (this.hasReplyLabelTarget) this.replyLabelTarget.textContent = ""
-    if (this.hasReplyPreviewTarget) this.replyPreviewTarget.textContent = ""
-    this.hideReplyBanner()
+    // 상세에서 취소하면 root에 답글을 달고, 피드에서는 답글 모드를 해제한다.
+    if (this.hasParentIdTarget) this.parentIdTarget.value = this.defaultParentIdValue || ""
+    if (this.hasReplyLabelTarget) this.replyLabelTarget.textContent = this.defaultAuthorNameValue || ""
+    if (this.hasReplyPreviewTarget) this.replyPreviewTarget.textContent = this.defaultBodyPreviewValue || ""
+    this.syncReplyState()
   }
 
   showReplyBanner() {
