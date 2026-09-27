@@ -78,6 +78,10 @@ group :development, :test do
   gem "simplecov", require: false
   gem "tapioca", require: false
 
+  # 계층 경계 검사 [https://github.com/Shopify/packwerk] (docs/architecture-layers.md)
+  gem "packwerk", "~> 3.3", require: false
+  gem "packwerk-extensions", "~> 0.4", require: false
+
   # Test profiling [https://github.com/test-prof/test-prof]
   # 계측은 ENV 변수로만 켜진다. 평소 실행에는 아무 영향이 없다.
   gem "test-prof", "~> 1.6"

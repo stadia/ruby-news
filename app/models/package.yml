@@ -1,0 +1,4 @@
+# Domain: ActiveRecord 모델과 불변 조건.
+enforce_dependencies: false
+enforce_layers: true
+layer: domain

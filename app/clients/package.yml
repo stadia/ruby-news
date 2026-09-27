@@ -1,0 +1,4 @@
+# Infrastructure: 외부 API·SDK 연동.
+enforce_dependencies: false
+enforce_layers: true
+layer: infrastructure

@@ -78,7 +78,7 @@ module OauthAccounts
         credentials = auth.fetch("credentials", {}).with_indifferent_access
         provider = auth.fetch("provider")
         email = info[:email].to_s.presence
-        github_email = github_verified_email(credentials[:token]) if provider.to_s == "github" && email.blank?
+        github_email = GithubEmails.primary_verified_email(credentials[:token]) if provider.to_s == "github" && email.blank?
         email ||= github_email
 
         {
@@ -135,33 +135,6 @@ module OauthAccounts
         end
 
         ActiveModel::Type::Boolean.new.cast(value)
-      end
-
-      def github_verified_email(token)
-        return if token.blank?
-
-        response = Faraday.get(
-          "https://api.github.com/user/emails",
-          nil,
-          {
-            "Authorization" => "Bearer #{token}",
-            "Accept" => "application/vnd.github+json",
-            "X-GitHub-Api-Version" => "2022-11-28"
-          }
-        ) do |req|
-          req.options.timeout = 5
-          req.options.open_timeout = 2
-        end
-        return unless response.status == 200
-
-        emails = JSON.parse(response.body)
-        return unless emails.is_a?(Array)
-
-        primary = emails.find { |entry| entry["primary"] && entry["verified"] }
-
-        primary&.fetch("email", nil).to_s.presence
-      rescue Faraday::Error, JSON::ParserError
-        nil
       end
 
       def merged_raw_info(existing:, incoming:)

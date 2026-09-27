@@ -114,6 +114,59 @@ jobs:
       - name: Check gem RBIs match Gemfile.lock
         run: bundle exec tapioca gem --verify
 
+  # Packwerk 계층 경계 검사. 규칙과 기존 위반 목록은 docs/architecture-layers.md를 본다.
+  # Packwerk가 config/environment로 앱 전체를 부팅하므로 libvips와
+  # 모델 로딩에 필요한 PostgreSQL 스키마를 테스트 환경에 준비한다.
+  boundaries:
+    runs-on: ubuntu-latest
+
+    env:
+      RAILS_ENV: test
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/ra-news_boundaries
+      PGGSSENCMODE: disable
+
+    services:
+      postgres:
+        image: ghcr.io/stadia/ra-pg:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libvips-dev
+
+      - name: Prepare database
+        run: bin/rails db:create:primary db:schema:load:primary
+
+      - name: Validate package configuration
+        run: bin/packwerk validate
+
+      # package_todo.yml에 없는 새 위반과, 고쳤는데 목록에 남은 stale 항목 모두에서 실패한다.
+      - name: Check layer boundaries
+        run: bin/packwerk check
+
+      # 설정 오타로 검사가 조용히 꺼지면 위 단계는 초록으로 남는다.
+      # 상위 계층을 참조하는 임시 파일을 넣어 실제로 실패하는지 확인한다.
+      - name: Check layer boundaries reject upward references
+        run: bin/packwerk-layer-probe
+
   test:
     runs-on: ubuntu-latest
 
