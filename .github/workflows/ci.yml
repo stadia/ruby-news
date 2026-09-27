@@ -116,6 +116,8 @@ jobs:
 
   # Packwerk 계층 경계 검사. 규칙과 기존 위반 목록은 docs/architecture-layers.md를 본다.
   # DB 없이 돈다. packwerk가 Zeitwerk 로드 경로를 얻으려고 config/environment만 부팅한다.
+  # Packwerk는 config/environment로 앱 전체를 부팅한다. DB에 접근하는 initializer를
+  # 추가하면 이 잡에도 PostgreSQL 설정이 필요하다.
   boundaries:
     runs-on: ubuntu-latest
 

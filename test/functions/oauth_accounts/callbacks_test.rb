@@ -35,6 +35,24 @@ class OauthAccounts::CallbacksTest < ActiveSupport::TestCase
     assert result[:relay_email]
   end
 
+  test "github payload에 email이 있으면 API를 호출하지 않는다" do
+    GithubEmails.stub(:primary_verified_email, ->(*) { flunk "email이 있으면 조회하면 안 된다" }) do
+      result = OauthAccounts::Callbacks.send(:build_auth_result, auth: github_auth_hash(email: "octo@example.com"))
+
+      assert_equal "octo@example.com", result[:email]
+    end
+  end
+
+  test "github 아닌 provider는 email이 없어도 API를 호출하지 않는다" do
+    GithubEmails.stub(:primary_verified_email, ->(*) { flunk "다른 provider는 조회하면 안 된다" }) do
+      [ google_auth_hash(email: nil), apple_auth_hash(email: nil, name: nil) ].each do |auth|
+        result = OauthAccounts::Callbacks.send(:build_auth_result, auth:)
+
+        assert_nil result[:email]
+      end
+    end
+  end
+
   test "github payload를 정규화한다" do
     result = OauthAccounts::Callbacks.send(:build_auth_result, auth: github_auth_hash(email: "octo@example.com"))
 
@@ -56,12 +74,15 @@ class OauthAccounts::CallbacksTest < ActiveSupport::TestCase
   end
 
   test "github verified primary email을 찾지 못하면 email_verified는 false다" do
-    GithubEmails.stub(:primary_verified_email, nil) do
+    requested_token = nil
+    lookup = ->(token) { requested_token = token; nil }
+    GithubEmails.stub(:primary_verified_email, lookup) do
       result = OauthAccounts::Callbacks.send(:build_auth_result, auth: github_auth_hash(email: nil))
 
       assert_nil result[:email]
       refute result[:email_verified]
     end
+    assert_equal "github-token", requested_token
   end
 
   test "existing oauth account면 sign_in 결과를 반환한다" do

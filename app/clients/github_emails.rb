@@ -3,7 +3,6 @@
 # rbs_inline: enabled
 
 # GitHub REST API `/user/emails` 조회(Infrastructure).
-# OAuth payload에 email이 없을 때 OauthAccounts::Callbacks가 사용한다.
 module GithubEmails
   URL = "https://api.github.com/user/emails"
   OPEN_TIMEOUT = 2 #: Integer
@@ -19,7 +18,10 @@ module GithubEmails
         req.options.timeout = REQUEST_TIMEOUT
         req.options.open_timeout = OPEN_TIMEOUT
       end
-      return unless response.status == 200
+      unless response.status == 200
+        Rails.logger.warn { "GithubEmails: email lookup failed (HTTP #{response.status})" }
+        return
+      end
 
       emails = JSON.parse(response.body)
       return unless emails.is_a?(Array)
@@ -27,7 +29,8 @@ module GithubEmails
       primary = emails.find { |entry| entry["primary"] && entry["verified"] }
 
       primary&.fetch("email", nil).to_s.presence
-    rescue Faraday::Error, JSON::ParserError
+    rescue Faraday::Error, JSON::ParserError => e
+      Rails.logger.warn { "GithubEmails: email lookup failed (#{e.class})" }
       nil
     end
 

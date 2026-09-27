@@ -74,6 +74,36 @@ class GithubEmailsTest < ActiveSupport::TestCase
     end
   end
 
+  [ 401, 403, 503 ].each do |status|
+    test "HTTP #{status} 실패를 경고 로그에 남긴다" do
+      output = StringIO.new
+      Rails.stub(:logger, ActiveSupport::Logger.new(output)) do
+        Faraday.stub(:get, github_get_response(status:, body: "private response")) do
+          assert_nil GithubEmails.primary_verified_email("secret-token")
+        end
+      end
+
+      assert_includes output.string, "GithubEmails: email lookup failed (HTTP #{status})"
+      refute_includes output.string, "secret-token"
+      refute_includes output.string, "private response"
+    end
+  end
+
+  [ Faraday::ConnectionFailed, JSON::ParserError ].each do |error_class|
+    test "#{error_class} 실패를 경고 로그에 남긴다" do
+      output = StringIO.new
+      Rails.stub(:logger, ActiveSupport::Logger.new(output)) do
+        Faraday.stub(:get, ->(*) { raise error_class, "private response secret-token" }) do
+          assert_nil GithubEmails.primary_verified_email("secret-token")
+        end
+      end
+
+      assert_includes output.string, "GithubEmails: email lookup failed (#{error_class})"
+      refute_includes output.string, "secret-token"
+      refute_includes output.string, "private response"
+    end
+  end
+
   private
 
   def github_get_response(status:, body:)

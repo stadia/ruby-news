@@ -1,9 +1,12 @@
+# typed: false
 # Run using bin/ci
+# rbs_inline: enabled
 
 CI.run do
   step "Setup", "bin/setup --skip-server"
 
   step "Style: Ruby", "bin/rubocop"
+  step "Architecture: Package config", "bin/packwerk validate"
   step "Architecture: Layer boundaries", "bin/packwerk check"
   step "Architecture: Layer probe", "bin/packwerk-layer-probe"
 

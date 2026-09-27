@@ -44,6 +44,7 @@ missing = PROBES.map(&:last).reject { |constant| output.include?("Layer violatio
 
 if status.success? || missing.any?
   warn output
+  warn "packwerk check가 성공 코드(0)로 종료되어 계층 위반을 거부하지 않았다." if status.success?
   warn "packwerk가 상위 계층 참조를 잡지 못했다: #{missing.join(", ")}"
   exit 1
 end
