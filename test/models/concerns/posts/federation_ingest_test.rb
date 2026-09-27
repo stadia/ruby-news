@@ -125,6 +125,9 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
     assert_equal @comment_post.article_id, result[:article_id]
   end
 
+  # A local /posts/N URL whose post no longer exists must not produce a
+  # dangling parent_id — that would violate the FK on save (issue #871, item 2).
+  # 없는 로컬 대상의 답글은 수신을 거부해 최상위 포스트로 남지 않는다.
   test "a missing local post is rejected instead of becoming a standalone post" do
     missing_id = Post.maximum(:id).to_i + 1_000
     hash = { "id" => "https://remote.example.com/notes/gone", "content" => "답글",
@@ -143,7 +146,7 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
 
     assert_match %r{/posts/root-slug-for-reply\z}, hash["inReplyTo"]
     assert Post.send(:handle_federated_object?, hash)
-    assert_equal @root_post.id, Post.from_activitypub_object(hash)[:parent_id]
+    assert_post_reply_to @root_post, Post.from_activitypub_object(hash)
   end
 
   test "a missing local post slug is rejected" do
@@ -159,7 +162,15 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
              "inReplyTo" => published_url("posts", @root_post.id) }
 
     assert Post.send(:handle_federated_object?, hash)
-    assert_equal @root_post.id, Post.from_activitypub_object(hash)[:parent_id]
+    assert_post_reply_to @root_post, Post.from_activitypub_object(hash)
+  end
+
+  test "a local published post URL with a trailing slash resolves to its parent" do
+    hash = { "id" => "https://remote.example.com/notes/published-slash-reply", "content" => "답글",
+             "inReplyTo" => "#{published_url('posts', @root_post.id)}/" }
+
+    assert Post.send(:handle_federated_object?, hash)
+    assert_post_reply_to @root_post, Post.from_activitypub_object(hash)
   end
 
   test "a local published article URL resolves to a comment" do
@@ -219,7 +230,7 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
              "inReplyTo" => "https://#{@local_host}/posts/#{@root_post.slug}/" }
 
     assert Post.send(:handle_federated_object?, hash)
-    assert_equal @root_post.id, Post.from_activitypub_object(hash)[:parent_id]
+    assert_post_reply_to @root_post, Post.from_activitypub_object(hash)
   end
 
   test "a local post HTML URL resolves to its parent" do
@@ -228,7 +239,37 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
              "inReplyTo" => "https://#{@local_host}/posts/#{@root_post.slug}.html" }
 
     assert Post.send(:handle_federated_object?, hash)
-    assert_equal @root_post.id, Post.from_activitypub_object(hash)[:parent_id]
+    assert_post_reply_to @root_post, Post.from_activitypub_object(hash)
+  end
+
+  # PostsController는 .md 형식을 제공하지 않으므로 정규식도 받지 않는다.
+  test "a local post Markdown URL is rejected" do
+    @root_post.update_columns(slug: "root-markdown-reply")
+    hash = { "id" => "https://remote.example.com/notes/post-markdown-reply", "content" => "답글",
+             "inReplyTo" => "https://#{@local_host}/posts/#{@root_post.slug}.md" }
+
+    assert_not Post.send(:handle_federated_object?, hash)
+    assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
+  end
+
+  # Post도 default_scope 없이 discard하므로 행이 남아 FK 관점에서 유효한 대상이다.
+  # 기사(#937)와 같게 find_by로 찾아 수락하는 현재 동작을 고정한다.
+  test "a reply to a discarded local post still resolves to its parent" do
+    @root_post.discard!
+    hash = { "id" => "https://remote.example.com/notes/discarded-post", "content" => "답글",
+             "inReplyTo" => "https://#{@local_host}/posts/#{@root_post.id}" }
+
+    assert Post.send(:handle_federated_object?, hash)
+    assert_post_reply_to @root_post, Post.from_activitypub_object(hash)
+  end
+
+  test "a host-only local URL is rejected" do
+    hash = { "id" => "https://remote.example.com/notes/host-only", "content" => "답글",
+             "inReplyTo" => "https://#{@local_host}" }
+
+    assert Post.send(:local_reply_target?, hash["inReplyTo"])
+    assert_not Post.send(:handle_federated_object?, hash)
+    assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
   end
 
   test "a missing local article is rejected instead of becoming a comment" do
@@ -348,10 +389,7 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
              "inReplyTo" => Rails.application.routes.url_helpers.article_url(@article) }
 
     assert Post.send(:handle_federated_object?, hash)
-    result = Post.from_activitypub_object(hash)
-
-    assert_equal @article.id, result[:article_id]
-    assert_equal :comment, result[:post_type]
+    assert_article_comment_on @article, Post.from_activitypub_object(hash)
   end
 
   test "a local article Markdown URL resolves to a comment" do
@@ -359,10 +397,15 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
              "inReplyTo" => Rails.application.routes.url_helpers.article_url(@article, format: :md) }
 
     assert Post.send(:handle_federated_object?, hash)
-    result = Post.from_activitypub_object(hash)
+    assert_article_comment_on @article, Post.from_activitypub_object(hash)
+  end
 
-    assert_equal @article.id, result[:article_id]
-    assert_equal :comment, result[:post_type]
+  test "a local article HTML URL resolves to a comment" do
+    hash = { "id" => "https://remote.example.com/notes/article-html-reply", "content" => "답글",
+             "inReplyTo" => "https://#{@local_host}/articles/#{@article.id}.html" }
+
+    assert Post.send(:handle_federated_object?, hash)
+    assert_article_comment_on @article, Post.from_activitypub_object(hash)
   end
 
   test "a local URL with a post path only in its query is rejected" do
@@ -371,6 +414,186 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
 
     assert_not Post.send(:handle_federated_object?, hash)
     assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
+  end
+
+  # 위 테스트는 path를 몰라서 거부되는지 query를 무시해서 거부되는지 구분하지 못한다.
+  # 알려진 path와 함께 써서 query·fragment가 대상 판정에 끼지 않음을 고정한다.
+  { "query" => "?next=", "fragment" => "#" }.each do |part, separator|
+    test "a #{part} naming an existing post does not rescue an unknown post slug" do
+      hash = { "id" => "https://remote.example.com/notes/#{part}-unknown", "content" => "답글",
+               "inReplyTo" => "https://#{@local_host}/posts/no-such-post#{separator}/posts/#{@root_post.id}" }
+
+      assert_not Post.send(:handle_federated_object?, hash)
+      assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
+    end
+
+    test "a #{part} naming another post does not override the path slug" do
+      @root_post.update_columns(slug: "root-#{part}-reply")
+      hash = { "id" => "https://remote.example.com/notes/#{part}-override", "content" => "답글",
+               "inReplyTo" => "https://#{@local_host}/posts/#{@root_post.slug}#{separator}/posts/#{@comment_post.id}" }
+
+      assert Post.send(:handle_federated_object?, hash)
+      assert_post_reply_to @root_post, Post.from_activitypub_object(hash)
+    end
+  end
+
+  # ── host gate comes before path matching ────────────────────────────
+  #
+  # 경로가 실제 로컬 대상과 같아도 호스트가 원격이면 로컬로 풀지 않는다. 원격 부모를
+  # 찾는 federated_url 조회로 넘어가고, 그런 부모가 없으니 답글 속성도 생기지 않는다.
+
+  test "a remote host carrying a real local post slug is not resolved locally" do
+    @root_post.update_columns(slug: "root-remote-host")
+    hash = { "id" => "https://remote.example.com/notes/remote-host-slug", "content" => "답글",
+             "inReplyTo" => "https://mastodon.example/posts/#{@root_post.slug}" }
+
+    assert_not Post.send(:handle_federated_object?, hash)
+    assert_no_reply_attributes Post.from_activitypub_object(hash)
+  end
+
+  test "a remote host carrying a real local article id is not resolved locally" do
+    hash = { "id" => "https://remote.example.com/notes/remote-host-article", "content" => "답글",
+             "inReplyTo" => "https://mastodon.example/articles/#{@article.id}" }
+
+    assert_not Post.send(:handle_federated_object?, hash)
+    assert_no_reply_attributes Post.from_activitypub_object(hash)
+  end
+
+  # local_reply_target 의 URI.parse 에는 rescue 가 없다. 파싱 불가 URL이 안전한 것은
+  # local_reply_target? 가 먼저 false 를 돌려 이 호출까지 가지 않기 때문이므로, 순서를 고정한다.
+  test "an unparseable URL is stopped by the host gate before path matching" do
+    in_reply_to = "https://exa mple.com/posts/1"
+    hash = { "id" => "https://remote.example.com/notes/invalid-host", "content" => "답글", "inReplyTo" => in_reply_to }
+
+    assert_raises(URI::InvalidURIError) { Post.send(:local_reply_target, in_reply_to) }
+    assert_not Post.send(:handle_federated_object?, hash)
+    assert_no_reply_attributes Post.from_activitypub_object(hash)
+  end
+
+  # 부팅 시 막는 설정이지만(config/initializers/routes_default_host.rb), 런타임에 비어도
+  # 빈 문자열과 비교해 원격으로 떨어질 뿐 예외를 내지 않는다.
+  test "an unknown host is classified as remote without raising when the routing host is blank" do
+    options = Rails.application.routes.default_url_options
+    original_host = options[:host]
+    options[:host] = nil
+    hash = { "id" => "https://remote.example.com/notes/misconfigured", "content" => "답글",
+             "inReplyTo" => "https://unknown.example/posts/#{@root_post.id}" }
+
+    assert_not Post.send(:local_reply_target?, hash["inReplyTo"])
+    assert_not Post.send(:handle_federated_object?, hash)
+    assert_no_reply_attributes Post.from_activitypub_object(hash)
+  ensure
+    options[:host] = original_host if options
+  end
+
+  # ── local blog post public URL (/@user/blog/:slug) ──────────────────
+  #
+  # 우리가 내보내는 블로그 글의 AP url 이자, 부모 federated_url 이 없을 때의 inReplyTo 폴백이다
+  # (Posts::Federation). url 을 inReplyTo 로 쓰는 구현의 로컬 답글도 받아야 한다(#1010).
+
+  test "a local blog post public URL resolves to its parent" do
+    blog = posts(:blog_published)
+    hash = { "id" => "https://remote.example.com/notes/blog-reply", "content" => "답글",
+             "inReplyTo" => blog.public_url }
+
+    assert_match %r{/@john/blog/lf-published-fixture\z}, hash["inReplyTo"]
+    assert Post.send(:handle_federated_object?, hash)
+    assert_post_reply_to blog, Post.from_activitypub_object(hash)
+  end
+
+  test "a discarded blog post public URL still resolves to its parent" do
+    blog = posts(:blog_published)
+    blog.discard!
+    hash = { "id" => "https://remote.example.com/notes/discarded-blog-reply", "content" => "답글",
+             "inReplyTo" => blog.public_url }
+
+    assert Post.send(:handle_federated_object?, hash)
+    assert_post_reply_to blog, Post.from_activitypub_object(hash)
+  end
+
+  test "a blog username lookup preserves case" do
+    blog = posts(:blog_published)
+    hash = { "id" => "https://remote.example.com/notes/blog-username-case", "content" => "답글",
+             "inReplyTo" => "https://#{@local_host}/@JOHN/blog/#{blog.slug}" }
+
+    assert_not Post.send(:handle_federated_object?, hash)
+    assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
+  end
+
+  test "a blog public URL with a dotted username resolves to its parent" do
+    blog = posts(:blog_published)
+    blog.user.update!(username: "john.doe")
+    hash = { "id" => "https://remote.example.com/notes/blog-dotted-username", "content" => "답글",
+             "inReplyTo" => blog.public_url }
+
+    assert_includes hash["inReplyTo"], "/@john.doe/blog/"
+    assert Post.send(:handle_federated_object?, hash)
+    assert_post_reply_to blog, Post.from_activitypub_object(hash)
+  end
+
+  [ "%FF", "%00" ].each do |identifier|
+    test "an invalid identifier #{identifier} logs a warning before rejection" do
+      output = StringIO.new
+
+      Post.stub(:logger, ActiveSupport::Logger.new(output)) do
+        assert_nil Post.send(:unescape_identifier, identifier)
+      end
+
+      assert_includes output.string, "unescape_identifier: invalid UTF-8 or NUL in identifier"
+      assert_includes output.string, identifier
+    end
+  end
+
+  test "a local blog post URL with a percent-encoded Korean slug resolves to its parent" do
+    blog = posts(:blog_published)
+    blog.update_columns(slug: "발행된-긴-글")
+    hash = { "id" => "https://remote.example.com/notes/blog-korean-reply", "content" => "답글",
+             "inReplyTo" => blog.public_url }
+
+    assert_includes hash["inReplyTo"], "%EB%B0%9C"
+    assert Post.send(:handle_federated_object?, hash)
+    assert_post_reply_to blog, Post.from_activitypub_object(hash)
+  end
+
+  # BlogsController#show 처럼 대소문자가 달라진 slug 도 같은 글로 찾는다.
+  test "a local blog post URL with a trailing slash and upcased slug resolves to its parent" do
+    blog = posts(:blog_published)
+    hash = { "id" => "https://remote.example.com/notes/blog-upcased-reply", "content" => "답글",
+             "inReplyTo" => "https://#{@local_host}/@john/blog/LF-PUBLISHED-FIXTURE/" }
+
+    assert Post.send(:handle_federated_object?, hash)
+    assert_post_reply_to blog, Post.from_activitypub_object(hash)
+  end
+
+  # slug 는 전역 유일하지만, 작성자를 확인하지 않으면 다른 사용자 주소 아래로도 풀린다.
+  test "a blog slug under another user's path is rejected" do
+    hash = { "id" => "https://remote.example.com/notes/blog-wrong-user", "content" => "답글",
+             "inReplyTo" => "https://#{@local_host}/@jane/blog/#{posts(:blog_published).slug}" }
+
+    assert_not Post.send(:handle_federated_object?, hash)
+    assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
+  end
+
+  {
+    "unknown user" => "/@no-such-user/blog/lf-published-fixture",
+    "unknown slug" => "/@john/blog/no-such-blog-post",
+    "draft" => "/@john/blog/lf-draft-fixture",
+    "short post slug" => "/@john/blog/%<short_slug>s",
+    "undecodable slug" => "/@john/blog/%%FF",
+    "NUL slug" => "/@john/blog/%%00",
+    "undecodable username" => "/@%%C3%%28/blog/lf-published-fixture",
+    "extension" => "/@john/blog/lf-published-fixture.html"
+  }.each do |label, path_format|
+    test "a local blog URL with #{label} is rejected as a missing target" do
+      @root_post.update_columns(slug: "root-not-a-blog", user_id: users(:john).id)
+      path = format(path_format, short_slug: @root_post.slug)
+      hash = { "id" => "https://remote.example.com/notes/blog-missing", "content" => "답글",
+               "inReplyTo" => "https://#{@local_host}#{path}" }
+
+      assert Post.send(:local_reply_target?, hash["inReplyTo"])
+      assert_not Post.send(:handle_federated_object?, hash)
+      assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
+    end
   end
 
   # ── unparseable inReplyTo ───────────────────────────────────────────
@@ -577,6 +800,34 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
   end
 
   private
+
+  # 로컬 Post 답글: 부모를 가리키고 article_id·post_type은 부모의 기사 연결을 따른다
+  # (기사 있으면 :comment, 없으면 :short).
+  def assert_post_reply_to(parent, result)
+    assert_equal parent.id, result[:parent_id]
+    assert result.key?(:article_id)
+    if parent.article_id
+      assert_equal parent.article_id, result[:article_id]
+      assert_equal :comment, result[:post_type]
+    else
+      assert_nil result[:article_id]
+      assert_equal :short, result[:post_type]
+    end
+  end
+
+  # 기사 댓글: 기사를 가리키고, 부모 Post 연결은 nil 로 명시한다.
+  def assert_article_comment_on(article, result)
+    assert_equal article.id, result[:article_id]
+    assert result.key?(:parent_id)
+    assert_nil result[:parent_id]
+    assert_equal :comment, result[:post_type]
+  end
+
+  def assert_no_reply_attributes(result)
+    assert_not result.key?(:parent_id)
+    assert_not result.key?(:article_id)
+    assert_not result.key?(:post_type)
+  end
 
   # fedipub가 발행하는 AP id와 같은 경로를 쓴다(config/fedipub.yml의 server_routes_path).
   # 호스트는 앱 호스트로 붙인다: test 환경의 fedipub site_host(localhost)는 앱 호스트와

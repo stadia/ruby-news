@@ -82,6 +82,8 @@ module Posts::FederationIngest
     def reply_target_attributes(in_reply_to, federated_url:)
       if local_reply_target?(in_reply_to)
         target = local_reply_target(in_reply_to)
+        # 없는 로컬 대상은 FK상 유효한 연결을 만들 수 없고, 속성을 비우면 답글이
+        # 최상위 포스트로 남으므로 거부한다. 이미 남은 고아 기사 댓글의 재수신은 예외다.
         unless target
           if orphaned_comment_for?(in_reply_to, federated_url)
             logger.warn { "reply_target_attributes: missing local inReplyTo #{in_reply_to.inspect}; preserving existing orphaned comment" }
@@ -120,6 +122,8 @@ module Posts::FederationIngest
 
     # Only routes we publish or serve locally may resolve to a local target.
     # The public post/article routes use slugs; fedipub's published routes use IDs.
+    # 경로만 보므로 query·fragment는 대상 판정에 끼지 않는다. URI.parse에 rescue가
+    # 없는 것은 호출부가 local_reply_target?로 파싱 가능한 로컬 URL만 넘기기 때문이다.
     #: (String) -> (Post | Article)?
     def local_reply_target(in_reply_to)
       path = URI.parse(in_reply_to).path
@@ -133,18 +137,43 @@ module Posts::FederationIngest
         find_by_slug_or_id(Post, Regexp.last_match(1).to_s)
       when %r{\A/articles/([^/.]+)(?:\.(?:html|md))?/?\z}
         find_by_slug_or_id(Article, Regexp.last_match(1).to_s)
+      when %r{\A/@([^/]+)/blog/([^/.]+)/?\z}
+        find_blog_post(Regexp.last_match(1).to_s, Regexp.last_match(2).to_s)
       end
     end
 
-    # 퍼센트 디코딩 결과가 잘못된 UTF-8이거나 NUL을 품으면 PG가 쿼리 자체를
-    # 거부해(StatementInvalid/ArgumentError) 인박스가 500을 낸다. 그런 slug는
-    # 존재할 수 없으므로 조회하지 않고 대상 없음으로 돌려 404 경로에 합친다.
+    # 우리가 내보내는 블로그 글의 AP url이자 부모 federated_url이 없을 때의
+    # inReplyTo 폴백이다(Posts::Federation). 이 url로 오는 답글도 받도록 푼다(#1010).
+    # BlogsController#show와 같게 작성자로 범위를 좁히고 slug를 lookup_key로 맞춘다.
+    # 초안은 연합된 적이 없으므로 대상으로 삼지 않는다. 삭제된 발행 글은 행이
+    # 남아 FK상 유효한 대상이므로 기존 답글의 Update도 계속 받는다.
+    #: (String, String) -> Post?
+    def find_blog_post(escaped_username, escaped_slug)
+      username = unescape_identifier(escaped_username)
+      slug = unescape_identifier(escaped_slug)
+      return unless username && slug
+
+      User.find_by(username:)&.posts&.published_blog&.find_by(slug: BlogSlug.lookup_key(slug))
+    end
+
     #: (singleton(Post) | singleton(Article), String) -> (Post | Article)?
     def find_by_slug_or_id(model, escaped_identifier)
-      identifier = URI::DEFAULT_PARSER.unescape(escaped_identifier)
-      return unless identifier.valid_encoding? && !identifier.include?("\0")
+      identifier = unescape_identifier(escaped_identifier)
+      return unless identifier
 
       model.find_by(slug: identifier) || (model.find_by(id: identifier) if identifier.match?(/\A\d+\z/))
+    end
+
+    # 퍼센트 디코딩 결과가 잘못된 UTF-8이거나 NUL을 품으면 PG가 쿼리 자체를
+    # 거부해(StatementInvalid/ArgumentError) 인박스가 500을 낸다. 그런 식별자는
+    # 존재할 수 없으므로 nil을 돌려 대상 없음(404) 경로에 합친다.
+    #: (String) -> String?
+    def unescape_identifier(escaped_identifier)
+      identifier = URI::DEFAULT_PARSER.unescape(escaped_identifier)
+      return identifier if identifier.valid_encoding? && !identifier.include?("\0")
+
+      logger.warn { "unescape_identifier: invalid UTF-8 or NUL in identifier #{escaped_identifier.truncate(200).inspect}; treating as missing target" }
+      nil
     end
 
     # Exact host match, not substring: a URL merely embedding a local host
