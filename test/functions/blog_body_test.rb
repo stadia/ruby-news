@@ -8,6 +8,10 @@ class BlogBodyTest < ActiveSupport::TestCase
       %(content-type="#{content_type}" filename="x.webp" presentation="gallery"></action-text-attachment>)
   end
 
+  def render_sanitize(html)
+    ApplicationController.helpers.sanitize(html, scrubber: BlogBody::SCRUBBER).to_s
+  end
+
   test "에디터의 이미지 첨부를 figure, img, figcaption으로 바꾼다" do
     html = BlogBody.sanitize(attachment(url: "https://cdn.example/a.webp", alt: "대체 텍스트", caption: "사진 설명"))
     figure = Nokogiri::HTML5.fragment(html).at_css("figure")
@@ -126,6 +130,47 @@ class BlogBodyTest < ActiveSupport::TestCase
     )
 
     assert_equal once, BlogBody.sanitize(once)
+    assert_equal once, render_sanitize(once)
+  end
+
+  # 화면(Views::Posts::Show)은 Rails 헬퍼 sanitize로 같은 스크러버를 한 번 더 통과시킨다.
+  # 헬퍼는 HTML5 파서를 쓰므로, 저장 경로도 같은 파서여야 두 결과가 같다.
+  FORMATTED_BODIES = {
+    "tbody 없는 표" => %(<figure class="lexxy-content__table-wrapper"><table><tr><th>머리</th><td>칸</td></tr></table></figure>),
+    "thead만 있는 표" => "<table><thead><tr><th>h</th></tr></thead><tr><td>d</td></tr></table>",
+    "빈 요소" => "<p></p><p><br></p><hr><h2></h2>",
+    "중첩 리스트" => "<ul><li>a<ul><li>b</li></ul></li></ul><ol><li><p>x</p></li></ol>",
+    "하이라이트" => %(<p><mark style="color: var(--highlight-1);">색</mark> a&nbsp;b</p>),
+    "앞 줄바꿈이 있는 코드 블록" => %(<pre data-language="ruby">\n\nputs 1\n</pre>),
+    "문단 안의 표" => "<p>a<table><tr><td>t</td></tr></table></p>"
+  }.freeze
+
+  test "저장 경로와 화면 경로가 같은 결과를 내고, 어느 쪽으로 다시 정제해도 그대로다" do
+    FORMATTED_BODIES.each do |name, html|
+      saved = BlogBody.sanitize(html)
+
+      assert_equal saved, render_sanitize(html), name
+      assert_equal saved, BlogBody.sanitize(saved), "#{name}: 저장 경로 멱등성"
+      assert_equal saved, render_sanitize(saved), "#{name}: 화면 경로 멱등성"
+    end
+  end
+
+  test "코드 블록 첫 줄의 빈 줄은 다시 정제해도 사라지지 않는다" do
+    saved = BlogBody.sanitize(%(<pre data-language="ruby">\n\nputs 1</pre>))
+
+    assert_equal "\nputs 1", Nokogiri::HTML5.fragment(saved).at_css("pre").text
+    assert_equal "\nputs 1", Nokogiri::HTML5.fragment(render_sanitize(saved)).at_css("pre").text
+  end
+
+  test "HTML4로 정제되어 저장된 본문은 다시 정제하면 화면에 보이던 모양이 되고, 그 뒤로는 그대로다" do
+    # 이전 BlogBody.sanitize(HTML4)가 표·목록 사이에 줄바꿈을 넣고 tbody는 넣지 않았던 형태.
+    legacy = "<table><tr>\n<th>a</th>\n<td>b</td>\n</tr></table><ul><li>a<ul><li>b</li></ul>\n</li></ul>"
+
+    resaved = BlogBody.sanitize(legacy)
+
+    assert_equal render_sanitize(legacy), resaved
+    assert_equal "<table><tbody><tr>\n<th>a</th>\n<td>b</td>\n</tr></tbody></table>", resaved[/<table>.*<\/table>/m]
+    assert_equal resaved, BlogBody.sanitize(resaved)
   end
 
   test "허용하지 않는 태그와 style 속성은 지우고 글자는 남긴다" do

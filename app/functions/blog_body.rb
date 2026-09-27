@@ -8,6 +8,10 @@
 # Lexxy는 본문 이미지를 <img>가 아니라 <action-text-attachment url=…>로 직렬화한다.
 # 이 앱은 ActionText를 쓰지 않아 그 태그를 렌더링할 방법이 없고 허용 목록에도 없으므로,
 # 정제 전에 <figure><img><figcaption>으로 바꿔 둔다. 그대로 두면 태그째 지워진다.
+#
+# 본문은 저장할 때(sanitize)와 화면에 그릴 때(Views::Posts::Show의 sanitize 헬퍼) 두 번
+# 정제된다. 헬퍼는 HTML5 파서를 쓰므로 저장 쪽도 같은 파서(SANITIZER)로 맞춰, 저장본을
+# 다시 정제해도 어느 경로에서든 모양이 그대로이게 한다(#1026).
 module BlogBody
   # 섹션 제목·구분선·이미지, 취소선·밑줄·글자색/배경색, 표.
   ALLOWED_TAGS = (
@@ -47,6 +51,14 @@ module BlogBody
       self.attributes = Rails::Html::SafeListSanitizer.allowed_attributes.to_a + ELEMENT_ONLY
     end
 
+    # HTML5 파서는 <pre> 바로 뒤의 줄바꿈 하나를 버리는데 Nokogiri 직렬화는 그 줄바꿈을
+    # 되돌려 쓰지 않는다. 그대로 두면 정제할 때마다 코드 블록 첫 줄의 빈 줄이 하나씩 사라진다.
+    #: (Nokogiri::XML::Node) -> untyped
+    def scrub(node)
+      keep_leading_newline(node) if node.name == "pre" && node.document.is_a?(Nokogiri::HTML5::Document)
+      super
+    end
+
     protected
 
     #: (Nokogiri::XML::Node) -> void
@@ -74,6 +86,12 @@ module BlogBody
 
     private
 
+    #: (Nokogiri::XML::Node) -> void
+    def keep_leading_newline(node)
+      text = node.children.first
+      text.content = "\n#{text.content}" if text&.text? && text.content.start_with?("\n")
+    end
+
     # 앞뒤 공백을 뺀 값이 형식에 맞으면 그 값으로 다시 쓰고, 아니면 속성을 지운다.
     #: (Nokogiri::XML::Node, String, Regexp) -> void
     def normalize_value(node, name, pattern)
@@ -85,11 +103,13 @@ module BlogBody
   end
 
   SCRUBBER = Scrubber.new
+  # 화면의 sanitize 헬퍼와 같은 파서. HTML5를 못 쓰는 환경(JRuby 등)에서는 헬퍼도 HTML4로 내려간다.
+  SANITIZER = Rails::HTML::Sanitizer.best_supported_vendor.safe_list_sanitizer
 
   class << self
     #: (String?) -> String
     def sanitize(html)
-      Rails::Html::SafeListSanitizer.new.sanitize(expand_image_attachments(html.to_s), scrubber: SCRUBBER).to_s
+      SANITIZER.new.sanitize(expand_image_attachments(html.to_s), scrubber: SCRUBBER).to_s
     end
 
     # 저장된 본문을 에디터에 다시 넣을 값으로 바꾼다. Lexxy는 <img>만 이미지로 읽고
