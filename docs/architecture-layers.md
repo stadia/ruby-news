@@ -85,7 +85,7 @@ bin/packwerk-layer-probe     # 상위 계층을 참조하는 임시 파일을 �
 bin/packwerk update-todo     # 위반을 고친 뒤 package_todo.yml 갱신
 ```
 
-CI의 `boundaries` 잡과 `bin/ci`가 앞의 세 명령을 실행한다. `bin/packwerk-layer-probe`는 음성 테스트다. 설정 오타 등으로 `enforce_layers`가 꺼지면 `check`는 조용히 초록으로 남는데, 이 스크립트가 그런 경우를 잡는다. 동일한 임시 파일을 쓰므로 probe를 동시에 여러 번 실행하지 않는다(기존 파일이 있으면 abort한다). `check`가 성공 코드로 종료되면 위반 메시지 유무와 관계없이 실패 사유를 출력한다. 스크립트는 application·domain·infrastructure 패키지에 각각 상위 계층을 참조하는 파일을 임시로 만들고, `packwerk check`가 세 건 모두를 위반으로 보고하는지 확인한 뒤 파일을 지운다.
+CI의 `boundaries` 잡과 `bin/ci`가 앞의 세 명령을 실행한다. `boundaries`는 앱 부팅에 필요한 libvips와 확장 구성이 포함된 PostgreSQL 18(`ra-pg`) 서비스를 준비한다. `RAILS_ENV=test`와 `TEST_DATABASE_URL`을 잡 전체에 적용하고, 전용 DB의 primary 스키마를 로드한 뒤 검사한다. `bin/packwerk-layer-probe`는 음성 테스트다. 설정 오타 등으로 `enforce_layers`가 꺼지면 `check`는 조용히 초록으로 남는데, 이 스크립트가 그런 경우를 잡는다. 동일한 임시 파일을 쓰므로 probe를 동시에 여러 번 실행하지 않는다(기존 파일이 있으면 abort한다). `check`가 성공 코드로 종료되면 위반 메시지 유무와 관계없이 실패 사유를 출력한다. 스크립트는 application·domain·infrastructure 패키지에 각각 상위 계층을 참조하는 파일을 임시로 만들고, `packwerk check`가 세 건 모두를 위반으로 보고하는지 확인한 뒤 파일을 지운다.
 
 ### 흐름을 넓힐 때
 
