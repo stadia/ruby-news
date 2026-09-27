@@ -17,7 +17,7 @@ class Components::Posts::PostForm < Components::Base
   def view_template
     div(
       id: @inline ? "inline_reply_form" : "post_form",
-      class: @inline ? "ml-6 sm:ml-10" : "mb-6",
+      class: @inline ? nil : "mb-6",
       data: {
         controller: "character-counter post-form",
         post_form_default_parent_id_value: @thread_post && !@inline ? @thread_post.id : nil,
