@@ -107,3 +107,27 @@
 4. `.theme-dark { color-scheme: dark }` / `.theme-light { color-scheme: light }` (P2)
 5. 입력 테두리 대비 보강 (P1-9)
 6. `DESIGN.md` 값 동기화, `tokens.css`의 Tailwind 네임스페이스 재정의 정리 (P2)
+
+## 후속 처리 (2026-09-27, #994 종료)
+
+위 "미해결"과 "후속 권장 순서" 항목을 모두 처리했다. 대비 값은 OKLCH → sRGB 변환 후 WCAG 2.x 대비비다.
+
+| 항목 | 변경 | 수정 후 |
+|---|---|---|
+| P1-7 success/warning 글자 | `--semantic-success-text`(다크 lime-400 / 라이트 lime-800), `--semantic-warning-text`(amber-400 / amber-800) 추가. Badge, Alert, Boost 활성, OAuth 성공 아이콘, 글자 수 경고를 `text-*-text`로 교체 | 라이트 틴트 위 6.11 / 6.18, 다크 8.29 / 7.41 |
+| P1-6 `text-content-disabled` 정보 텍스트 | 빈 상태 메시지 5곳과 `users/user.rb` 라벨을 `text-content-muted`로. DESIGN.md 마이그레이션 표 수정 | 다크 6.97 / 라이트 7.22 |
+| P1-9 입력 테두리 | `--input` → `--semantic-input-border`(neutral-500). RubyUI Input/Textarea는 `border-input`. 앱 입력 필드(로그인, 비밀번호, 인증 메일, 기사 URL, 헤더 검색, 원격 계정 조회, 댓글 답글, 회원 폼)는 `bg-app border-input`, 에러는 `border-danger-text` | 다크 bg-app 3.74, bg-surface 3.06 / 라이트 4.55. 에러 다크 6.46 / 라이트 6.19 |
+| P1-9 모바일 메뉴 포커스 outline | `--semantic-brand-solid` → `--semantic-brand` | 다크 7.84 / 라이트 4.80 |
+| P1-10 경계선 조합 | 입력 placeholder는 배경을 `bg-app`으로 바꿔 해소(다크 4.04 → 6.97). 작은 아바타 폴백은 `bg-surface text-accent-text` | 라이트 4.08 → 4.58 |
+| 라이트 primary hover | RubyUI Button/Link `hover:bg-primary/90` → `hover:bg-brand-solid-hover`, destructive도 `hover:bg-danger-solid-hover` | 4.22 → 7.13 |
+| fedipub skip link | `focus:bg-brand` → `focus:bg-brand-solid` | 다크 2.28 → 5.02 |
+| `color-scheme` | `.theme-dark { color-scheme: dark }`, `.theme-light { color-scheme: light }` (`tokens.css`) | 스크롤바·폼 컨트롤이 테마를 따름 |
+| DESIGN.md 동기화 | 표면·글자·테두리 값을 실제 토큰으로, radius 표(`--radius: 0.625rem` 기준), APCA는 참고 지표로 낮추고 WCAG 2.x AA를 기준으로 명시 | |
+| `tokens.css` 네임스페이스 | `--color-{success,warning,error,info}`, `--text-*`, `--radius-*`, `--shadow-*`, `--font-*`, `--leading-*`, `--ease-*` 재정의 제거(모두 Tailwind 기본값과 같거나 적용되지 않던 값). info는 `--status-info` | 빌드 산출물 동일 |
+| PWA 색 | manifest `theme_color`/`background_color` `#7F1D1D` → `#0f172a`(다크 bg-app). head에 테마별 `<meta name="theme-color">`, 테마를 직접 고르면 theme-toggle이 media를 바꾼다. 쓰이지 않고 JSON도 깨져 있던 `manifest.js.erb` 삭제 | |
+| 하드코딩 팔레트 | madmin 레이아웃은 앱 Tailwind(`app.css`)를 불러오지 않아 팔레트 클래스가 원래 적용되지 않았다. 토큰으로 옮기지 않고 madmin CSS 구조(`header`, `table`, `btn btn-*`)로 정리. `btn-success`/`btn-warning`은 madmin에 없어 `btn-secondary` | OAuth 브랜드 버튼만 예외로 남음 |
+| 로케일 정규화 | `i18n-tasks normalize` (별도 커밋) | |
+| 검토: Devise 안내 flash | 유지. Flash 톤은 메시지가 아니라 키로 정해지고, Devise는 거부된 동작(이미 로그인됨 등)에 `:alert`를 쓴다 | |
+| 검토: 스위치 thumb | `bg-background` → `bg-brand-foreground`(흰색). 켜짐/꺼짐 모두 일반적인 흰 thumb 관례를 따른다 | |
+
+검증: `bin/rails tailwindcss:build`, `bin/rails test`(1289 runs 0 failures), `bundle exec rspec`(70 examples 0 failures), headless Chrome으로 로그인 화면 라이트/다크 확인.
