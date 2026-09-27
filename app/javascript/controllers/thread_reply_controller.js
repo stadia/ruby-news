@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { scrollBehavior } from "utils/motion"
 
 const INLINE_FORM_ID = "inline_reply_form"
 const REPLY_BUTTON = "button[data-action='feed-reply#activate']"
@@ -43,7 +44,7 @@ export default class extends Controller {
     current?.remove()
     card.after(node)
     this.focusEditor(node)
-    node.scrollIntoView({ behavior: "smooth", block: "nearest" })
+    node.scrollIntoView({ behavior: scrollBehavior(), block: "nearest" })
   }
 
   close(event) {
@@ -76,7 +77,7 @@ export default class extends Controller {
   focusRootComposer() {
     if (!this.hasRootComposerTarget) return
 
-    this.rootComposerTarget.scrollIntoView({ behavior: "smooth", block: "center" })
+    this.rootComposerTarget.scrollIntoView({ behavior: scrollBehavior(), block: "center" })
     this.focusEditor(this.rootComposerTarget)
   }
 

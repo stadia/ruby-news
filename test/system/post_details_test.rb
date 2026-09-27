@@ -136,6 +136,23 @@ class PostDetailsSystemTest < ApplicationSystemTestCase
     assert evaluate_script("document.activeElement.closest('#post_#{child.id}') !== null")
   end
 
+  test "reply scrolling respects reduced motion" do
+    visit post_path(@short)
+    page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", features: [ { name: "prefers-reduced-motion", value: "reduce" } ])
+
+    assert_equal "auto", evaluate_async_script(<<~JS)
+      const done = arguments[arguments.length - 1];
+      import("utils/motion").then(({ scrollBehavior }) => done(scrollBehavior()));
+    JS
+
+    page.driver.browser.execute_cdp("Emulation.setEmulatedMedia", features: [ { name: "prefers-reduced-motion", value: "no-preference" } ])
+
+    assert_equal "smooth", evaluate_async_script(<<~JS)
+      const done = arguments[arguments.length - 1];
+      import("utils/motion").then(({ scrollBehavior }) => done(scrollBehavior()));
+    JS
+  end
+
   test "replying to the root focuses the reading page composer" do
     visit post_path(@short)
 

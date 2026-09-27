@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { resetFormWithCounter } from "utils/form_helpers"
+import { scrollBehavior } from "utils/motion"
 
 // Connects to data-controller="post-form"
 export default class extends Controller {
@@ -52,7 +53,7 @@ export default class extends Controller {
     if (this.hasReplyPreviewTarget) this.replyPreviewTarget.textContent = bodyPreview || ""
     this.showReplyBanner()
     this.focusBody()
-    this.element.scrollIntoView({ behavior: "smooth", block: "center" })
+    this.element.scrollIntoView({ behavior: scrollBehavior(), block: "center" })
   }
 
   cancelReply() {
