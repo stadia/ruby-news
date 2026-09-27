@@ -8,6 +8,7 @@
 class Components::Layout::AssetPreloads < Components::Base
   # 브라우저 UI 색을 페이지 배경(bg-app: 라이트 neutral-50, 다크 neutral-900)에 맞춘다.
   # media는 OS 테마 기준이고, 사용자가 테마를 직접 고르면 theme-toggle이 media를 바꾼다.
+  # tokens.css의 neutral-50/900을 hex로 옮긴 값이다. 변경 시 manifest.json.erb도 동기화한다.
   THEME_COLORS = { light: "#f8fafc", dark: "#0f172a" }.freeze
 
   def initialize(section:)
@@ -17,6 +18,7 @@ class Components::Layout::AssetPreloads < Components::Base
   def view_template
     case @section
     when :preconnect then render_asset_preconnect
+    when :theme_color then render_theme_color
     when :pwa_and_icons then render_pwa_and_icons
     when :google_fonts then render_google_fonts
     end
@@ -24,11 +26,14 @@ class Components::Layout::AssetPreloads < Components::Base
 
   private
 
-  def render_pwa_and_icons
-    link(rel: "manifest", href: pwa_manifest_path(format: :json))
+  def render_theme_color
     THEME_COLORS.each do |theme, color|
       meta(name: "theme-color", content: color, media: "(prefers-color-scheme: #{theme})", data: { theme: })
     end
+  end
+
+  def render_pwa_and_icons
+    link(rel: "manifest", href: pwa_manifest_path(format: :json))
     link(rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png")
     link(rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32x32.png")
     link(rel: "icon", type: "image/png", sizes: "16x16", href: "/favicon-16x16.png")

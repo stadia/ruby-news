@@ -17,7 +17,7 @@ class LayoutFooterTest < ActionDispatch::IntegrationTest
   test "테마 전환 버튼의 접근 가능한 이름은 누르면 바뀔 테마를 말한다" do
     get root_path
 
-    assert_select "footer [data-action$='#setDarkTheme'] button[aria-label=?]", I18n.t("layout.theme_dark")
-    assert_select "footer [data-action$='#setLightTheme'] button[aria-label=?]", I18n.t("layout.theme_light")
+    assert_select "footer [data-action$='#setDarkTheme'] button[aria-label=?]", "다크 모드로 전환"
+    assert_select "footer [data-action$='#setLightTheme'] button[aria-label=?]", "라이트 모드로 전환"
   end
 end

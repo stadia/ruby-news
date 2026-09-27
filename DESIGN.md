@@ -70,7 +70,7 @@ The design system is expressed through Phlex components, RubyUI primitives, and 
 | 900 | `oklch(0.208 0.040 266)` |
 | 950 | `oklch(0.129 0.041 265)` |
 
-**Status Colors** — 배경·링·아이콘 틴트 전용이다. 글자에는 아래 Status Semantics의 `-text` 토큰을 쓴다.
+**Status Colors** — 배경·링 전용이다. 글자·아이콘에는 아래 Status Semantics의 `-text` 토큰을 쓴다.
 | Role | OKLCH | Hue | Defined in |
 |------|-------|-----|------------|
 | Success | `oklch(0.648 0.175 132)` (lime-600) | Yellow-green | `application.css` `--success` |
@@ -173,9 +173,9 @@ Tailwind v4 기본 `shadow-*` 유틸리티를 그대로 쓴다. `tokens.css`에�
 - Transition: `transition-colors`
 
 **Secondary** — `bg-surface-muted hover:bg-surface text-content-secondary`
-- Same padding/font/radius as primary
+- 패딩·글자 크기·반경은 화면 용도에 맞춘다. RubyUI::Button에서는 size/variant prop을 우선한다.
 
-**Danger** — `bg-surface-muted hover:bg-danger-solid text-content-secondary hover:text-danger-text`
+**Danger** — `bg-surface-muted hover:bg-danger-solid text-content-secondary hover:text-brand-foreground`
 
 **Info** — `bg-info-solid hover:bg-info-solid-hover text-brand-foreground`
 
@@ -183,7 +183,10 @@ Tailwind v4 기본 `shadow-*` 유틸리티를 그대로 쓴다. `tokens.css`에�
 
 **Standard (RubyUI::Card)**
 ```ruby
-class: "bg-surface shadow-md hover:shadow-lg transition-shadow overflow-hidden border border-border-strong p-3 md:p-6"
+render RubyUI::Card.new do
+  # 기본: rounded-xl border bg-card text-card-foreground shadow
+  # 내용은 RubyUI::CardContent로 구성한다.
+end
 ```
 
 **Transparent / Profile**
@@ -196,7 +199,7 @@ class: "bg-app/40 border border-border-subtle rounded-2xl overflow-hidden shadow
 class: "bg-app border-input text-content placeholder:text-content-muted"
 # error: border-danger-text
 ```
-- 입력 배경은 페이지색(`bg-app`)으로 카드 안에서 안쪽으로 들어간 느낌을 준다. `bg-surface-muted` 위에서는 placeholder(4.04:1)와 테두리(2.17:1)가 대비에 미달한다.
+- 입력 배경은 페이지색(`bg-app`)으로 카드 안에서 안쪽으로 들어간 느낌을 준다. `bg-surface-muted` 위에서 placeholder는 다크 4.04:1로 텍스트 기준에 미달한다. 기존 `border-border-muted`는 같은 표면 위에서 다크 1.37:1 / 라이트 2.08:1로 입력 경계 기준에 미달한다.
 
 ### Select / Dropdown
 - Use `RubyUI::DropdownMenu` for action groups
@@ -228,14 +231,14 @@ class: "h-24 w-24 ring-4 ring-app bg-app shadow-xl"
 
 ### Radius Mapping (radiusTone: rounded)
 
-`--radius: 0.625rem`(10px)을 기준으로 `@theme inline`이 `rounded-sm`(6px)·`md`(8px)·`lg`(10px)·`xl`(14px)를 만든다(`application.css`).
+`--radius: 0.625rem`(10px)을 기준으로 `@theme inline`이 `rounded-sm`(6px)·`md`(8px)·`lg`(10px)·`xl`(14px)·`2xl`(24px)를 만든다(`application.css`).
 
 | Component | Radius | Value |
 |-----------|--------|-------|
 | Button | `rounded-md` | 8px |
 | Input | `rounded-md` | 8px |
 | Card | `rounded-xl` | 14px |
-| Dialog/Modal | `rounded-lg` | 10px |
+| Dialog/Modal | `sm:rounded-lg` | sm 이상에서 10px |
 | Badge/Pill | `rounded-full` | 9999px |
 | Profile card | `rounded-2xl` | 24px |
 
@@ -332,9 +335,9 @@ Dark interfaces need visible separation. Priority order:
 - ARIA labels on meaningful navigation and toggles
 - Reduced motion support (`prefers-reduced-motion: reduce`)
 - WCAG 2.x AA가 기준이다: 텍스트 4.5:1, 비텍스트(입력 테두리, 포커스 링, 체크박스, 스위치 트랙) 3:1. 두 테마에서 모두 확인한다.
-- APCA는 참고 지표다. 본문(`text-content`, `text-content-secondary`)은 Lc 60 이상이지만 `text-content-muted`는 Lc 48~51이다. muted는 날짜·카운트 같은 보조 메타데이터와 빈 상태 안내에만 쓰고 본문 문단에 쓰지 않는다.
+- APCA는 참고 지표다. 본문(`text-content`, `text-content-secondary`)은 Lc 60 이상이지만 `text-content-muted`는 다크에서 Lc 48~51이고 라이트에서는 약 80이다. muted는 날짜·카운트 같은 보조 메타데이터와 빈 상태 안내에만 쓰고 본문 문단에 쓰지 않는다.
 - `color-scheme`은 테마 클래스가 정한다(`.theme-dark { color-scheme: dark }`). 네이티브 스크롤바, 폼 컨트롤, 자동완성 배경이 테마를 따른다.
-- 브라우저 UI 색: `<meta name="theme-color">`가 bg-app 색(라이트 `#f8fafc`, 다크 `#0f172a`)을 쓰고, 테마를 직접 고르면 theme-toggle이 맞춘다. PWA manifest는 다크 색을 쓴다.
+- 브라우저 UI 색: `<meta name="theme-color">`가 bg-app 색(라이트 `#f8fafc`, 다크 `#0f172a`)을 쓰고, 테마를 직접 고르면 pre-paint 스크립트와 theme-toggle이 media를 맞춘다. PWA manifest는 다크 색을 쓴다.
 
 ### Contrast Validation Pairs
 - `text-content` on `bg-app` (primary text on page background)
@@ -387,7 +390,7 @@ When updating old UI, use these mandatory replacements:
 - Attribute: CSS class (`.theme-dark`, `.theme-light`)
 - Tailwind: `@custom-variant dark (&:is(.theme-dark *, .dark *));`
 - Provider: Custom Stimulus controller (localStorage + matchMedia + data attribute)
-- `tokens.css`는 Tailwind 테마 네임스페이스(`--color-*` 상태 색, `--text-*`, `--radius-*`, `--shadow-*`, `--leading-*`, `--ease-*`)를 재정의하지 않는다. 앱 전용 값은 `--semantic-*`, `--status-*`, `--neutral-*`처럼 겹치지 않는 이름을 쓴다.
+- `tokens.css`는 Tailwind 테마 네임스페이스(`--color-*` 상태 색, `--text-*`, `--radius-*`, `--shadow-*`, `--font-*`, `--leading-*`, `--ease-*`)를 재정의하지 않는다. 앱 전용 값은 `--semantic-*`, `--status-*`, `--neutral-*`처럼 겹치지 않는 이름을 쓴다. 기존 RubyUI 호환을 위한 `--color-border` 별칭은 예외로 유지하고, 새 참조는 `--semantic-border`를 사용한다. radius 유틸리티 값은 `application.css`의 `@theme inline`에서만 정의한다.
 
 ---
 
@@ -399,7 +402,7 @@ When updating old UI, use these mandatory replacements:
 - `2026-04-10` — Theme: class-based switching preserved (.theme-dark/.theme-light), Stimulus controller contract defined.
 - `2026-09-22` — Contrast review (`docs/design-system-review-2026-09-22.md`). RubyUI `--primary`/`--destructive` now alias the solid tokens (`--semantic-brand-solid`, `--semantic-danger-solid`) with white foreground; they are background-only. Text uses `text-link` / `text-danger-text`, never `text-primary` / `text-destructive`. `--color-brand` is theme-aware via `--semantic-brand` (green-700 in light) so `ring-brand` meets 3:1.
 - `2026-09-22` — RubyUI surface tokens now alias app tokens (single source in `tokens.css`): `--background` → `bg-app`, `--card`/`--popover` → `bg-surface-elevated`, `--muted`/`--secondary` → `bg-surface-muted`, `--accent` → `bg-surface-hover`, `--border` → `--semantic-border`. Floating UI uses `bg-popover`, cards `bg-card`. Reference borders via `--semantic-border`, not `--color-border` (collides with Tailwind's theme namespace).
-- `2026-09-27` — #994 follow-up. Added `--semantic-success-text` / `--semantic-warning-text` (`text-success-text`, `text-warning-text`); status colors are background-only. `--input` → `--semantic-input-border` (neutral-500) for 3:1 input boundaries; app inputs use `bg-app border-input`, errors `border-danger-text`. `text-content-disabled` is for disabled state only. Removed Tailwind-namespace redefinitions from `tokens.css`; status info is `--status-info`. `color-scheme` per theme, `theme-color` meta per theme. RubyUI Button hover uses `bg-brand-solid-hover` / `bg-danger-solid-hover` (not `/90`), Switch thumb is white. Devise `flash[:alert]` (e.g. already signed in) stays destructive: the key, not the message, decides the tone, and Devise uses `:alert` for refused actions.
+- `2026-09-27` — #994 follow-up. Added `--semantic-success-text` / `--semantic-warning-text` (`text-success-text`, `text-warning-text`); status colors are background-only. `--input` → `--semantic-input-border` (neutral-500) for 3:1 input boundaries; 로그인·비밀번호·인증 메일·기사 URL·헤더 검색·원격 계정 조회·블로그 편집은 `bg-app border-input`이다. Post 답글 폼은 `bg-surface`, 회원 폼은 `bg-surface/50` 배경을 유지하며 테두리만 `border-input`으로 바꿨다. 에러는 `border-danger-text`다. `text-content-disabled` is for disabled state only. Removed Tailwind-namespace redefinitions from `tokens.css`; status info is `--status-info`. `color-scheme` per theme, `theme-color` meta per theme. RubyUI primary hover uses `bg-brand-solid-hover`; destructive hover의 `bg-danger-solid-hover`는 `[a&]` 조건으로 링크에만 적용된다(일반 button에는 적용되지 않음), Switch thumb is white. Devise `flash[:alert]` (e.g. already signed in) stays destructive: the key, not the message, decides the tone, and Devise uses `:alert` for refused actions.
 
 ---
 
@@ -420,7 +423,7 @@ When updating old UI, use these mandatory replacements:
 - Focus ring: `ring-brand ring-offset-app`
 
 ### Example Component Prompts
-- "Create a card: `bg-surface` bg, `border-border-strong` outline, `rounded-lg`, padding `p-3 md:p-6`"
+- "Create a card with RubyUI::Card (`bg-card`, `border`, `rounded-xl`) and RubyUI::CardContent"
 - "Create a primary button: `bg-brand-solid` bg, `text-brand-foreground` text, hover `bg-brand-solid-hover`"
 - "Create an input: `bg-app` bg, `border-input`, `text-content`, placeholder `text-content-muted`"
 

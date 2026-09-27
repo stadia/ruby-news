@@ -101,7 +101,7 @@ class Views::Profiles::FollowList < Views::Base
         button_to t("profiles.follow_list.unfollow"), following_path(following),
           method: :delete,
           form: { data: { turbo_stream: true } },
-          class: "px-3 py-1 text-xs font-medium bg-surface-muted hover:bg-danger-solid text-content-secondary hover:text-danger-text rounded-lg transition-colors cursor-pointer"
+          class: "px-3 py-1 text-xs font-medium bg-surface-muted hover:bg-danger-solid text-content-secondary hover:text-brand-foreground rounded-lg transition-colors cursor-pointer"
       end
     end
   end

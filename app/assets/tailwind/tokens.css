@@ -35,7 +35,8 @@
         /* ========================================
            Status Colors (OKLCH)
            Tailwind 테마 네임스페이스(--color-*)와 겹치지 않게 --status-*로 둔다.
-           텍스트/배경 용도는 아래 --semantic-{success,warning,info,danger}-* 를 쓴다.
+           글자·아이콘은 --semantic-*-text를 쓴다. success/warning 배경은
+           application.css의 --success/--warning, info/danger 배경은 --semantic-*-solid다.
            ======================================== */
         --status-info: oklch(0.623 0.188 260); /* blue-500 */
 

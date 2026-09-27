@@ -20,6 +20,11 @@ class Madmin::SocialControllerTest < ActionDispatch::IntegrationTest
     assert_select "td code", text: "abcdefghijklmnop..."
     assert_select "a.btn.btn-secondary", text: "재인증"
     assert_select "a.btn.btn-primary", text: "linkedin_oauth 연동하기"
-    assert_select "[class*='gray-'], [class*='bg-white'], [class*='text-white'], [class*='blue-'], [class*='green-']", 0
+    allowed_classes = %w[header actions table-scroll label btn btn-secondary btn-primary]
+    assert_select "main > div [class]" do |elements|
+      elements.each do |element|
+        assert_empty element["class"].split - allowed_classes
+      end
+    end
   end
 end
