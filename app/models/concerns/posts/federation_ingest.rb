@@ -82,8 +82,8 @@ module Posts::FederationIngest
     def reply_target_attributes(in_reply_to, federated_url:)
       if local_reply_target?(in_reply_to)
         target = local_reply_target(in_reply_to)
-        # 없는 로컬 대상의 id를 그대로 담으면 저장 시 FK를 어기는 dangling parent_id가
-        # 된다(#871). 속성을 비우면 최상위 포스트로 남으므로 수신 자체를 거부한다.
+        # 없는 로컬 대상은 FK상 유효한 연결을 만들 수 없고, 속성을 비우면 답글이
+        # 최상위 포스트로 남으므로 거부한다. 이미 남은 고아 기사 댓글의 재수신은 예외다.
         unless target
           if orphaned_comment_for?(in_reply_to, federated_url)
             logger.warn { "reply_target_attributes: missing local inReplyTo #{in_reply_to.inspect}; preserving existing orphaned comment" }
@@ -142,17 +142,18 @@ module Posts::FederationIngest
       end
     end
 
-    # 블로그 글의 AP url이자 부모 federated_url이 없을 때의 inReplyTo 폴백이다
-    # (Posts::Federation). url을 inReplyTo로 쓰는 구현의 답글도 받도록 푼다(#1010).
+    # 우리가 내보내는 블로그 글의 AP url이자 부모 federated_url이 없을 때의
+    # inReplyTo 폴백이다(Posts::Federation). 이 url로 오는 답글도 받도록 푼다(#1010).
     # BlogsController#show와 같게 작성자로 범위를 좁히고 slug를 lookup_key로 맞춘다.
-    # 초안은 연합되지 않고 공개 화면에도 보이지 않으므로 대상으로 삼지 않는다.
+    # 초안은 연합된 적이 없으므로 대상으로 삼지 않는다. 삭제된 발행 글은 행이
+    # 남아 FK상 유효한 대상이므로 기존 답글의 Update도 계속 받는다.
     #: (String, String) -> Post?
     def find_blog_post(escaped_username, escaped_slug)
       username = unescape_identifier(escaped_username)
       slug = unescape_identifier(escaped_slug)
       return unless username && slug
 
-      User.find_by(username:)&.posts&.blog&.published&.find_by(slug: BlogSlug.lookup_key(slug))
+      User.find_by(username:)&.posts&.published_blog&.find_by(slug: BlogSlug.lookup_key(slug))
     end
 
     #: (singleton(Post) | singleton(Article), String) -> (Post | Article)?
@@ -169,7 +170,10 @@ module Posts::FederationIngest
     #: (String) -> String?
     def unescape_identifier(escaped_identifier)
       identifier = URI::DEFAULT_PARSER.unescape(escaped_identifier)
-      identifier if identifier.valid_encoding? && !identifier.include?("\0")
+      return identifier if identifier.valid_encoding? && !identifier.include?("\0")
+
+      logger.warn { "unescape_identifier: invalid UTF-8 or NUL in identifier #{escaped_identifier.truncate(200).inspect}; treating as missing target" }
+      nil
     end
 
     # Exact host match, not substring: a URL merely embedding a local host

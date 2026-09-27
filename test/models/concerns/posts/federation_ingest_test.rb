@@ -127,7 +127,7 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
 
   # A local /posts/N URL whose post no longer exists must not produce a
   # dangling parent_id — that would violate the FK on save (issue #871, item 2).
-  # #1003 이후로는 속성을 비우는 대신 수신 자체를 거부해 최상위 포스트로도 남지 않는다.
+  # 없는 로컬 대상의 답글은 수신을 거부해 최상위 포스트로 남지 않는다.
   test "a missing local post is rejected instead of becoming a standalone post" do
     missing_id = Post.maximum(:id).to_i + 1_000
     hash = { "id" => "https://remote.example.com/notes/gone", "content" => "답글",
@@ -472,7 +472,7 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
 
   # 부팅 시 막는 설정이지만(config/initializers/routes_default_host.rb), 런타임에 비어도
   # 빈 문자열과 비교해 원격으로 떨어질 뿐 예외를 내지 않는다.
-  test "an unknown host is rejected when the routing host is blank" do
+  test "an unknown host is classified as remote without raising when the routing host is blank" do
     options = Rails.application.routes.default_url_options
     original_host = options[:host]
     options[:host] = nil
@@ -488,7 +488,7 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
 
   # ── local blog post public URL (/@user/blog/:slug) ──────────────────
   #
-  # 블로그 글의 AP url 이자, 부모 federated_url 이 없을 때의 inReplyTo 폴백이다
+  # 우리가 내보내는 블로그 글의 AP url 이자, 부모 federated_url 이 없을 때의 inReplyTo 폴백이다
   # (Posts::Federation). url 을 inReplyTo 로 쓰는 구현의 로컬 답글도 받아야 한다(#1010).
 
   test "a local blog post public URL resolves to its parent" do
@@ -499,6 +499,49 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
     assert_match %r{/@john/blog/lf-published-fixture\z}, hash["inReplyTo"]
     assert Post.send(:handle_federated_object?, hash)
     assert_post_reply_to blog, Post.from_activitypub_object(hash)
+  end
+
+  test "a discarded blog post public URL still resolves to its parent" do
+    blog = posts(:blog_published)
+    blog.discard!
+    hash = { "id" => "https://remote.example.com/notes/discarded-blog-reply", "content" => "답글",
+             "inReplyTo" => blog.public_url }
+
+    assert Post.send(:handle_federated_object?, hash)
+    assert_post_reply_to blog, Post.from_activitypub_object(hash)
+  end
+
+  test "a blog username lookup preserves case" do
+    blog = posts(:blog_published)
+    hash = { "id" => "https://remote.example.com/notes/blog-username-case", "content" => "답글",
+             "inReplyTo" => "https://#{@local_host}/@JOHN/blog/#{blog.slug}" }
+
+    assert_not Post.send(:handle_federated_object?, hash)
+    assert_raises(ActiveRecord::RecordNotFound) { Post.from_activitypub_object(hash) }
+  end
+
+  test "a blog public URL with a dotted username resolves to its parent" do
+    blog = posts(:blog_published)
+    blog.user.update!(username: "john.doe")
+    hash = { "id" => "https://remote.example.com/notes/blog-dotted-username", "content" => "답글",
+             "inReplyTo" => blog.public_url }
+
+    assert_includes hash["inReplyTo"], "/@john.doe/blog/"
+    assert Post.send(:handle_federated_object?, hash)
+    assert_post_reply_to blog, Post.from_activitypub_object(hash)
+  end
+
+  [ "%FF", "%00" ].each do |identifier|
+    test "an invalid identifier #{identifier} logs a warning before rejection" do
+      output = StringIO.new
+
+      Post.stub(:logger, ActiveSupport::Logger.new(output)) do
+        assert_nil Post.send(:unescape_identifier, identifier)
+      end
+
+      assert_includes output.string, "unescape_identifier: invalid UTF-8 or NUL in identifier"
+      assert_includes output.string, identifier
+    end
   end
 
   test "a local blog post URL with a percent-encoded Korean slug resolves to its parent" do
@@ -758,7 +801,8 @@ class Posts::FederationIngestTest < ActiveSupport::TestCase
 
   private
 
-  # 로컬 Post 답글: 부모를 가리키고, 기사 댓글 타입이 되지 않는다.
+  # 로컬 Post 답글: 부모를 가리키고 article_id·post_type은 부모의 기사 연결을 따른다
+  # (기사 있으면 :comment, 없으면 :short).
   def assert_post_reply_to(parent, result)
     assert_equal parent.id, result[:parent_id]
     assert result.key?(:article_id)
