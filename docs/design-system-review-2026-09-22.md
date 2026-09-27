@@ -126,8 +126,9 @@
 | `tokens.css` 네임스페이스 | `--color-{success,warning,error,info}`, `--text-*`, `--radius-*`, `--shadow-*`, `--font-*`, `--leading-*`, `--ease-*` 재정의 제거(모두 Tailwind 기본값과 같거나 적용되지 않던 값). info는 `--status-info` | 빌드 산출물 동일 |
 | PWA 색 | manifest `theme_color`/`background_color` `#7F1D1D` → `#0f172a`(다크 bg-app). head에 테마별 `<meta name="theme-color">`, 테마를 직접 고르면 theme-toggle이 media를 바꾼다. 쓰이지 않고 JSON도 깨져 있던 `manifest.js.erb` 삭제 | |
 | 하드코딩 팔레트 | madmin 레이아웃은 앱 Tailwind(`app.css`)를 불러오지 않아 팔레트 클래스가 원래 적용되지 않았다. 토큰으로 옮기지 않고 madmin CSS 구조(`header`, `table`, `btn btn-*`)로 정리. `btn-success`/`btn-warning`은 madmin에 없어 `btn-secondary` | OAuth 브랜드 버튼만 예외로 남음 |
+| 푸터 테마 전환 버튼 이름(브라우저 확인 중 발견) | 0af675bd에서 붙인 `aria-label`이 반대였다. 다크 모드에서 보이는 버튼은 라이트로 바꾸는데 "다크 모드로 전환"으로 읽혔다. 누르면 바뀔 테마로 교체 | |
 | 로케일 정규화 | `i18n-tasks normalize` (별도 커밋) | |
 | 검토: Devise 안내 flash | 유지. Flash 톤은 메시지가 아니라 키로 정해지고, Devise는 거부된 동작(이미 로그인됨 등)에 `:alert`를 쓴다 | |
 | 검토: 스위치 thumb | `bg-background` → `bg-brand-foreground`(흰색). 켜짐/꺼짐 모두 일반적인 흰 thumb 관례를 따른다 | |
 
-검증: `bin/rails tailwindcss:build`, `bin/rails test`(1289 runs 0 failures), `bundle exec rspec`(70 examples 0 failures), headless Chrome으로 로그인 화면 라이트/다크 확인.
+검증: `bin/rails tailwindcss:build`, `bin/rails test`(1289 runs 0 failures), `bundle exec rspec`(70 examples 0 failures), Chrome에서 로그인·홈·프로필 빈 상태·계정 설정·비밀번호 변경(에러 상태) 화면을 라이트/다크 두 테마로 확인하고, 계산 대비값을 페이지 안에서 다시 측정(에러 테두리 다크 6.48 / 라이트 6.19, 입력 테두리 다크 3.76, 빈 상태 7.24 / 6.96, 성공 알림 6.41).

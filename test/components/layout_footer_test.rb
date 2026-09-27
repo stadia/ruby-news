@@ -12,4 +12,12 @@ class LayoutFooterTest < ActionDispatch::IntegrationTest
     assert_select "footer a[href*='slack.com/oauth']", count: 0
     assert_select "footer a[href*='discord.com/oauth2']", count: 0
   end
+
+  # 버튼 이름은 누르면 일어나는 일이어야 한다. 라이트 모드에서 보이는 버튼은 다크로 바꾼다.
+  test "테마 전환 버튼의 접근 가능한 이름은 누르면 바뀔 테마를 말한다" do
+    get root_path
+
+    assert_select "footer [data-action$='#setDarkTheme'] button[aria-label=?]", I18n.t("layout.theme_dark")
+    assert_select "footer [data-action$='#setLightTheme'] button[aria-label=?]", I18n.t("layout.theme_light")
+  end
 end
