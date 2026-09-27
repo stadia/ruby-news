@@ -152,6 +152,29 @@
 
         /* Prose */
         --color-prose-heading: var(--brand-primary-light);
+
+        /* Lexxy Highlight (Dark): 글자색은 lexxy 팔레트와 같은 hue를 L 0.80으로 올리고,
+           배경색은 같은 색을 알파 0.3 → 0.15로 줄인다. 글자색은 bg-app·bg-surface와
+           모든 배경색 하이라이트 위에서 4.85:1 이상, 기본 본문 글자는 배경색 위 9.27:1 이상.
+           아래 레이어 밖 블록이 lexxy의 --highlight-*를 이 값으로 바꾼다. */
+        --semantic-highlight-1: oklch(0.800 0.100 96.2);
+        --semantic-highlight-2: oklch(0.800 0.131 54.1);
+        --semantic-highlight-3: oklch(0.800 0.114 29.2);
+        --semantic-highlight-4: oklch(0.800 0.152 341.4);
+        --semantic-highlight-5: oklch(0.800 0.117 298.9);
+        --semantic-highlight-6: oklch(0.800 0.103 254.1);
+        --semantic-highlight-7: oklch(0.800 0.180 142.5);
+        --semantic-highlight-8: oklch(0.800 0.112 57.1);
+        --semantic-highlight-9: oklch(0.800 0 0);
+        --semantic-highlight-bg-1: oklch(0.880 0.189 107.7 / 0.15);
+        --semantic-highlight-bg-2: oklch(0.833 0.139 72.9 / 0.15);
+        --semantic-highlight-bg-3: oklch(0.728 0.168 22.1 / 0.15);
+        --semantic-highlight-bg-4: oklch(0.775 0.164 339 / 0.15);
+        --semantic-highlight-bg-5: oklch(0.778 0.128 296.1 / 0.15);
+        --semantic-highlight-bg-6: oklch(0.786 0.110 246.4 / 0.15);
+        --semantic-highlight-bg-7: oklch(0.904 0.196 142 / 0.15);
+        --semantic-highlight-bg-8: oklch(0.774 0.086 63.7 / 0.15);
+        --semantic-highlight-bg-9: oklch(0.833 0 0 / 0.15);
     }
 
     .theme-light,
@@ -237,6 +260,35 @@
             text-shadow: none !important;
         }
     }
+}
+
+/* ========================================
+   Lexxy Highlight Palette (Dark Theme)
+   lexxy-variables.css는 밝은 배경 기준 --highlight-*를 레이어 없는 :root에 두고
+   app.css 뒤에 로드된다. @layer base 안의 값은 레이어 없는 규칙에 지므로 레이어 밖에서,
+   :root(0-1-0)보다 높은 명시도(0-2-0)로 다시 정의한다. 기본값이 어두운 테마인
+   tokens.css와 맞추려고 theme-light가 아닌 루트 전부에 적용한다.
+   저장된 본문은 var(--highlight-N)만 참조하므로 글 화면과 편집기가 함께 바뀐다.
+   ======================================== */
+:root:not(.theme-light, .light) {
+    --highlight-1: var(--semantic-highlight-1);
+    --highlight-2: var(--semantic-highlight-2);
+    --highlight-3: var(--semantic-highlight-3);
+    --highlight-4: var(--semantic-highlight-4);
+    --highlight-5: var(--semantic-highlight-5);
+    --highlight-6: var(--semantic-highlight-6);
+    --highlight-7: var(--semantic-highlight-7);
+    --highlight-8: var(--semantic-highlight-8);
+    --highlight-9: var(--semantic-highlight-9);
+    --highlight-bg-1: var(--semantic-highlight-bg-1);
+    --highlight-bg-2: var(--semantic-highlight-bg-2);
+    --highlight-bg-3: var(--semantic-highlight-bg-3);
+    --highlight-bg-4: var(--semantic-highlight-bg-4);
+    --highlight-bg-5: var(--semantic-highlight-bg-5);
+    --highlight-bg-6: var(--semantic-highlight-bg-6);
+    --highlight-bg-7: var(--semantic-highlight-bg-7);
+    --highlight-bg-8: var(--semantic-highlight-bg-8);
+    --highlight-bg-9: var(--semantic-highlight-bg-9);
 }
 
 /* ========================================
