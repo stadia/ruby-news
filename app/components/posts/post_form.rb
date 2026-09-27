@@ -6,8 +6,9 @@ class Components::Posts::PostForm < Components::Base
   include Phlex::Rails::Helpers::HiddenFieldTag
   include PhlexIcons
 
-  # 상세 화면은 답글 대상을 배너 대신 폼의 위치로 알린다. root 폼은 원문 아래에
-  # 두고, 하위 답글에는 inline 폼을 그 답글 바로 아래에 연다.
+  # 상세(thread_post 있음)는 답글 대상을 배너 없이 폼 위치로 알린다.
+  # inline: true는 하위 답글 아래에 끼워 넣는 폼으로, id와 필드 id를 inline_reply_*로
+  # 바꾸고 취소 버튼을 단다. 배치는 Views::Posts::Show와 thread-reply가 맡는다.
   def initialize(post: Post.new, thread_post: nil, inline: false)
     @post = post
     @thread_post = thread_post
@@ -123,11 +124,7 @@ class Components::Posts::PostForm < Components::Base
         plain "/#{::Post::MAX_BODY_LENGTH}"
       end
       div(class: "flex items-center gap-2") do
-        # Opens the blog editor carrying the in-progress body. POSTs to #new so
-        # the body travels in the request body (not the URL); #new stashes it and
-        # redirects to the GET editor, which Turbo renders. The draft row is
-        # created lazily on first autosave — switching to blog from an empty
-        # composer never persists an empty draft.
+        # 상세 inline 폼만: thread-reply가 폼을 지우고 답글 버튼으로 포커스를 돌린다.
         if @inline
           render RubyUI::Button.new(
             type: :button,
@@ -135,6 +132,11 @@ class Components::Posts::PostForm < Components::Base
             data: { action: "thread-reply#close" }
           ) { t("posts.post_form.cancel") }
         end
+        # Opens the blog editor carrying the in-progress body. POSTs to #new so
+        # the body travels in the request body (not the URL); #new stashes it and
+        # redirects to the GET editor, which Turbo renders. The draft row is
+        # created lazily on first autosave — switching to blog from an empty
+        # composer never persists an empty draft.
         unless @thread_post
           render RubyUI::Button.new(
             type: :submit,

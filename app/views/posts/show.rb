@@ -94,10 +94,13 @@ class Views::Posts::Show < Views::Base
     end
   end
 
-  # 실패한 하위 답글은 그 답글 아래 inline 폼으로 다시 연다.
+  # 실패한 하위 답글은 그 답글 아래 inline 폼으로 다시 연다. 대상 카드가 스레드에
+  # 없으면 nil을 돌려 root 폼이 입력과 오류를 받게 한다.
   def inline_reply_parent_id
     parent_id = @reply_post&.parent_id
-    parent_id unless parent_id.nil? || parent_id == @posts.first&.id
+    return if parent_id.nil? || parent_id == @posts.first&.id
+
+    parent_id if @posts.any? { |post| post.id == parent_id }
   end
 
   def inline_reply_form(root, post)

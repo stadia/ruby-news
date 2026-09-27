@@ -261,6 +261,20 @@ class PostDetailsTest < ActionDispatch::IntegrationTest
     assert_not_includes response.body, child.body
   end
 
+  test "reply under a hidden ancestor returns input to the root composer" do
+    sign_in @reader
+    child = posts(:reply_post)
+    grandchild = Post.create!(user: @reader, body: "<p>숨겨질 손자 답글</p>", parent: child)
+    child.discard!
+
+    assert_no_difference("Post.count") { submit_reply(root: @short, parent: grandchild, body: "보존할 답글") }
+    assert_response :unprocessable_entity
+    assert_select "#post_form [role='alert']", text: /#{Regexp.escape(I18n.t("posts.reply_parent_unavailable"))}/
+    assert_select "#post_form lexxy-editor[value=?]", "보존할 답글"
+    assert_select "#post_form input[name='post[parent_id]'][value=?]", @short.id.to_s
+    assert_select "#replies_#{@short.id} #inline_reply_form", count: 0
+  end
+
   test "published child under discarded root is unavailable" do
     sign_in @reader
     child = posts(:reply_post)

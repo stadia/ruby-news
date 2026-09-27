@@ -73,7 +73,6 @@ class PostDetailsSystemTest < ApplicationSystemTestCase
   end
 
   test "only one inline composer stays open and cancel closes it" do
-    visit post_path(@short)
     child = posts(:reply_post)
     sibling = Post.create!(user: @reader, body: "<p>다른 답글</p>", parent: @short)
     visit post_path(@short)
@@ -88,6 +87,53 @@ class PostDetailsSystemTest < ApplicationSystemTestCase
 
     assert_no_selector "#inline_reply_form"
     assert_selector "#post_form input[name='post[parent_id]'][value='#{@short.id}']", visible: :all
+  end
+
+  test "switching the reply target keeps the draft" do
+    child = posts(:reply_post)
+    sibling = Post.create!(user: @reader, body: "<p>다른 답글</p>", parent: @short)
+    visit post_path(@short)
+
+    open_inline_reply(child)
+    fill_lexxy "<p>옮겨 갈 초안</p>", scope: "#inline_reply_form"
+    open_inline_reply(child)
+
+    assert_selector "#post_#{child.id} + #inline_reply_form"
+
+    open_inline_reply(sibling)
+
+    assert_selector "#inline_reply_form", count: 1
+    assert_selector "#post_#{sibling.id} + #inline_reply_form input[name='post[parent_id]'][value='#{sibling.id}']", visible: :all
+    assert_selector "#inline_reply_form .lexxy-editor__content", text: "옮겨 갈 초안", wait: 10
+
+    within("#inline_reply_form") { click_button I18n.t("posts.post_form.reply_submit") }
+
+    assert_no_selector "#replies_#{@short.id} #inline_reply_form"
+    assert_equal sibling.id, Post.find_by!("body LIKE ?", "%옮겨 갈 초안%").parent_id
+  end
+
+  test "failed inline reply scrolls back to its composer" do
+    child = posts(:reply_post)
+    visit post_path(@short)
+
+    open_inline_reply(child)
+    fill_lexxy "<p><br></p>", scope: "#inline_reply_form"
+    within("#inline_reply_form") { click_button I18n.t("posts.post_form.reply_submit") }
+
+    assert_selector "#post_#{child.id} + #inline_reply_form [role='alert']"
+    assert_selector "#inline_reply_form .lexxy-editor__content", wait: 10
+    assert_predicate evaluate_script("document.querySelector('#inline_reply_form').contains(document.activeElement)"), :present?
+  end
+
+  test "cancelling returns focus to the reply button" do
+    child = posts(:reply_post)
+    visit post_path(@short)
+
+    open_inline_reply(child)
+    within("#inline_reply_form") { click_button I18n.t("posts.post_form.cancel") }
+
+    assert_no_selector "#inline_reply_form"
+    assert evaluate_script("document.activeElement.closest('#post_#{child.id}') !== null")
   end
 
   test "replying to the root focuses the reading page composer" do
