@@ -3,7 +3,7 @@ import { resetFormWithCounter } from "utils/form_helpers"
 
 // Connects to data-controller="post-form"
 export default class extends Controller {
-  static values = { defaultParentId: Number, defaultAuthorName: String, defaultBodyPreview: String }
+  static values = { defaultParentId: Number }
   static targets = ["parentId", "replyBanner", "replyLabel", "replyPreview", "body"]
 
   connect() {
@@ -68,10 +68,10 @@ export default class extends Controller {
   }
 
   clearReplyState() {
-    // 상세에서 취소하면 root에 답글을 달고, 피드에서는 답글 모드를 해제한다.
+    // 상세 root 폼은 root로 되돌리고, 피드에서는 답글 모드를 해제한다.
     if (this.hasParentIdTarget) this.parentIdTarget.value = this.defaultParentIdValue || ""
-    if (this.hasReplyLabelTarget) this.replyLabelTarget.textContent = this.defaultAuthorNameValue || ""
-    if (this.hasReplyPreviewTarget) this.replyPreviewTarget.textContent = this.defaultBodyPreviewValue || ""
+    if (this.hasReplyLabelTarget) this.replyLabelTarget.textContent = ""
+    if (this.hasReplyPreviewTarget) this.replyPreviewTarget.textContent = ""
     this.syncReplyState()
   }
 

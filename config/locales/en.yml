@@ -263,7 +263,7 @@ en:
       submit: Send reset email
   posts:
     rate_limit_exceeded: Too many posts. Please try again later.
-    reply_parent_unavailable: The reply target is no longer available.
+    reply_parent_unavailable: The reply target is no longer available. Submitting again will post it as a comment on the original post.
     blog:
       autosave_failed: Save failed
       autosave_idle: Autosave ready

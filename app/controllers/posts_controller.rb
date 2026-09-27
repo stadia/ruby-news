@@ -122,7 +122,11 @@ class PostsController < ApplicationController
     raise ActiveRecord::RecordNotFound unless root.id.to_s == params[:return_to_post].to_s
     raise ActiveRecord::RecordNotFound if parent && !parent.published?
 
-    @post.errors.add(:base, I18n.t("posts.reply_parent_unavailable")) if parent.nil? || parent.discarded?
+    if parent.nil? || parent.discarded?
+      @post.errors.add(:base, I18n.t("posts.reply_parent_unavailable"))
+      # 사라진 대상 아래에는 인라인 폼을 열 수 없으므로 입력을 원문 폼으로 돌려준다.
+      @post.parent_id = root.id
+    end
     root
   end
 

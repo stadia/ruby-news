@@ -135,16 +135,38 @@ class PostDetailsTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "failed child reply retains input and selected parent" do
+  test "failed child reply reopens the inline composer under its parent" do
     sign_in @reader
     parent = posts(:reply_post)
     body = "<p>&nbsp;</p>"
 
     assert_no_difference("Post.count") { submit_reply(root: @short, parent: parent, body: body) }
     assert_response :unprocessable_entity
-    assert_select "#post_form [role='alert']"
-    assert_select "#post_form input[name='post[parent_id]'][value=?]", parent.id.to_s
-    assert_select "#post_form lexxy-editor[name='post[body]'][value=?]", body
+    assert_select "#post_#{parent.id} + #inline_reply_form"
+    assert_select "#inline_reply_form [role='alert']"
+    assert_select "#inline_reply_form input[name='post[parent_id]'][value=?]", parent.id.to_s
+    assert_select "#inline_reply_form lexxy-editor[name='post[body]'][value=?]", body
+    assert_select "#post_form [role='alert']", count: 0
+    assert_select "#post_form input[name='post[parent_id]'][value=?]", @short.id.to_s
+  end
+
+  test "reading pages reply without a reply banner" do
+    sign_in @reader
+
+    [ @blog, @short ].each do |root|
+      get detail_url(root)
+
+      assert_select "[data-post-form-target='replyBanner']", count: 0
+      assert_select "#post_form[data-action*='post-form:reply']", count: 0
+      assert_select "template[data-thread-reply-target='template']"
+    end
+  end
+
+  test "anonymous readers get an inline sign in prompt" do
+    get detail_url(@short)
+
+    assert_select "template[data-thread-reply-target='template'] #inline_reply_form a[href=?]", new_user_session_path
+    assert_select "#replies_#{@short.id} #inline_reply_form", count: 0
   end
 
   test "detail replies reject a child under an unpublished root" do
@@ -212,6 +234,20 @@ class PostDetailsTest < ActionDispatch::IntegrationTest
     assert_select "#post_form input[name='post[parent_id]'][value=?]", @short.id.to_s
   end
 
+  test "rate limited child reply keeps the inline composer" do
+    sign_in @reader
+    parent = posts(:reply_post)
+    cache = ActiveSupport::Cache::MemoryStore.new
+    cache.write("rate_limit:127.0.0.1:posts", 20)
+
+    Rails.stub(:cache, cache) do
+      assert_no_difference("Post.count") { submit_reply(root: @short, parent: parent, body: "보존할 답글") }
+    end
+    assert_response :too_many_requests
+    assert_select "#post_#{parent.id} + #inline_reply_form [role='alert']"
+    assert_select "#inline_reply_form lexxy-editor[value=?]", "보존할 답글"
+  end
+
   test "discarded child retains input on its public thread" do
     sign_in @reader
     child = posts(:reply_post)
@@ -220,6 +256,8 @@ class PostDetailsTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
     assert_select "#post_form lexxy-editor[value=?]", "보존할 답글"
     assert_select "#post_form [role='alert']"
+    assert_select "#post_form input[name='post[parent_id]'][value=?]", @short.id.to_s
+    assert_select "#replies_#{@short.id} #inline_reply_form", count: 0
     assert_not_includes response.body, child.body
   end
 
@@ -272,7 +310,7 @@ class PostDetailsTest < ActionDispatch::IntegrationTest
     assert_no_difference("Post.count") { submit_reply(root: @short, parent: child, body: "보존할 답글") }
     assert_response :unprocessable_entity
     assert_select "#post_form lexxy-editor[value=?]", "보존할 답글"
-    assert_select "#post_form input[name='post[parent_id]'][value=?]", child.id.to_s
+    assert_select "#post_form input[name='post[parent_id]'][value=?]", @short.id.to_s
   end
 
   test "rate limit cannot render an unrelated thread" do

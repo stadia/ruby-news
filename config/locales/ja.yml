@@ -263,7 +263,7 @@ ja:
       submit: 再設定メールを送信
   posts:
     rate_limit_exceeded: 投稿が多すぎます。しばらくしてから再試行してください。
-    reply_parent_unavailable: 返信先の投稿は表示できなくなりました。
+    reply_parent_unavailable: 返信先の投稿は表示できなくなりました。もう一度送信すると元の投稿へのコメントになります。
     blog:
       autosave_failed: 保存に失敗しました
       autosave_idle: 自動保存の準備完了
