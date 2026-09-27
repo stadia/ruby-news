@@ -35,7 +35,7 @@ class Views::Profiles::FollowList < Views::Base
 
   def list_content(title)
     if @followings.empty?
-      div(class: "text-center py-16 text-content-disabled") do
+      div(class: "text-center py-16 text-content-muted") do
         p { @type == :followers ? t("profiles.follow_list.empty_followers") : t("profiles.follow_list.empty_following") }
       end
     else

@@ -26,7 +26,7 @@ module RubyUI
         input(**attrs.merge(type: "checkbox", class: "hidden peer", value: @checked_value))
 
         span(class: [
-          "pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform translate-x-0",
+          "pointer-events-none block h-5 w-5 rounded-full bg-brand-foreground shadow-lg ring-0 transition-transform translate-x-0",
           "peer-checked:translate-x-5"
         ])
       end

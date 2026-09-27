@@ -47,7 +47,7 @@ module RubyUI
         BASE_CLASSES,
         size_classes,
         "bg-primary text-primary-foreground shadow",
-        "hover:bg-primary/90"
+        "hover:bg-brand-solid-hover"
       ]
     end
 
@@ -74,7 +74,7 @@ module RubyUI
         BASE_CLASSES,
         size_classes,
         "bg-destructive text-destructive-foreground shadow-sm",
-        "[a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20"
+        "[a&]:hover:bg-danger-solid-hover focus-visible:ring-destructive/20"
       ]
     end
 

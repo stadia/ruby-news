@@ -11,6 +11,7 @@
     --radius: 0.625rem;
     --warning: oklch(0.769 0.165 70);
     --warning-foreground: oklch(1 0 0);
+    --success: oklch(0.648 0.175 132);
     --success-foreground: oklch(1 0 0);
 }
 
@@ -34,7 +35,7 @@
     --accent: var(--color-bg-hover);
     --accent-foreground: var(--color-text-primary);
     --border: var(--semantic-border);
-    --input: var(--color-border-light);
+    --input: var(--semantic-input-border);
     --sidebar-foreground: var(--foreground);
     --sidebar-accent: var(--accent);
     --sidebar-accent-foreground: var(--accent-foreground);
@@ -60,8 +61,6 @@
     --sidebar-primary: var(--chart-1);
     --sidebar-primary-foreground: var(--primary);
     --sidebar-ring: oklch(0.556 0 0);
-
-    --success: oklch(0.648 0.175 132);
 }
 
 .theme-light,
@@ -80,8 +79,6 @@
     --sidebar-primary: oklch(0.205 0 0);
     --sidebar-primary-foreground: var(--primary-foreground);
     --sidebar-ring: oklch(0.708 0 0);
-
-    --success: oklch(0.648 0.175 132);
 }
 
 @theme inline {
@@ -127,6 +124,9 @@
     --color-warning-foreground: var(--warning-foreground);
     --color-success: var(--success);
     --color-success-foreground: var(--success-foreground);
+    /* 상태 색(success/warning)은 배경·링 전용이다. 글자와 아이콘은 -text 토큰을 쓴다. */
+    --color-success-text: var(--semantic-success-text);
+    --color-warning-text: var(--semantic-warning-text);
 
     /* app semantic aliases (OKLCH — no rgb() wrapper needed) */
     --color-app: var(--color-bg-primary);
@@ -152,7 +152,7 @@
     --color-link-hover: var(--semantic-link-hover);
     --color-accent-text: var(--semantic-accent-text);
     --color-accent-text-hover: var(--semantic-accent-text-hover);
-    --color-state-info: var(--color-info);
+    --color-state-info: var(--status-info);
     --color-info-solid: var(--semantic-info-solid);
     --color-info-solid-hover: var(--semantic-info-solid-hover);
     --color-info-text: var(--semantic-info-text);

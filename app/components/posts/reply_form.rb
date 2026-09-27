@@ -27,7 +27,7 @@ class Components::Posts::ReplyForm < Components::Base
 
         f.text_area :body,
           rows: 2,
-          class: "w-full px-3 py-2 rounded-lg border border-border-muted bg-surface text-content placeholder:text-content-muted hover:border-border-strong focus:border-transparent focus:ring-2 focus:ring-state-info transition-all duration-200 resize-none text-sm",
+          class: "w-full px-3 py-2 rounded-lg border border-input bg-surface text-content placeholder:text-content-muted hover:border-content-muted focus:border-transparent focus:ring-2 focus:ring-state-info transition-all duration-200 resize-none text-sm",
           placeholder: t("helpers.placeholder.post.reply_body"),
           data: { character_counter_target: "input", action: "input->character-counter#update" }
 

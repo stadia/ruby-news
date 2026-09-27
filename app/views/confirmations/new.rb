@@ -52,7 +52,7 @@ class Views::Confirmations::New < Views::Base
 
   def input_classes(errors)
     base_classes = "mt-2 block w-full rounded-md border px-3 py-2 shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2"
-    error_classes = errors.any? ? "border-destructive/50 bg-surface-muted text-content focus:border-destructive/50 focus:ring-destructive/30" : "border-border-muted bg-surface-muted text-content placeholder:text-content-muted focus:border-transparent focus:ring-brand"
+    error_classes = errors.any? ? "border-danger-text bg-app text-content focus:border-danger-text focus:ring-destructive/30" : "border-input bg-app text-content placeholder:text-content-muted focus:border-transparent focus:ring-brand"
     "#{base_classes} #{error_classes}"
   end
 end

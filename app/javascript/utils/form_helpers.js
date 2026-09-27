@@ -16,7 +16,7 @@ export function resetFormWithCounter(element) {
   const counter = form.querySelector("[data-character-counter-target='counter']")
   if (counter) {
     counter.textContent = "0"
-    counter.classList.remove("text-warning", "text-danger-text")
+    counter.classList.remove("text-warning-text", "text-danger-text")
     counter.classList.add("text-content-muted")
   }
 

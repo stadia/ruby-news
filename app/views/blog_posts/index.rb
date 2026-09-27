@@ -65,7 +65,7 @@ class Views::BlogPosts::Index < Views::Base
   end
 
   def empty_state(message)
-    div(class: "text-center py-8 text-content-disabled") { p { message } }
+    div(class: "text-center py-8 text-content-muted") { p { message } }
   end
 
   def draft_row(draft)
