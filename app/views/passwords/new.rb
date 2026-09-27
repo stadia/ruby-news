@@ -19,7 +19,7 @@ class Views::Passwords::New < Views::Base
             autocomplete: "username",
             placeholder: t("helpers.placeholder.user.email"),
             value: request.params[:email],
-            class: "block shadow-sm rounded-md border border-border-muted px-3 py-2 mt-2 w-full bg-surface-muted text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition-colors duration-200"
+            class: "block shadow-sm rounded-md border border-input px-3 py-2 mt-2 w-full bg-app text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition-colors duration-200"
         end
 
         div(class: "inline") do

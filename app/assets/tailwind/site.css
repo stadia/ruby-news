@@ -25,7 +25,7 @@ body select {
 }
 
 .mobile-menu-toggle:focus + label {
-    outline: 2px solid var(--semantic-brand-solid);
+    outline: 2px solid var(--semantic-brand);
     outline-offset: 2px;
 }
 
@@ -38,11 +38,11 @@ lexxy-editor.post-composer-editor {
     --lexxy-color-ink-lightest: var(--color-bg-secondary);
     --lexxy-color-selected: var(--color-bg-secondary);
     --lexxy-color-selected-hover: var(--color-bg-hover);
-    --lexxy-color-selected-dark: var(--color-info);
+    --lexxy-color-selected-dark: var(--status-info);
     --lexxy-color-link: var(--semantic-link);
     --lexxy-color-table-header-bg: var(--color-bg-hover);
     --lexxy-color-table-cell-border: var(--color-border-light);
-    --lexxy-focus-ring-color: var(--color-info);
+    --lexxy-focus-ring-color: var(--status-info);
     --lexxy-editor-padding: 0;
     --lexxy-editor-rows: 5lh;
     --lexxy-radius: 0.75rem;

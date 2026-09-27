@@ -49,7 +49,7 @@ class Components::Users::User < Components::Base
 
   def detail_field(label, value = nil, &block)
     div(class: "space-y-2") do
-      span(class: "text-[10px] font-bold uppercase tracking-[0.2em] text-content-disabled") { label }
+      span(class: "text-[10px] font-bold uppercase tracking-[0.2em] text-content-muted") { label }
       if block
         yield
       else

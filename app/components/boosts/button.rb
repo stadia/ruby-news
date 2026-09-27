@@ -74,6 +74,6 @@ class Components::Boosts::Button < Components::Base
 
   def button_classes
     base = "inline-flex items-center gap-1 text-sm transition-colors hover:bg-transparent p-0"
-    boosted? ? "#{base} text-success" : "#{base} text-content-muted hover:text-success"
+    boosted? ? "#{base} text-success-text" : "#{base} text-content-muted hover:text-success-text"
   end
 end

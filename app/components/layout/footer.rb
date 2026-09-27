@@ -42,10 +42,11 @@ class Components::Layout::Footer < Components::Base
     end
   end
 
+  # SetLightMode는 라이트 모드일 때 보이고 누르면 다크로 바꾼다. 버튼 이름은 누르면 바뀔 테마다.
   def render_theme_toggle
     ThemeToggle do |toggle|
       SetLightMode do
-        Button(variant: :ghost, icon: true, aria_label: t("layout.theme_light")) do
+        Button(variant: :ghost, icon: true, aria_label: t("layout.theme_dark")) do
           svg(
             xmlns: "http://www.w3.org/2000/svg",
             viewbox: "0 0 24 24",
@@ -61,7 +62,7 @@ class Components::Layout::Footer < Components::Base
         end
       end
       SetDarkMode do
-        Button(variant: :ghost, icon: true, aria_label: t("layout.theme_dark")) do
+        Button(variant: :ghost, icon: true, aria_label: t("layout.theme_light")) do
           svg(
             xmlns: "http://www.w3.org/2000/svg",
             viewbox: "0 0 24 24",

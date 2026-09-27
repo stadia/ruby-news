@@ -51,25 +51,25 @@ class ArticleResource < Madmin::Resource
 
     if record.is_a?(Article) && record.deleted_at.nil?
       actions << button_to("Discard", discard_madmin_article_path(record), method: :put, data: { turbo_confirm: "이 기사를 폐기하시겠습니까?" },
-        class: "btn btn-danger bg-red-600 text-white rounded px-4 py-2 hover:bg-red-700")
+        class: "btn btn-danger")
     else
       actions << button_to("Restore", restore_madmin_article_path(record), method: :put, data: { turbo_confirm: "이 기사를 복원하시겠습니까?" },
-        class: "btn btn-success bg-green-600 text-white rounded px-4 py-2 hover:bg-green-700")
+        class: "btn btn-secondary")
     end
 
     if record.is_a?(Article) && record.is_related?
       actions << button_to("Mark Unrelated", mark_unrelated_madmin_article_path(record), method: :put, data: { turbo_confirm: "이 기사를 관련 없음으로 표시하시겠습니까?" },
-        class: "btn btn-warning bg-yellow-600 text-white rounded px-4 py-2 hover:bg-yellow-700")
+        class: "btn btn-secondary")
     end
 
     actions << button_to("재처리", reprocess_madmin_article_path(record), method: :put, data: { turbo_confirm: "이 기사의 AI 요약을 다시 생성하시겠습니까?" },
-      class: "btn btn-primary bg-blue-600 text-white rounded px-4 py-2 hover:bg-blue-700")
+      class: "btn btn-primary")
 
     actions << button_to("썸네일 재생성", regenerate_thumbnail_madmin_article_path(record), method: :put, data: { turbo_confirm: "이 기사의 썸네일을 삭제하고 다시 생성하시겠습니까?" },
-      class: "btn btn-primary bg-indigo-600 text-white rounded px-4 py-2 hover:bg-indigo-700")
+      class: "btn btn-primary")
 
     actions << button_to("일본어 재번역", translate_japanese_madmin_article_path(record), method: :put, data: { turbo_confirm: "이 기사의 일본어 번역을 다시 생성하시겠습니까?" },
-      class: "btn btn-primary bg-teal-600 text-white rounded px-4 py-2 hover:bg-teal-700")
+      class: "btn btn-primary")
 
     safe_join(actions, " ")
   end

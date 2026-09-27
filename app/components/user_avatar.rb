@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 class Components::UserAvatar < Components::Base
-  def initialize(user: nil, fedipub_actor: nil, name:, size: "h-8 w-8", fallback_class: "bg-surface-muted text-accent-text ring-1 ring-inset ring-border-muted text-sm font-bold")
+  def initialize(user: nil, fedipub_actor: nil, name:, size: "h-8 w-8", fallback_class: "bg-surface text-accent-text ring-1 ring-inset ring-border-muted text-sm font-bold")
     @user = user
     @fedipub_actor = fedipub_actor
     @name = name

@@ -27,10 +27,10 @@ class SiteResource < Madmin::Resource
   member_action do |record|
     if record.is_a?(Site) && record.deleted_at.nil?
       button_to "폐기", discard_madmin_site_path(record), method: :put, data: { turbo_confirm: "정말 이 사이트를 폐기하시겠습니까?" },
-    class: "btn btn-danger bg-red-600 text-white rounded px-4 py-2 hover:bg-red-700"
+    class: "btn btn-danger"
     else
       button_to "복원", restore_madmin_site_path(record), method: :put, data: { turbo_confirm: "정말 이 사이트를 복원하시겠습니까?" },
-    class: "btn btn-success bg-green-600 text-white rounded px-4 py-2 hover:bg-green-700"
+    class: "btn btn-secondary"
     end
   end
 

@@ -49,7 +49,7 @@ class Views::Profiles::ActivityList < Views::Base
 
   def list_content
     if @posts.empty?
-      div(class: "text-center py-16 text-content-disabled") do
+      div(class: "text-center py-16 text-content-muted") do
         p { t(@empty_key) }
       end
     else

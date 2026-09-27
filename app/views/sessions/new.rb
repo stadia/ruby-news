@@ -40,7 +40,7 @@ class Views::Sessions::New < Views::Base
                            autocomplete: "username",
                            placeholder: t("helpers.placeholder.user.email"),
                            value: view_context.params[:email],
-                           class: "block shadow-sm rounded-md border border-border-muted px-3 py-2 mt-2 w-full bg-surface-muted text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition-colors duration-200"
+                           class: "block shadow-sm rounded-md border border-input px-3 py-2 mt-2 w-full bg-app text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition-colors duration-200"
         end
 
         render RubyUI::FormField.new(class: "my-5") do
@@ -50,7 +50,7 @@ class Views::Sessions::New < Views::Base
                               autocomplete: "current-password",
                               placeholder: t("helpers.placeholder.user.password"),
                               maxlength: 72,
-                              class: "block shadow-sm rounded-md border border-border-muted px-3 py-2 mt-2 w-full bg-surface-muted text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition-colors duration-200"
+                              class: "block shadow-sm rounded-md border border-input px-3 py-2 mt-2 w-full bg-app text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition-colors duration-200"
         end
 
         div(class: "col-span-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4") do

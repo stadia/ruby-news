@@ -47,7 +47,7 @@ export default class extends CharacterCounter {
     if (!this.hasCounterTarget) return
 
     const classList = this.counterTarget.classList
-    classList.remove("text-content-muted", "text-warning", "text-danger-text")
+    classList.remove("text-content-muted", "text-warning-text", "text-danger-text")
 
     if (this.maxLength <= 0) {
       classList.add("text-content-muted")
@@ -59,7 +59,7 @@ export default class extends CharacterCounter {
     if (percentage >= this.dangerThresholdValue) {
       classList.add("text-danger-text")
     } else if (percentage >= this.warningThresholdValue) {
-      classList.add("text-warning")
+      classList.add("text-warning-text")
     } else {
       classList.add("text-content-muted")
     }

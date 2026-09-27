@@ -109,7 +109,7 @@ class Components::Posts::BlogEditor < Components::Base
   def title_field(f)
     f.text_field(
       :title,
-      class: "w-full bg-transparent border-0 border-b border-border-muted text-3xl font-bold text-content placeholder:text-content-muted focus:ring-0 focus:border-brand",
+      class: "w-full bg-transparent border-0 border-b border-input text-3xl font-bold text-content placeholder:text-content-muted focus:ring-0 focus:border-brand",
       placeholder: t("posts.blog.title_placeholder"),
       data: { action: "input->blog-autosave#markDirty" }
     )
