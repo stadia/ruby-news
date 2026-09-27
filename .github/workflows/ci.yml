@@ -115,8 +115,8 @@ jobs:
         run: bundle exec tapioca gem --verify
 
   # Packwerk 계층 경계 검사. 규칙과 기존 위반 목록은 docs/architecture-layers.md를 본다.
-  # DB 없이 돈다. packwerk가 Zeitwerk 로드 경로를 얻으려고 config/environment만 부팅한다.
-  # Packwerk는 config/environment로 앱 전체를 부팅한다. DB에 접근하는 initializer를
+  # DB 없이 돈다. Packwerk가 Zeitwerk 로드 경로를 얻으려고 config/environment로
+  # 앱 전체를 부팅하므로 ruby-vips가 로드할 시스템 libvips도 필요하다. DB에 접근하는 initializer를
   # 추가하면 이 잡에도 PostgreSQL 설정이 필요하다.
   boundaries:
     runs-on: ubuntu-latest
@@ -130,6 +130,9 @@ jobs:
         with:
           ruby-version: .ruby-version
           bundler-cache: true
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libvips-dev
 
       - name: Validate package configuration
         run: bin/packwerk validate
