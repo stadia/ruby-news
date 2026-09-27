@@ -69,7 +69,7 @@ Packwerk 패키지는 디렉터리 단위라서 domain과 infrastructure는 흐�
 
 Packwerk는 **앱 안의 패키지에 정의된 상수 참조**만 본다. 다음은 검사 밖이므로 리뷰와 테스트로 지킨다.
 
-- **덕 타이핑된 요청 객체.** `session`, `params`, `request`, `cookies`를 인자로 넘기면 상수 참조가 아니라서 잡히지 않는다. 현재 `OauthAccounts::Callbacks.handle_callback(auth:, session:)`이 세션에 직접 쓴다. 검사에 드러나지 않는 설계상 위반이며 #1028에서 걷어낸다.
+- **덕 타이핑된 요청 객체.** `session`, `params`, `request`, `cookies`를 인자로 넘기면 상수 참조가 아니라서 잡히지 않는다. 예전에는 `OauthAccounts::Callbacks.handle_callback(auth:, session:)`이 세션에 직접 썼다. #1028에서 걷어냈다. 지금은 `handle_callback(auth:)`이 결과만 돌려주고, `CompleteSignup#signup_payload`를 세션에 저장하거나 `SignIn`일 때 남은 payload를 지우는 일은 `Users::OmniauthCallbacksController`가 맡는다. `OauthAccounts::Registration.register_user`도 세션이 아니라 `signup_payload:` 값을 받는다. 검사가 이 경계를 지켜 주지 않으므로 `app/functions` 아래에 요청 객체를 넘기지 않도록 리뷰에서 본다.
 - **젬 상수.** `ActionDispatch::Request`, `Faraday` 같은 젬 상수는 어느 패키지에도 속하지 않는다. application이 `Faraday`를 직접 불러도 검사는 통과한다.
 - **런타임 호출.** 문자열로 대상을 정하는 `constantize`, 동적으로 메서드를 선택하는 `send`, `public_send` 등의 의존은 보이지 않는다. 모델 콜백의 `IndexNowJob.set(...).perform_later` 같은 잡 상수 참조는 정적 검사 대상이지만, 현재 `app/jobs`가 루트 패키지여서 계층 위반이 되지 않는다.
 - **루트 패키지.** 계층이 없는 코드(`app/services`, `app/jobs`, 흐름 밖 컨트롤러 등)와 주고받는 참조는 검사하지 않는다.

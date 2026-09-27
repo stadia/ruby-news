@@ -102,6 +102,9 @@ module OauthAccounts
     class CompleteSignup
       sig { returns(String) }
       def suggested_username; end
+
+      sig { returns(T::Hash[String, T.untyped]) }
+      def signup_payload; end
     end
   end
 

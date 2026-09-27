@@ -46,9 +46,11 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
 
     case result
     when OauthAccounts::Callbacks::SignIn
+      session.delete(:oauth_signup)
       sign_in(resource_name, result.user)
       redirect_to root_path, notice: t("devise.omniauth_callbacks.success", kind: provider_name)
     when OauthAccounts::Callbacks::CompleteSignup
+      session[:oauth_signup] = result.signup_payload
       redirect_to new_user_oauth_registration_path
     else
       # handle_callback의 sum type에 새 variant가 추가됐을 때 render 없이
@@ -62,7 +64,7 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
 
   #: () -> untyped
   def oauth_callback_result
-    OauthAccounts::Callbacks.handle_callback(auth: request.env["omniauth.auth"], session: session)
+    OauthAccounts::Callbacks.handle_callback(auth: request.env["omniauth.auth"])
   end
 
   def provider_name

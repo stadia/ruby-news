@@ -88,20 +88,17 @@ class OauthAccounts::CallbacksTest < ActiveSupport::TestCase
   test "existing oauth account면 sign_in 결과를 반환한다" do
     user = users(:john)
     OauthAccount.create!(user:, provider: "google_oauth2", uid: "google-123")
-    session = {}
 
-    result = OauthAccounts::Callbacks.handle_callback(auth: google_auth_hash(email: user.email), session: session)
+    result = OauthAccounts::Callbacks.handle_callback(auth: google_auth_hash(email: user.email))
 
     assert_instance_of OauthAccounts::Callbacks::SignIn, result
     assert_equal user, result.user
-    assert_nil session[:oauth_signup]
   end
 
   test "verified email 기존 user를 oauth account에 연결한다" do
     user = users(:john)
-    session = {}
 
-    result = OauthAccounts::Callbacks.handle_callback(auth: google_auth_hash(email: user.email), session: session)
+    result = OauthAccounts::Callbacks.handle_callback(auth: google_auth_hash(email: user.email))
 
     assert_instance_of OauthAccounts::Callbacks::SignIn, result
     assert_equal user, result.user
@@ -127,9 +124,8 @@ class OauthAccounts::CallbacksTest < ActiveSupport::TestCase
         }
       }
     )
-    session = {}
 
-    result = OauthAccounts::Callbacks.handle_callback(auth: apple_auth_hash(email: nil, name: nil), session: session)
+    result = OauthAccounts::Callbacks.handle_callback(auth: apple_auth_hash(email: nil, name: nil))
 
     assert_instance_of OauthAccounts::Callbacks::SignIn, result
 
@@ -158,37 +154,42 @@ class OauthAccounts::CallbacksTest < ActiveSupport::TestCase
         }
       }
     )
-    session = {}
 
     auth = google_auth_hash(email: user.email)
     auth["info"]["email_verified"] = false
 
-    result = OauthAccounts::Callbacks.handle_callback(auth:, session:)
+    result = OauthAccounts::Callbacks.handle_callback(auth:)
 
     assert_instance_of OauthAccounts::Callbacks::SignIn, result
     refute OauthAccount.find_by!(provider: "google_oauth2", uid: "google-123").raw_info.dig("info", "email_verified")
   end
 
   test "신규 user면 signup completion 결과와 suggested username을 반환한다" do
-    session = {}
-
-    result = OauthAccounts::Callbacks.handle_callback(auth: google_auth_hash(email: "new-user@example.com", name: "New User"), session: session)
+    result = OauthAccounts::Callbacks.handle_callback(auth: google_auth_hash(email: "new-user@example.com", name: "New User"))
 
     assert_instance_of OauthAccounts::Callbacks::CompleteSignup, result
     assert_equal "new_user", result.suggested_username
-    assert_equal "new-user@example.com", session.dig(:oauth_signup, "email")
+    assert_equal "new-user@example.com", result.signup_payload["email"]
   end
 
-  test "signup completion 세션에 raw_info를 보존한다" do
-    session = {}
+  test "signup completion 결과의 signup payload는 가입 완료에 필요한 값만 문자열 키로 담는다" do
+    result = OauthAccounts::Callbacks.handle_callback(auth: google_auth_hash(email: "new-user@example.com", name: "New User"))
 
-    OauthAccounts::Callbacks.handle_callback(
-      auth: apple_auth_hash(email: "first-login@example.com", name: "First Login"),
-      session: session
+    assert_equal %w[provider uid email email_verified relay_email name raw_info].sort, result.signup_payload.keys.sort
+    assert_equal "google_oauth2", result.signup_payload["provider"]
+    assert_equal "google-123", result.signup_payload["uid"]
+    assert result.signup_payload["email_verified"]
+    refute result.signup_payload["relay_email"]
+    assert_equal "New User", result.signup_payload["name"]
+  end
+
+  test "signup completion 결과의 signup payload에 raw_info를 보존한다" do
+    result = OauthAccounts::Callbacks.handle_callback(
+      auth: apple_auth_hash(email: "first-login@example.com", name: "First Login")
     )
 
-    assert_equal "first-login@example.com", session.dig(:oauth_signup, "raw_info", "info", "email")
-    assert_equal "First Login", session.dig(:oauth_signup, "raw_info", "info", "name")
+    assert_equal "first-login@example.com", result.signup_payload.dig("raw_info", "info", "email")
+    assert_equal "First Login", result.signup_payload.dig("raw_info", "info", "name")
   end
 
   # --- match_user (private) ---

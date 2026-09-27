@@ -11,13 +11,18 @@ module OauthAccounts
 
     # 콜백 처리 결과를 표현하는 불변 sum type.
     # 기존 user와 매칭되면 SignIn, 신규면 CompleteSignup을 반환한다.
+    # HTTP 세션은 다루지 않는다. 호출하는 컨트롤러가 결과에 따라 세션을 관리한다.
+    # - SignIn: 이전 가입 단계에서 남은 signup payload를 지운다.
+    # - CompleteSignup: signup_payload를 가입 완료 단계가 읽을 수 있게 저장한다.
     # 멤버 타입: sorbet/rbi/shims/data_definitions.rbi
     SignIn = Data.define(:user)
-    CompleteSignup = Data.define(:suggested_username)
+    CompleteSignup = Data.define(:suggested_username, :signup_payload)
+
+    SIGNUP_PAYLOAD_KEYS = %i[provider uid email email_verified relay_email name raw_info].freeze
 
     class << self
-      #: (auth: untyped, session: untyped) -> (SignIn | CompleteSignup)
-      def handle_callback(auth:, session:)
+      #: (auth: untyped) -> (SignIn | CompleteSignup)
+      def handle_callback(auth:)
         oauth_data = build_auth_result(auth:)
         user = match_user(
           provider: oauth_data[:provider],
@@ -30,13 +35,13 @@ module OauthAccounts
         if user
           upsert_oauth_account(user:, oauth_data:)
 
-          session.delete(:oauth_signup)
           return SignIn.new(user:)
         end
 
-        session[:oauth_signup] = oauth_data.slice(:provider, :uid, :email, :email_verified, :relay_email, :name, :raw_info).deep_stringify_keys
-
-        CompleteSignup.new(suggested_username: suggest_username(name: oauth_data[:name], email: oauth_data[:email]))
+        CompleteSignup.new(
+          suggested_username: suggest_username(name: oauth_data[:name], email: oauth_data[:email]),
+          signup_payload: oauth_data.slice(*SIGNUP_PAYLOAD_KEYS).deep_stringify_keys
+        )
       end
 
       def suggest_username(name:, email:)

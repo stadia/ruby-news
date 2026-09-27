@@ -16,9 +16,9 @@ module OauthAccounts
     end
 
     class << self
-      #: (session_data: untyped, username: String, locale: String, signup_host: String) -> Result
-      def register_user(session_data:, username:, locale:, signup_host:)
-        payload = session_data.with_indifferent_access
+      #: (signup_payload: untyped, username: String, locale: String, signup_host: String) -> Result
+      def register_user(signup_payload:, username:, locale:, signup_host:)
+        payload = signup_payload.with_indifferent_access
         user = build_user(payload:, username:, locale:, signup_host:)
 
         User.transaction do

@@ -3,9 +3,9 @@
 require "test_helper"
 
 class OauthAccounts::RegistrationTest < ActiveSupport::TestCase
-  test "oauth signup session으로 user와 oauth account를 생성한다" do
+  test "oauth signup payload로 user와 oauth account를 생성한다" do
     result = OauthAccounts::Registration.register_user(
-      session_data: session_data,
+      signup_payload: signup_payload,
       username: "oauth_user",
       locale: "ko",
       signup_host: "ruby-news.dev"
@@ -30,7 +30,7 @@ class OauthAccounts::RegistrationTest < ActiveSupport::TestCase
 
   test "username이 유효하지 않으면 실패를 반환한다" do
     result = OauthAccounts::Registration.register_user(
-      session_data: session_data,
+      signup_payload: signup_payload,
       username: "한글",
       locale: "ko",
       signup_host: "ruby-news.dev"
@@ -42,7 +42,7 @@ class OauthAccounts::RegistrationTest < ActiveSupport::TestCase
 
   private
 
-  def session_data
+  def signup_payload
     {
       "provider" => "google_oauth2",
       "uid" => "google-123",

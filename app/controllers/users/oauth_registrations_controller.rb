@@ -20,7 +20,7 @@ class Users::OauthRegistrationsController < ApplicationController
     return redirect_to(new_user_session_path, alert: t("users.oauth_signup.session_missing")) unless oauth_signup
 
     result = OauthAccounts::Registration.register_user(
-      session_data: oauth_signup,
+      signup_payload: oauth_signup,
       username: oauth_registration_params[:username],
       locale: safe_locale,
       signup_host: safe_signup_host
