@@ -1,15 +1,5 @@
 ---
 ko:
-  boosts:
-    button:
-      aria_label:
-        boost: 부스트
-        undo: 부스트 취소
-  likes:
-    button:
-      aria_label:
-        like: 좋아요
-        undo: 좋아요 취소
   activerecord:
     attributes:
       article:
@@ -53,6 +43,7 @@ ko:
     create:
       already_exists: 이미 등록된 글입니다.
       success: 글이 성공적으로 등록되었습니다.
+    default_summary: 새로운 Ruby 관련 글이 올라왔습니다.
     form:
       errors_heading: "%{count}건의 오류로 인해 글을 저장할 수 없습니다:"
       submit: 등록
@@ -66,20 +57,19 @@ ko:
       item_list_name: Ruby-News 지난 글 모음
       no_results: 검색 결과가 없습니다.
       search_source: 검색 소스
-      try_searching: "다른 검색어를 시도해보세요:"
       tabs:
         google: Google
         ruby_news: Ruby-News
       title: 지난 글 모음 | Ruby-News
-    default_summary: 새로운 Ruby 관련 글이 올라왔습니다.
+      try_searching: '다른 검색어를 시도해보세요:'
     markdown:
-      source_url: 원문 URL
-      ruby_news_url: Ruby-News URL
-      published_at: 발행일
-      summary_heading: 요약
-      introduction_heading: 소개
       body_heading: 본문
       conclusion_heading: 결론
+      introduction_heading: 소개
+      published_at: 발행일
+      ruby_news_url: Ruby-News URL
+      source_url: 원문 URL
+      summary_heading: 요약
     new:
       back_to_list: 목록으로 돌아가기
       badge: Article Intake
@@ -105,27 +95,32 @@ ko:
       summary_heading: 핵심 요약
     tagged:
       count: "%{count}개의 글이 있습니다"
-      item_list_name: "Ruby-News #%{tag} 태그 글"
+      item_list_name: 'Ruby-News #%{tag} 태그 글'
       title: "#%{tag} 태그 글 | Ruby-News"
+  boosts:
+    button:
+      aria_label:
+        boost: 부스트
+        undo: 부스트 취소
   comments:
     comment:
       delete: 삭제
       delete_confirm: 정말 삭제하시겠습니까?
       reply: 답글
     comment_form:
-      error_heading: "오류가 발생했습니다:"
+      error_heading: '오류가 발생했습니다:'
       guideline: 정중하고 건설적인 댓글을 작성해 주세요.
       login_prompt_after: " 이 필요합니다."
-      login_prompt_before: "댓글을 작성하려면 "
+      login_prompt_before: '댓글을 작성하려면 '
       submit: 댓글 작성
       title: 댓글 작성
     comment_header:
       title: 댓글
     comment_reply_form:
       cancel: 취소
-      error_heading: "오류가 발생했습니다:"
+      error_heading: '오류가 발생했습니다:'
       login_prompt_after: " 하세요."
-      login_prompt_before: "답글을 작성하려면 "
+      login_prompt_before: '답글을 작성하려면 '
       submit: 답글 작성
       title: 답글 작성
   errors:
@@ -152,7 +147,7 @@ ko:
       following: 팔로잉
       incoming_following: "%{username}이(가) 팔로우 중입니다."
       incoming_request: "%{username}이(가) 팔로우 요청했습니다."
-      logged_out: "팔로우하려면 로그인하세요. 또는 다른 Fediverse 서버에서 검색: "
+      logged_out: '팔로우하려면 로그인하세요. 또는 다른 Fediverse 서버에서 검색: '
       own_account: 내 계정입니다.
       requested: 요청 중
       unfollow: 언팔로우
@@ -223,6 +218,11 @@ ko:
     theme: 테마
     theme_dark: 다크 모드로 전환
     theme_light: 라이트 모드로 전환
+  likes:
+    button:
+      aria_label:
+        like: 좋아요
+        undo: 좋아요 취소
   login_required:
     go_to_login: 로그인 하러 가기
     message: 댓글을 작성하거나 대화에 참여하려면 로그인이 필요합니다.
@@ -263,40 +263,40 @@ ko:
       submit: 재설정 메일 보내기
   posts:
     blog:
-      untitled_draft: 제목 없는 초안
-      edit_title: 블로그 쓰기 | Ruby-News
-      edit_heading: 블로그 쓰기
-      published: 글을 발행했습니다.
-      updated: 글을 수정했습니다.
-      deleted: 글을 삭제했습니다.
-      restored: 글을 복구했습니다.
-      destroyed_permanently: 글을 완전히 삭제했습니다.
-      edit: 수정
-      delete: 삭제
-      restore: 복구
-      destroy_permanently: 완전 삭제
-      delete_confirm: 이 글을 삭제할까요?
-      destroy_permanently_confirm: 이 글을 완전히 삭제할까요? 되돌릴 수 없습니다.
-      forbidden: 이 글을 수정할 권한이 없습니다.
+      autosave_failed: 저장 실패
       autosave_idle: 자동 저장 준비됨
       autosave_pending: 저장 대기 중
-      autosave_saving: 저장 중
       autosave_saved: 저장됨
-      autosave_failed: 저장 실패
-      preview: 미리보기
-      publish: 발행
-      title_placeholder: 제목을 입력하세요
+      autosave_saving: 저장 중
       body_placeholder: 블로그 글을 작성하세요
-      no_tags: 태그 없음
-      status_draft: 초안
-      status_published: 발행됨
-      read_more: 원문 읽기
-      manage_title: 블로그 글 관리 | Ruby-News
-      manage_heading: 블로그 글 관리
-      draft_stash_failed: 편집기로 초안을 넘기지 못했습니다. 다시 시도해 주세요.
+      delete: 삭제
+      delete_confirm: 이 글을 삭제할까요?
+      deleted: 글을 삭제했습니다.
+      destroy_permanently: 완전 삭제
+      destroy_permanently_confirm: 이 글을 완전히 삭제할까요? 되돌릴 수 없습니다.
+      destroyed_permanently: 글을 완전히 삭제했습니다.
       draft_expired: 이어받을 초안이 남아 있지 않아 빈 편집기로 열었습니다.
+      draft_stash_failed: 편집기로 초안을 넘기지 못했습니다. 다시 시도해 주세요.
+      edit: 수정
+      edit_heading: 블로그 쓰기
+      edit_title: 블로그 쓰기 | Ruby-News
       errors:
         blank_draft: 제목이나 본문 중 하나는 입력해야 합니다.
+      forbidden: 이 글을 수정할 권한이 없습니다.
+      manage_heading: 블로그 글 관리
+      manage_title: 블로그 글 관리 | Ruby-News
+      no_tags: 태그 없음
+      preview: 미리보기
+      publish: 발행
+      published: 글을 발행했습니다.
+      read_more: 원문 읽기
+      restore: 복구
+      restored: 글을 복구했습니다.
+      status_draft: 초안
+      status_published: 발행됨
+      title_placeholder: 제목을 입력하세요
+      untitled_draft: 제목 없는 초안
+      updated: 글을 수정했습니다.
     post_card:
       boosted_by: "%{name}님이 부스트함"
       linked_article: 연결된 기사
@@ -304,11 +304,11 @@ ko:
       unknown_author: 알 수 없음
       view_article: 기사 보기
     post_form:
+      blog: 블로그 쓰기
       cancel: 취소
       post_submit: 게시
       reply_submit: 답글
-      replying_to: "답글 작성 중 "
-      blog: 블로그 쓰기
+      replying_to: '답글 작성 중 '
     remote_attachment_only_body: 첨부된 미디어
     reply_form:
       cancel: 취소
@@ -321,13 +321,23 @@ ko:
       sign_in_to_reply: 로그인하고 댓글 쓰기
   profiles:
     activity_tabs:
+      blog: 블로그
       boosts: 부스트
       comments: 댓글
       followers: 팔로워
       following: 팔로잉
       likes: 좋아요
-      blog: 블로그
       posts: 글
+    blog_list:
+      drafts_empty: 작성 중인 초안이 없습니다.
+      drafts_heading: 작성 중 초안
+      empty: 아직 발행한 블로그 글이 없습니다.
+      published_empty: 발행한 블로그가 없습니다.
+      published_heading: 발행됨
+      trash_empty: 휴지통이 비어 있습니다.
+      trash_heading: 휴지통
+    boost_list:
+      empty: 아직 부스트한 글이 없습니다.
     comment_list:
       empty: 아직 작성한 댓글이 없습니다.
     follow_list:
@@ -339,20 +349,10 @@ ko:
       reject: 거절
       requested: 요청 중
       unfollow: 언팔로우
-    boost_list:
-      empty: 아직 부스트한 글이 없습니다.
     like_list:
       empty: 아직 좋아요한 글이 없습니다.
     post_list:
       empty: 아직 작성한 글이 없습니다.
-    blog_list:
-      drafts_heading: 작성 중 초안
-      published_heading: 발행됨
-      trash_heading: 휴지통
-      drafts_empty: 작성 중인 초안이 없습니다.
-      published_empty: 발행한 블로그가 없습니다.
-      trash_empty: 휴지통이 비어 있습니다.
-      empty: 아직 발행한 블로그 글이 없습니다.
     show:
       feed: Feed
       find_follow: 팔로우 검색
@@ -385,17 +385,17 @@ ko:
   sign_up: 회원가입
   social:
     oauth:
-      error: "OAuth 에러: %{message}"
+      error: 'OAuth 에러: %{message}'
       success: OAuth 인증 성공! Access token이 저장되었습니다.
   tags_sidebar:
     empty: 표시할 태그가 없습니다.
     heading: 태그
   users:
     edit:
+      blog_link: 블로그 글 관리
       heading: 사용자 정보 수정
       subtitle: 계정 정보를 업데이트합니다.
       title: 사용자 정보 수정
-      blog_link: 블로그 글 관리
     form:
       avatar_alt_default: 프로필 이미지
       avatar_hint: 정사각형 대표 썸네일로 400x400 크롭되어 외부에 공개됩니다.

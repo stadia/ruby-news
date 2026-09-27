@@ -22,7 +22,7 @@ class Views::Oauth::Result < Views::Base
         render RubyUI::CardHeader.new do
           div(class: "flex items-center gap-3") do
             if @success
-              render PhlexIcons::Hero::CheckCircle.new(variant: :outline, class: "w-8 h-8 text-success")
+              render PhlexIcons::Hero::CheckCircle.new(variant: :outline, class: "w-8 h-8 text-success-text")
             else
               render PhlexIcons::Hero::XCircle.new(variant: :outline, class: "w-8 h-8 text-danger-text")
             end

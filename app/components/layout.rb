@@ -9,6 +9,7 @@ class Components::Layout < Components::Base
     html(lang: I18n.locale, class: "light theme-light") do
       head do
         render Components::Layout::AssetPreloads.new(section: :preconnect)
+        render Components::Layout::AssetPreloads.new(section: :theme_color)
         render_theme_init_script
         render_analytics_scripts
         render Components::Layout::MetaTags.new
@@ -58,6 +59,12 @@ class Components::Layout < Components::Base
           d.classList.toggle('light',!dark);
           d.classList.toggle('theme-dark',dark);
           d.classList.toggle('theme-light',!dark);
+          document.querySelectorAll('meta[name="theme-color"][data-theme]').forEach(function(meta){
+            var theme=meta.dataset.theme;
+            meta.media=storedTheme==='light'||storedTheme==='dark'
+              ? (theme===storedTheme?'all':'not all')
+              : '(prefers-color-scheme: '+theme+')';
+          });
         })();
       JS
     end

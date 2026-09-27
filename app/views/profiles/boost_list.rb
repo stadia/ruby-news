@@ -30,7 +30,7 @@ class Views::Profiles::BoostList < Views::Base
 
   def list_content
     if @boostables.empty?
-      div(class: "text-center py-16 text-content-disabled") do
+      div(class: "text-center py-16 text-content-muted") do
         p { t("profiles.boost_list.empty") }
       end
     else

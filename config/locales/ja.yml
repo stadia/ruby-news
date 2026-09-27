@@ -1,15 +1,5 @@
 ---
 ja:
-  boosts:
-    button:
-      aria_label:
-        boost: ブースト
-        undo: ブースト取り消し
-  likes:
-    button:
-      aria_label:
-        like: いいね
-        undo: いいね取り消し
   activerecord:
     attributes:
       article:
@@ -53,6 +43,7 @@ ja:
     create:
       already_exists: すでに登録されている記事です。
       success: 記事が正常に登録されました。
+    default_summary: 新しいRuby関連の記事が投稿されました。
     form:
       errors_heading: "%{count}件のエラーにより記事を保存できませんでした:"
       submit: 登録
@@ -66,20 +57,19 @@ ja:
       item_list_name: Ruby-News 過去の記事
       no_results: 検索結果がありません。
       search_source: 検索ソース
-      try_searching: "他のキーワードをお試しください:"
       tabs:
         google: Google
         ruby_news: Ruby-News
       title: 過去の記事 | Ruby-News
-    default_summary: 新しいRuby関連の記事が投稿されました。
+      try_searching: '他のキーワードをお試しください:'
     markdown:
-      source_url: 元記事URL
-      ruby_news_url: Ruby-News URL
-      published_at: 公開日
-      summary_heading: 要約
-      introduction_heading: はじめに
       body_heading: 本文
       conclusion_heading: まとめ
+      introduction_heading: はじめに
+      published_at: 公開日
+      ruby_news_url: Ruby-News URL
+      source_url: 元記事URL
+      summary_heading: 要約
     new:
       back_to_list: 一覧に戻る
       badge: Article Intake
@@ -105,27 +95,32 @@ ja:
       summary_heading: 要点
     tagged:
       count: "%{count}件の記事があります"
-      item_list_name: "Ruby-News #%{tag} タグの記事"
+      item_list_name: 'Ruby-News #%{tag} タグの記事'
       title: "#%{tag} タグの記事 | Ruby-News"
+  boosts:
+    button:
+      aria_label:
+        boost: ブースト
+        undo: ブースト取り消し
   comments:
     comment:
       delete: 削除
       delete_confirm: 本当に削除しますか?
       reply: 返信
     comment_form:
-      error_heading: "エラーが発生しました:"
+      error_heading: 'エラーが発生しました:'
       guideline: 丁寧で建設的なコメントを心がけてください。
       login_prompt_after: " が必要です。"
-      login_prompt_before: "コメントを書くには "
+      login_prompt_before: 'コメントを書くには '
       submit: コメントを書く
       title: コメントを書く
     comment_header:
       title: コメント
     comment_reply_form:
       cancel: キャンセル
-      error_heading: "エラーが発生しました:"
+      error_heading: 'エラーが発生しました:'
       login_prompt_after: " してください。"
-      login_prompt_before: "返信を書くには "
+      login_prompt_before: '返信を書くには '
       submit: 返信を書く
       title: 返信を書く
   errors:
@@ -152,7 +147,7 @@ ja:
       following: フォロー中
       incoming_following: "%{username}さんがフォローしています。"
       incoming_request: "%{username}さんからフォローリクエストがあります。"
-      logged_out: "フォローするにはログインしてください。または他のFediverseサーバーから検索: "
+      logged_out: 'フォローするにはログインしてください。または他のFediverseサーバーから検索: '
       own_account: あなた自身のアカウントです。
       requested: リクエスト中
       unfollow: フォロー解除
@@ -223,6 +218,11 @@ ja:
     theme: テーマ
     theme_dark: ダークモードに切り替え
     theme_light: ライトモードに切り替え
+  likes:
+    button:
+      aria_label:
+        like: いいね
+        undo: いいね取り消し
   login_required:
     go_to_login: ログインへ
     message: コメントを書いたり会話に参加するにはログインが必要です。
@@ -263,40 +263,40 @@ ja:
       submit: 再設定メールを送信
   posts:
     blog:
-      untitled_draft: 無題の下書き
-      edit_title: ブログを書く | Ruby-News
-      edit_heading: ブログを書く
-      published: 投稿を公開しました。
-      updated: 投稿を更新しました。
-      deleted: 投稿を削除しました。
-      restored: 投稿を復元しました。
-      destroyed_permanently: 投稿を完全に削除しました。
-      edit: 編集
-      delete: 削除
-      restore: 復元
-      destroy_permanently: 完全に削除
-      delete_confirm: この投稿を削除しますか？
-      destroy_permanently_confirm: この投稿を完全に削除しますか？元に戻せません。
-      forbidden: この投稿を編集する権限がありません。
+      autosave_failed: 保存に失敗しました
       autosave_idle: 自動保存の準備完了
       autosave_pending: 保存待機中
-      autosave_saving: 保存中
       autosave_saved: 保存しました
-      autosave_failed: 保存に失敗しました
-      preview: プレビュー
-      publish: 公開
-      title_placeholder: タイトルを入力してください
+      autosave_saving: 保存中
       body_placeholder: ブログを入力してください
-      no_tags: タグなし
-      status_draft: 下書き
-      status_published: 公開済み
-      read_more: 本文を読む
-      manage_title: ブログ記事の管理 | Ruby-News
-      manage_heading: ブログ記事の管理
-      draft_stash_failed: 下書きをエディタに引き継げませんでした。もう一度お試しください。
+      delete: 削除
+      delete_confirm: この投稿を削除しますか？
+      deleted: 投稿を削除しました。
+      destroy_permanently: 完全に削除
+      destroy_permanently_confirm: この投稿を完全に削除しますか？元に戻せません。
+      destroyed_permanently: 投稿を完全に削除しました。
       draft_expired: 引き継ぐ下書きが見つからなかったため、空のエディタで開きました。
+      draft_stash_failed: 下書きをエディタに引き継げませんでした。もう一度お試しください。
+      edit: 編集
+      edit_heading: ブログを書く
+      edit_title: ブログを書く | Ruby-News
       errors:
         blank_draft: 下書きを保存するにはタイトルまたは本文を入力してください。
+      forbidden: この投稿を編集する権限がありません。
+      manage_heading: ブログ記事の管理
+      manage_title: ブログ記事の管理 | Ruby-News
+      no_tags: タグなし
+      preview: プレビュー
+      publish: 公開
+      published: 投稿を公開しました。
+      read_more: 本文を読む
+      restore: 復元
+      restored: 投稿を復元しました。
+      status_draft: 下書き
+      status_published: 公開済み
+      title_placeholder: タイトルを入力してください
+      untitled_draft: 無題の下書き
+      updated: 投稿を更新しました。
     post_card:
       boosted_by: "%{name}さんがブースト"
       linked_article: 関連記事
@@ -304,11 +304,11 @@ ja:
       unknown_author: 不明
       view_article: 記事を見る
     post_form:
+      blog: ブログを書く
       cancel: キャンセル
       post_submit: 投稿
       reply_submit: 返信
-      replying_to: "返信中 "
-      blog: ブログを書く
+      replying_to: '返信中 '
     remote_attachment_only_body: 添付メディア
     reply_form:
       cancel: キャンセル
@@ -321,13 +321,23 @@ ja:
       sign_in_to_reply: ログインして返信する
   profiles:
     activity_tabs:
+      blog: ブログ
       boosts: ブースト
       comments: コメント
       followers: フォロワー
       following: フォロー中
       likes: いいね
-      blog: ブログ
       posts: 投稿
+    blog_list:
+      drafts_empty: 作成中の下書きはありません。
+      drafts_heading: 作成中の下書き
+      empty: まだ公開されたブログ記事がありません。
+      published_empty: 公開したブログはありません。
+      published_heading: 公開済み
+      trash_empty: ゴミ箱は空です。
+      trash_heading: ゴミ箱
+    boost_list:
+      empty: まだブーストした記事がありません。
     comment_list:
       empty: まだコメントを書いていません。
     follow_list:
@@ -339,20 +349,10 @@ ja:
       reject: 拒否
       requested: リクエスト中
       unfollow: フォロー解除
-    boost_list:
-      empty: まだブーストした記事がありません。
     like_list:
       empty: まだいいねした記事がありません。
     post_list:
       empty: まだ投稿がありません。
-    blog_list:
-      drafts_heading: 作成中の下書き
-      published_heading: 公開済み
-      trash_heading: ゴミ箱
-      drafts_empty: 作成中の下書きはありません。
-      published_empty: 公開したブログはありません。
-      trash_empty: ゴミ箱は空です。
-      empty: まだ公開されたブログ記事がありません。
     show:
       feed: フィード
       find_follow: フォロー検索
@@ -385,17 +385,17 @@ ja:
   sign_up: 新規登録
   social:
     oauth:
-      error: "OAuthエラー: %{message}"
+      error: 'OAuthエラー: %{message}'
       success: OAuth認証に成功しました！アクセストークンが保存されました。
   tags_sidebar:
     empty: 表示するタグがありません。
     heading: タグ
   users:
     edit:
+      blog_link: ブログ記事の管理
       heading: ユーザー情報を編集
       subtitle: アカウント情報を更新します。
       title: ユーザー情報を編集
-      blog_link: ブログ記事の管理
     form:
       avatar_alt_default: プロフィール画像
       avatar_hint: 正方形の代表サムネイルとして400x400にクロップされ、外部に公開されます。

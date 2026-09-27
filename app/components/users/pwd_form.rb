@@ -96,7 +96,7 @@ class Components::Users::PwdForm < Components::Base
 
   def input_classes(errors)
     base_classes = "block w-full bg-surface/50 border rounded-xl px-4 py-3 text-content placeholder:text-content-muted focus:outline-none focus:ring-2 transition-all duration-200"
-    error_classes = errors.any? ? "border-destructive/50 focus:ring-destructive/30" : "border-border-strong focus:ring-brand/30 focus:border-brand/50"
+    error_classes = errors.any? ? "border-danger-text focus:ring-destructive/30" : "border-input focus:ring-brand/30 focus:border-brand/50"
     "#{base_classes} #{error_classes}"
   end
 

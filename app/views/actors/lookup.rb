@@ -22,7 +22,7 @@ class Views::Actors::Lookup < Views::Base
             placeholder: t("helpers.placeholder.actor.account"),
             required: true,
             autofocus: true,
-            class: "bg-surface-muted border-border-muted text-content placeholder:text-content-muted"
+            class: "bg-app border-input text-content placeholder:text-content-muted"
           )
         end
         render RubyUI::Button.new(type: "submit", class: "bg-brand-solid hover:bg-brand-solid-hover text-brand-foreground") { t("actors.lookup.submit") }

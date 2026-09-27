@@ -30,7 +30,7 @@ class Views::Profiles::LikeList < Views::Base
 
   def list_content
     if @likeables.empty?
-      div(class: "text-center py-16 text-content-disabled") do
+      div(class: "text-center py-16 text-content-muted") do
         p { t("profiles.like_list.empty") }
       end
     else

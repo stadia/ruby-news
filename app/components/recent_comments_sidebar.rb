@@ -35,7 +35,7 @@ class Components::RecentCommentsSidebar < Components::Base
           fedipub_actor: comment.fedipub_actor,
           name: comment.author_name,
           size: "h-7 w-7",
-          fallback_class: "bg-surface-muted text-accent-text ring-1 ring-inset ring-border-muted font-bold"
+          fallback_class: "bg-surface text-accent-text ring-1 ring-inset ring-border-muted font-bold"
         )
         span(class: "text-sm font-medium text-content-secondary truncate") { comment.author_name }
         if comment.author_host.present?

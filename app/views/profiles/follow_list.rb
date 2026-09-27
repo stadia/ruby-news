@@ -35,7 +35,7 @@ class Views::Profiles::FollowList < Views::Base
 
   def list_content(title)
     if @followings.empty?
-      div(class: "text-center py-16 text-content-disabled") do
+      div(class: "text-center py-16 text-content-muted") do
         p { @type == :followers ? t("profiles.follow_list.empty_followers") : t("profiles.follow_list.empty_following") }
       end
     else
@@ -101,7 +101,7 @@ class Views::Profiles::FollowList < Views::Base
         button_to t("profiles.follow_list.unfollow"), following_path(following),
           method: :delete,
           form: { data: { turbo_stream: true } },
-          class: "px-3 py-1 text-xs font-medium bg-surface-muted hover:bg-danger-solid text-content-secondary hover:text-danger-text rounded-lg transition-colors cursor-pointer"
+          class: "px-3 py-1 text-xs font-medium bg-surface-muted hover:bg-danger-solid text-content-secondary hover:text-brand-foreground rounded-lg transition-colors cursor-pointer"
       end
     end
   end

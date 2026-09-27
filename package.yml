@@ -1,0 +1,3 @@
+# 루트 패키지. 아직 계층을 정하지 않은 코드가 모두 여기에 속한다.
+# layer가 없는 패키지는 계층 검사에서 제외된다(packwerk-extensions Layer::Package#can_depend_on?).
+enforce_dependencies: false

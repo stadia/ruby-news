@@ -43,6 +43,7 @@
     <%= csp_meta_tag %>
     <%= yield :head %>
     <link rel="manifest" href="<%= pwa_manifest_path(format: :json) %>">
+    <meta name="theme-color" content="<%= Components::Layout::AssetPreloads::THEME_COLORS[:dark] %>">
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -72,7 +73,7 @@
       href="#main-content"
       class="
         sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50
-        focus:px-4 focus:py-2 focus:bg-brand focus:text-brand-foreground focus:rounded-lg
+        focus:px-4 focus:py-2 focus:bg-brand-solid focus:text-brand-foreground focus:rounded-lg
       "
     >
       <%= t("layout.skip_to_content") %>

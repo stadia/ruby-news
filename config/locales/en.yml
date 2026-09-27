@@ -1,15 +1,5 @@
 ---
 en:
-  boosts:
-    button:
-      aria_label:
-        boost: Boost
-        undo: Undo boost
-  likes:
-    button:
-      aria_label:
-        like: Like
-        undo: Unlike
   activerecord:
     attributes:
       article:
@@ -53,6 +43,7 @@ en:
     create:
       already_exists: Article already exists.
       success: Article was successfully created.
+    default_summary: A new Ruby-related article has been posted.
     form:
       errors_heading: 'Could not save the article due to %{count} error(s):'
       submit: Submit
@@ -66,20 +57,19 @@ en:
       item_list_name: Ruby-News Past Articles
       no_results: No results found.
       search_source: Search source
-      try_searching: "Try searching for:"
       tabs:
         google: Google
         ruby_news: Ruby-News
       title: Past Articles | Ruby-News
-    default_summary: A new Ruby-related article has been posted.
+      try_searching: 'Try searching for:'
     markdown:
-      source_url: Source URL
-      ruby_news_url: Ruby-News URL
-      published_at: Published
-      summary_heading: Summary
-      introduction_heading: Introduction
       body_heading: Body
       conclusion_heading: Conclusion
+      introduction_heading: Introduction
+      published_at: Published
+      ruby_news_url: Ruby-News URL
+      source_url: Source URL
+      summary_heading: Summary
     new:
       back_to_list: Back to list
       badge: Article Intake
@@ -107,6 +97,11 @@ en:
       count: "%{count} articles"
       item_list_name: 'Ruby-News #%{tag} Tagged Articles'
       title: "#%{tag} Tagged Articles | Ruby-News"
+  boosts:
+    button:
+      aria_label:
+        boost: Boost
+        undo: Undo boost
   comments:
     comment:
       delete: Delete
@@ -223,6 +218,11 @@ en:
     theme: Theme
     theme_dark: Switch to dark mode
     theme_light: Switch to light mode
+  likes:
+    button:
+      aria_label:
+        like: Like
+        undo: Unlike
   login_required:
     go_to_login: Go to sign in
     message: You need to sign in to write comments or join conversations.
@@ -263,40 +263,40 @@ en:
       submit: Send reset email
   posts:
     blog:
-      untitled_draft: Untitled draft
-      edit_title: Write blog | Ruby-News
-      edit_heading: Write blog
-      published: Post published.
-      updated: Post updated.
-      deleted: Post deleted.
-      restored: Post restored.
-      destroyed_permanently: Post permanently deleted.
-      edit: Edit
-      delete: Delete
-      restore: Restore
-      destroy_permanently: Delete permanently
-      delete_confirm: Delete this post?
-      destroy_permanently_confirm: Permanently delete this post? This cannot be undone.
-      forbidden: You do not have permission to edit this post.
+      autosave_failed: Save failed
       autosave_idle: Autosave ready
       autosave_pending: Saving pending
-      autosave_saving: Saving
       autosave_saved: Saved
-      autosave_failed: Save failed
-      preview: Preview
-      publish: Publish
-      title_placeholder: Enter a title
+      autosave_saving: Saving
       body_placeholder: Write your blog post
-      no_tags: No tags
-      status_draft: Draft
-      status_published: Published
-      read_more: Read full post
-      manage_title: Manage blog posts | Ruby-News
-      manage_heading: Manage blog posts
-      draft_stash_failed: We couldn't hand your draft to the editor. Please try again.
+      delete: Delete
+      delete_confirm: Delete this post?
+      deleted: Post deleted.
+      destroy_permanently: Delete permanently
+      destroy_permanently_confirm: Permanently delete this post? This cannot be undone.
+      destroyed_permanently: Post permanently deleted.
       draft_expired: Your carried-over draft was no longer available, so the editor opened blank.
+      draft_stash_failed: We couldn't hand your draft to the editor. Please try again.
+      edit: Edit
+      edit_heading: Write blog
+      edit_title: Write blog | Ruby-News
       errors:
         blank_draft: Enter a title or body before saving this draft.
+      forbidden: You do not have permission to edit this post.
+      manage_heading: Manage blog posts
+      manage_title: Manage blog posts | Ruby-News
+      no_tags: No tags
+      preview: Preview
+      publish: Publish
+      published: Post published.
+      read_more: Read full post
+      restore: Restore
+      restored: Post restored.
+      status_draft: Draft
+      status_published: Published
+      title_placeholder: Enter a title
+      untitled_draft: Untitled draft
+      updated: Post updated.
     post_card:
       boosted_by: Boosted by %{name}
       linked_article: Linked article
@@ -304,11 +304,11 @@ en:
       unknown_author: Unknown
       view_article: View article
     post_form:
+      blog: Write blog
       cancel: Cancel
       post_submit: Post
       reply_submit: Reply
       replying_to: 'Replying to '
-      blog: Write blog
     remote_attachment_only_body: Attached media
     reply_form:
       cancel: Cancel
@@ -321,13 +321,23 @@ en:
       sign_in_to_reply: Sign in to reply
   profiles:
     activity_tabs:
+      blog: Blog
       boosts: Boosts
       comments: Comments
       followers: Followers
       following: Following
       likes: Likes
-      blog: Blog
       posts: Posts
+    blog_list:
+      drafts_empty: No drafts in progress.
+      drafts_heading: Drafts in progress
+      empty: No published blog posts yet.
+      published_empty: No published blog posts.
+      published_heading: Published
+      trash_empty: Trash is empty.
+      trash_heading: Trash
+    boost_list:
+      empty: No boosted articles yet.
     comment_list:
       empty: No comments yet.
     follow_list:
@@ -339,20 +349,10 @@ en:
       reject: Reject
       requested: Requested
       unfollow: Unfollow
-    boost_list:
-      empty: No boosted articles yet.
     like_list:
       empty: No liked articles yet.
     post_list:
       empty: No posts yet.
-    blog_list:
-      drafts_heading: Drafts in progress
-      published_heading: Published
-      trash_heading: Trash
-      drafts_empty: No drafts in progress.
-      published_empty: No published blog posts.
-      trash_empty: Trash is empty.
-      empty: No published blog posts yet.
     show:
       feed: Feed
       find_follow: Find & Follow
@@ -392,10 +392,10 @@ en:
     heading: Tags
   users:
     edit:
+      blog_link: Manage blog posts
       heading: Edit Profile
       subtitle: Update your account information.
       title: Edit Profile
-      blog_link: Manage blog posts
     form:
       avatar_alt_default: Profile picture
       avatar_hint: Will be cropped to 400×400 as a square thumbnail and displayed publicly.

@@ -28,7 +28,7 @@ class Components::Articles::Form < Components::Base
 
        render RubyUI::FormField.new(class: "my-5") do
          render RubyUI::FormFieldLabel.new(for: :article_url) { ::Article.human_attribute_name(:url) }
-         form.text_field :url, class: [ "block shadow-sm rounded-md border px-3 py-2 mt-2 w-full bg-surface-muted text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:border-transparent transition-colors duration-200", { "border-border-muted focus:ring-brand": article.errors[:url].none?, "border-danger-solid focus:ring-danger-solid": article.errors[:url].any? } ]
+         form.text_field :url, class: [ "block shadow-sm rounded-md border px-3 py-2 mt-2 w-full bg-app text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:border-transparent transition-colors duration-200", { "border-input focus:ring-brand": article.errors[:url].none?, "border-danger-text focus:ring-danger-solid": article.errors[:url].any? } ]
          article.errors[:url].each do |msg|
            render RubyUI::FormFieldError.new { msg }
          end
