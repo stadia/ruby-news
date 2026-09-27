@@ -6,22 +6,24 @@ class Components::Posts::PostForm < Components::Base
   include Phlex::Rails::Helpers::HiddenFieldTag
   include PhlexIcons
 
-  def initialize(post: Post.new, thread_post: nil)
+  # 상세(thread_post 있음)는 답글 대상을 배너 없이 폼 위치로 알린다.
+  # inline: true는 하위 답글 아래에 끼워 넣는 폼으로, id와 필드 id를 inline_reply_*로
+  # 바꾸고 취소 버튼을 단다. 배치는 Views::Posts::Show와 thread-reply가 맡는다.
+  def initialize(post: Post.new, thread_post: nil, inline: false)
     @post = post
     @thread_post = thread_post
+    @inline = inline
   end
 
   def view_template
     div(
-      id: "post_form",
-      class: "mb-6",
+      id: @inline ? "inline_reply_form" : "post_form",
+      class: @inline ? nil : "mb-6",
       data: {
         controller: "character-counter post-form",
-        post_form_default_parent_id_value: @thread_post&.id,
-        post_form_default_author_name_value: @thread_post && author_label(@thread_post),
-        post_form_default_body_preview_value: thread_preview,
+        post_form_default_parent_id_value: @thread_post && !@inline ? @thread_post.id : nil,
         character_counter_max_length_value: ::Post::MAX_BODY_LENGTH.to_s,
-        action: "submit->post-form#submit turbo:submit-end->post-form#reset post-form:reply@window->post-form#activateReply"
+        action: form_actions
       }
     ) do
       render RubyUI::Card.new(class: "bg-surface border-border-muted shadow-sm") do
@@ -34,10 +36,10 @@ class Components::Posts::PostForm < Components::Base
             # 상세는 전체 스레드를 다시 렌더링해 실패한 입력과 오류를 보존한다.
             data: { turbo: @thread_post.nil? }
           ) do |f|
-            hidden_field_tag :return_to_post, @thread_post.id if @thread_post
+            hidden_field_tag :return_to_post, @thread_post.id, id: field_id("return_to_post") if @thread_post
             error_messages if @post.errors.any?
-            reply_state_banner
-            f.hidden_field :parent_id, value: @post.parent_id, data: { post_form_target: "parentId" }
+            reply_state_banner unless @thread_post
+            f.hidden_field :parent_id, value: @post.parent_id, id: field_id("parent_id"), data: { post_form_target: "parentId" }
             body_field(f)
             form_footer(f)
           end
@@ -48,6 +50,16 @@ class Components::Posts::PostForm < Components::Base
 
   private
 
+  # 피드만 카드의 답글 이벤트로 대상을 바꾼다. 상세는 thread-reply가 폼을 연다.
+  def form_actions
+    actions = "submit->post-form#submit turbo:submit-end->post-form#reset"
+    @thread_post ? actions : "#{actions} post-form:reply@window->post-form#activateReply"
+  end
+
+  def field_id(name)
+    @inline ? "inline_reply_#{name}" : "post_#{name}"
+  end
+
   def error_messages
     div(class: "text-sm text-danger-text", role: "alert") do
       @post.errors.full_messages.each { |msg| p { msg } }
@@ -56,11 +68,12 @@ class Components::Posts::PostForm < Components::Base
 
   def body_field(f)
     if @thread_post
-      render RubyUI::FormFieldLabel.new(for: "post_body", class: "sr-only") { t("posts.show.reply_body") }
+      render RubyUI::FormFieldLabel.new(for: field_id("body"), class: "sr-only") { t("posts.show.reply_body") }
     end
     raw(
       f.lexxy_rich_textarea(
         :body,
+        id: field_id("body"),
         class: "post-composer-editor w-full text-content",
         rows: 3,
         toolbar: false,
@@ -111,6 +124,14 @@ class Components::Posts::PostForm < Components::Base
         plain "/#{::Post::MAX_BODY_LENGTH}"
       end
       div(class: "flex items-center gap-2") do
+        # 상세 inline 폼만: thread-reply가 폼을 지우고 답글 버튼으로 포커스를 돌린다.
+        if @inline
+          render RubyUI::Button.new(
+            type: :button,
+            variant: :ghost,
+            data: { action: "thread-reply#close" }
+          ) { t("posts.post_form.cancel") }
+        end
         # Opens the blog editor carrying the in-progress body. POSTs to #new so
         # the body travels in the request body (not the URL); #new stashes it and
         # redirects to the GET editor, which Turbo renders. The draft row is
@@ -155,12 +176,6 @@ class Components::Posts::PostForm < Components::Base
     return unless parent_post.present?
 
     view_context.truncate(view_context.strip_tags(parent_post.body.to_s).squish, length: 120)
-  end
-
-  def thread_preview
-    return unless @thread_post
-
-    view_context.truncate(view_context.strip_tags(@thread_post.body.to_s).squish, length: 120)
   end
 
   def parent_post

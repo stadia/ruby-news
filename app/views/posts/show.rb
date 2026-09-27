@@ -51,6 +51,17 @@ class Views::Posts::Show < Views::Base
     root = @posts.first
     return unless root
 
+    div(
+      class: "space-y-4",
+      data: {
+        controller: "thread-reply",
+        thread_reply_root_id_value: root.id,
+        action: "post-form:reply@window->thread-reply#open turbo:before-cache@document->thread-reply#close"
+      }
+    ) { render_thread(root) }
+  end
+
+  def render_thread(root)
     # 루트 포스트
     if root.blog?
       render_blog(root)
@@ -63,7 +74,10 @@ class Views::Posts::Show < Views::Base
       )
     end
 
-    detail_reply_form(root) if root.published?
+    if root.published?
+      div(data: { thread_reply_target: "rootComposer" }) { detail_reply_form(root) }
+      template(data: { thread_reply_target: "template" }) { inline_reply_form(root, Post.new(parent_id: root.id)) }
+    end
 
     # 답글 영역
     replies = @posts[1..] || []
@@ -75,7 +89,25 @@ class Views::Posts::Show < Views::Base
           boosted: @boosted_post_ids.include?(reply.id),
           show_reply_badge: false
         )
+        inline_reply_form(root, @reply_post) if reply.id == inline_reply_parent_id
       end
+    end
+  end
+
+  # 실패한 하위 답글은 그 답글 아래 inline 폼으로 다시 연다. 대상 카드가 스레드에
+  # 없으면 nil을 돌려 root 폼이 입력과 오류를 받게 한다.
+  def inline_reply_parent_id
+    parent_id = @reply_post&.parent_id
+    return if parent_id.nil? || parent_id == @posts.first&.id
+
+    parent_id if @posts.any? { |post| post.id == parent_id }
+  end
+
+  def inline_reply_form(root, post)
+    if view_context.current_user
+      render Components::Posts::PostForm.new(post: post, thread_post: root, inline: true)
+    else
+      div(id: "inline_reply_form") { sign_in_to_reply_link }
     end
   end
 
@@ -106,14 +138,19 @@ class Views::Posts::Show < Views::Base
 
   def detail_reply_form(root)
     if view_context.current_user
+      post = inline_reply_parent_id ? nil : @reply_post
       render Components::Posts::PostForm.new(
-        post: @reply_post || Post.new(parent_id: root.id),
+        post: post || Post.new(parent_id: root.id),
         thread_post: root
       )
     else
-      link_to t("posts.show.sign_in_to_reply"), new_user_session_path,
-        class: "text-sm text-link hover:text-link-hover hover:underline"
+      sign_in_to_reply_link
     end
+  end
+
+  def sign_in_to_reply_link
+    link_to t("posts.show.sign_in_to_reply"), new_user_session_path,
+      class: "text-sm text-link hover:text-link-hover hover:underline"
   end
 
   def owner_controls(root)

@@ -122,8 +122,20 @@ class PostsController < ApplicationController
     raise ActiveRecord::RecordNotFound unless root.id.to_s == params[:return_to_post].to_s
     raise ActiveRecord::RecordNotFound if parent && !parent.published?
 
-    @post.errors.add(:base, I18n.t("posts.reply_parent_unavailable")) if parent.nil? || parent.discarded?
+    unless rendered_in_thread?(parent)
+      @post.errors.add(:base, I18n.t("posts.reply_parent_unavailable"))
+      # 스레드에 그려지지 않는 대상 아래에는 inline 폼을 열 수 없다. 입력을 원문 폼으로
+      # 돌려주고 parent_id도 root로 바꾸므로, 다시 보내면 원문 댓글이 된다.
+      @post.parent_id = root.id
+    end
     root
+  end
+
+  # build_thread는 공개된 자식만 따라 내려가므로, 대상과 조상이 모두 공개일 때만 그려진다.
+  def rendered_in_thread?(parent)
+    return false if parent.nil?
+
+    !parent.self_and_ancestors.where.not(id: Post.visible.select(:id)).exists?
   end
 
   def render_rate_limit_error
