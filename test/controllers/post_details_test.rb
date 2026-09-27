@@ -29,8 +29,8 @@ class PostDetailsTest < ActionDispatch::IntegrationTest
 
     assert_select "#like_post_#{@blog.id} input[name='_method'][value='delete']"
     assert_select "#boost_post_#{@blog.id} input[name='_method'][value='delete']"
-    assert_select "#like_post_#{@blog.id} button", text: /1/
-    assert_select "#boost_post_#{@blog.id} button", text: /1/
+    assert_select "#like_post_#{@blog.id} button span:not(.sr-only)", text: "1"
+    assert_select "#boost_post_#{@blog.id} button span:not(.sr-only)", text: "1"
   end
 
   test "both reading pages provide a reply composer bound to their root" do
@@ -43,6 +43,7 @@ class PostDetailsTest < ActionDispatch::IntegrationTest
       assert_select "#post_form input[name='return_to_post'][value=?]", root.id.to_s
       assert_select "#post_form input[name='post[parent_id]'][value=?]", root.id.to_s
       assert_select "#post_form button[formaction=?]", new_blog_post_path, count: 0
+      assert_select "#post_form lexxy-editor[attachments='false']"
     end
   end
 
@@ -179,6 +180,146 @@ class PostDetailsTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_not_includes response.body, draft.body
+  end
+
+  test "feed rejects markup-only replies" do
+    sign_in @reader
+    assert_no_difference("Post.count") do
+      post posts_url, params: { post: { parent_id: @short.id, body: "<p><br></p>" } }, as: :turbo_stream
+    end
+    assert_response :unprocessable_entity
+  end
+
+  test "image-only detail replies require text" do
+    sign_in @reader
+    [ '<img src="https://example.com/image.png">', '<action-text-attachment url="https://example.com/image.png" content-type="image/png"></action-text-attachment>' ].each do |body|
+      assert_no_difference("Post.count") { submit_reply(root: @short, parent: @short, body: body) }
+      assert_response :unprocessable_entity
+    end
+  end
+
+  test "rate limited detail reply retains body and parent" do
+    sign_in @reader
+    cache = ActiveSupport::Cache::MemoryStore.new
+    cache.write("rate_limit:127.0.0.1:posts", 20)
+
+    Rails.stub(:cache, cache) do
+      assert_no_difference("Post.count") { submit_reply(root: @short, parent: @short, body: "보존할 댓글") }
+    end
+    assert_response :too_many_requests
+    assert_select "#post_form [role='alert']"
+    assert_select "#post_form lexxy-editor[value=?]", "보존할 댓글"
+    assert_select "#post_form input[name='post[parent_id]'][value=?]", @short.id.to_s
+  end
+
+  test "discarded child retains input on its public thread" do
+    sign_in @reader
+    child = posts(:reply_post)
+    child.discard!
+    assert_no_difference("Post.count") { submit_reply(root: @short, parent: child, body: "보존할 답글") }
+    assert_response :unprocessable_entity
+    assert_select "#post_form lexxy-editor[value=?]", "보존할 답글"
+    assert_select "#post_form [role='alert']"
+    assert_not_includes response.body, child.body
+  end
+
+  test "published child under discarded root is unavailable" do
+    sign_in @reader
+    child = posts(:reply_post)
+    @short.discard!
+    assert_no_difference("Post.count") { submit_reply(root: @short, parent: child, body: "댓글") }
+    assert_response :not_found
+    get post_url(child)
+
+    assert_response :not_found
+  end
+
+  test "draft child under published root is unavailable" do
+    sign_in @reader
+    child = posts(:reply_post)
+    child.update!(status: :draft)
+    assert_no_difference("Post.count") { submit_reply(root: @short, parent: child, body: "댓글") }
+    assert_response :not_found
+  end
+
+  test "detail replies to article comments stay in article comments" do
+    sign_in @reader
+    root = posts(:comment_post)
+    submit_reply(root: root, parent: root, body: "기사에 남긴 답글")
+
+    assert_response :see_other
+    reply = Post.order(:id).last
+
+    assert_equal root.article_id, reply.article_id
+    assert_predicate reply, :comment?
+  end
+
+  test "feed composer retains turbo and blog switching" do
+    sign_in @reader
+    get feed_url
+
+    assert_response :success
+    assert_select "#post_form form[data-turbo='true']"
+    assert_select "#post_form input[name='return_to_post']", count: 0
+    assert_select "#post_form button[formaction=?]", new_blog_post_path
+  end
+
+  test "destroyed child retains input without saving an orphan" do
+    sign_in @reader
+    child = Post.create!(user: @reader, body: "삭제할 답글", parent: @short)
+    child.destroy!
+
+    assert_no_difference("Post.count") { submit_reply(root: @short, parent: child, body: "보존할 답글") }
+    assert_response :unprocessable_entity
+    assert_select "#post_form lexxy-editor[value=?]", "보존할 답글"
+    assert_select "#post_form input[name='post[parent_id]'][value=?]", child.id.to_s
+  end
+
+  test "rate limit cannot render an unrelated thread" do
+    sign_in @reader
+    cache = ActiveSupport::Cache::MemoryStore.new
+    cache.write("rate_limit:127.0.0.1:posts", 20)
+
+    Rails.stub(:cache, cache) do
+      assert_no_difference("Post.count") { submit_reply(root: @blog, parent: @short, body: "댓글") }
+    end
+    assert_response :not_found
+  end
+
+  test "rate limited feed HTML redirects with localized feedback" do
+    sign_in @reader
+    cache = ActiveSupport::Cache::MemoryStore.new
+    cache.write("rate_limit:127.0.0.1:posts", 20)
+
+    Rails.stub(:cache, cache) do
+      assert_no_difference("Post.count") { post posts_url, params: { post: { body: "댓글" } } }
+    end
+    assert_redirected_to root_url
+    assert_equal I18n.t("posts.rate_limit_exceeded"), flash[:alert]
+  end
+
+  test "rate limited turbo feed keeps its error response" do
+    sign_in @reader
+    cache = ActiveSupport::Cache::MemoryStore.new
+    cache.write("rate_limit:127.0.0.1:posts", 20)
+
+    Rails.stub(:cache, cache) do
+      assert_no_difference("Post.count") do
+        post posts_url, params: { post: { body: "댓글" } }, as: :turbo_stream
+      end
+    end
+    assert_response :too_many_requests
+    assert_equal "Rate limit exceeded", JSON.parse(response.body)["error"]
+  end
+
+  test "missing parent cannot turn a child into a return root" do
+    sign_in @reader
+    child = posts(:reply_post)
+
+    assert_no_difference("Post.count") do
+      post posts_url, params: { return_to_post: child.id, post: { parent_id: -1, body: "댓글" } }
+    end
+    assert_response :not_found
   end
 
   private

@@ -12,7 +12,8 @@ module PostViewing
 
   private
 
-  # Renders the reading page for +post+, or 404s if it is not viewable.
+  # 글과 root가 모두 공개 또는 작성자 미리보기 가능한 경우에만 렌더링한다.
+  # reply_post와 status로 실패한 입력과 HTTP 오류 상태를 보존한다.
   def render_post_show(post, reply_post: nil, status: :ok)
     root = post.root
     raise ActiveRecord::RecordNotFound unless viewable?(post) && viewable?(root)
@@ -23,7 +24,7 @@ module PostViewing
     render Views::Posts::Show.new(posts: @posts, liked_post_ids: @liked_post_ids, boosted_post_ids: @boosted_post_ids, reply_post: reply_post), status: status
   end
 
-  # 상세 댓글은 공개된 동일 스레드에만 작성할 수 있다.
+  # 댓글을 받을 root가 발행되고 삭제되지 않았는지 확인한다. 스레드 일치는 호출부가 검사한다.
   def published_thread_root(post)
     root = post.root
     raise ActiveRecord::RecordNotFound unless root.kept? && root.published?
@@ -65,7 +66,7 @@ module PostViewing
   end
 
   def build_thread(root)
-    # parent_id 기반으로 안전하게 스레드 수집
+    # 초안 자식은 작성자에게도 공개 스레드에서 노출하지 않는다.
     ids = [ root.id ] #: Array[Integer]
     queue = [ root.id ] #: Array[Integer]
     while queue.any?

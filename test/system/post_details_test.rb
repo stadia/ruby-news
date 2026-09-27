@@ -55,6 +55,7 @@ class PostDetailsSystemTest < ApplicationSystemTestCase
   test "selecting a child reply and cancelling restores the root reply target" do
     visit post_path(@short)
     child = posts(:reply_post)
+    label = find("#post_form [data-post-form-target='replyLabel']").text
 
     within("#post_#{child.id}") { find("button[data-action='feed-reply#activate']").click }
 
@@ -63,6 +64,8 @@ class PostDetailsSystemTest < ApplicationSystemTestCase
     within("#post_form") { click_button I18n.t("posts.post_form.cancel") }
 
     assert_selector "#post_form input[name='post[parent_id]'][value='#{@short.id}']", visible: :all
+
+    assert_selector "#post_form [data-post-form-target='replyLabel']", exact_text: label
 
     fill_lexxy "<p>루트에 남기는 댓글</p>"
     within("#post_form") { click_button I18n.t("posts.post_form.reply_submit") }
@@ -80,6 +83,21 @@ class PostDetailsSystemTest < ApplicationSystemTestCase
     assert_selector "h1", text: @blog.title
     assert_selector "#post_form [role='alert']"
     assert_selector "#post_form input[name='post[parent_id]'][value='#{@blog.id}']", visible: :all
+  end
+
+  test "rapid repeated submission saves only one reply" do
+    visit post_path(@short)
+    fill_lexxy "<p>한 번만 저장할 답글</p>"
+
+    execute_script(<<~JS)
+      const form = document.querySelector("#post_form form");
+      form.requestSubmit();
+      form.requestSubmit();
+    JS
+
+    assert_current_path post_path(@short)
+    within("#replies_#{@short.id}") { assert_text "한 번만 저장할 답글", count: 1 }
+    assert_equal 1, Post.where("body LIKE ?", "%한 번만 저장할 답글%").count
   end
 
   private

@@ -18,10 +18,10 @@ class Components::Posts::PostForm < Components::Base
       data: {
         controller: "character-counter post-form",
         post_form_default_parent_id_value: @thread_post&.id,
-        post_form_default_author_name_value: @thread_post&.author_name,
+        post_form_default_author_name_value: @thread_post && author_label(@thread_post),
         post_form_default_body_preview_value: thread_preview,
         character_counter_max_length_value: ::Post::MAX_BODY_LENGTH.to_s,
-        action: "turbo:submit-end->post-form#reset post-form:reply@window->post-form#activateReply"
+        action: "submit->post-form#submit turbo:submit-end->post-form#reset post-form:reply@window->post-form#activateReply"
       }
     ) do
       render RubyUI::Card.new(class: "bg-surface border-border-muted shadow-sm") do
@@ -31,6 +31,7 @@ class Components::Posts::PostForm < Components::Base
             url: view_context.posts_path,
             class: "space-y-3",
             autocomplete: "off",
+            # 상세는 전체 스레드를 다시 렌더링해 실패한 입력과 오류를 보존한다.
             data: { turbo: @thread_post.nil? }
           ) do |f|
             hidden_field_tag :return_to_post, @thread_post.id if @thread_post
@@ -63,6 +64,7 @@ class Components::Posts::PostForm < Components::Base
         class: "post-composer-editor w-full text-content",
         rows: 3,
         toolbar: false,
+        attachments: "false",
         placeholder: t("helpers.placeholder.post.body"),
         autocomplete: "off",
         data: {
@@ -142,7 +144,11 @@ class Components::Posts::PostForm < Components::Base
   def reply_target_label
     return unless parent_post.present?
 
-    parent_post.user&.name || parent_post.fedipub_actor&.name || parent_post.author_name
+    author_label(parent_post)
+  end
+
+  def author_label(post)
+    post.user&.name || post.fedipub_actor&.name || post.author_name
   end
 
   def reply_preview_text
@@ -161,6 +167,6 @@ class Components::Posts::PostForm < Components::Base
     return @parent_post if defined?(@parent_post)
     return @parent_post = nil if @post.parent_id.blank?
 
-    @parent_post = Post.includes(:user, :fedipub_actor).find_by(id: @post.parent_id)
+    @parent_post = Post.visible.includes(:user, :fedipub_actor).find_by(id: @post.parent_id)
   end
 end
