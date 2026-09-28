@@ -6,11 +6,11 @@ require "flog"
 
 module Quality
   class FlogParser
+    # app/skills는 독립 CLI 스크립트와 참고 자료이며 Zeitwerk에서도 제외된다.
     EXCLUDE_PATTERNS = %w[
-      app/components
-      app/views
-      app/components/**
-      app/views/**
+      app/components/
+      app/views/
+      app/skills/
     ].freeze
 
     def initialize(paths)
@@ -20,7 +20,7 @@ module Quality
         else
           p
         end
-      end.reject { |f| f.include?("app/components/") || f.include?("app/views/") }
+      end.reject { |file| EXCLUDE_PATTERNS.any? { |pattern| file.include?(pattern) } }
     end
 
     def parse

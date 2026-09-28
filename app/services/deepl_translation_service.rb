@@ -30,55 +30,17 @@ class DeeplTranslationService < OperationService
 
   #: (Article article) -> Dry::Monads::Result
   def run_translation(article)
-    keys = Array(article.summary_key).map(&:to_s).reject(&:blank?)
-    detail = article.summary_detail || {}
-    scalars = {
-      title_ja: article.title_ko.to_s,
-      introduction: detail["introduction"].to_s,
-      conclusion: detail["conclusion"].to_s,
-      summary_body_ja: article.summary_body.to_s
-    }
-
+    keys = translation_keys(article)
+    scalars = translation_scalars(article)
     inputs = scalars.values + keys
     outputs = translate(inputs, context: translation_context(article))
     return Failure(:deepl_error) if outputs.size != inputs.size
 
     scalar_out = scalars.keys.zip(outputs.first(scalars.size)).to_h
+    key_out = outputs.last(keys.size)
+    return Failure(:deepl_error) if nil_translation?(article, scalar_out, key_out)
 
-    # A nil element means DeepL answered with a translation object whose text
-    # was null -- the size check above only catches a short response.
-    #
-    # This must stay a Failure. `japanese_translation` in ArticleJapaneseService
-    # falls back to ArticleJapaneseAgent on failure, but takes a Success at
-    # face value: `return attrs if attrs.is_a?(Hash)`. Letting the nils through
-    # as "" would therefore skip the fallback entirely and either persist empty
-    # Japanese columns (readers silently get the Korean text, because
-    # `display_summary_body` is `summary_body_ja.presence || summary_body`) or
-    # fail as `:japanese_agent_empty` -- a label naming an agent that was never
-    # called.
-    #
-    # The `.to_s` below is then unreachable for nil and kept only so the
-    # expression types as String; the recovery decision is made here.
-    #
-    # `summary_key` 영역(outputs의 뒷부분)의 nil도 같은 실패다 — 거기서 nil을
-    # 통과시키면 `.to_s.strip`이 ""로 만들어 reject돼 일본어 요약 항목이 조용히 유실된다.
-    if outputs.any?(&:nil?)
-      nil_labels = scalar_out.select { |_, v| v.nil? }.keys
-      nil_labels << :summary_key_ja if outputs.last(keys.size).any?(&:nil?)
-      logger.warn "DeepL returned a nil translation for article #{article.id} " \
-                  "(#{nil_labels.join(', ')}); falling back"
-      return Failure(:deepl_error)
-    end
-
-    Success(
-      title_ja: scalar_out[:title_ja].to_s.strip,
-      summary_key_ja: outputs.last(keys.size).map { |t| t.to_s.strip }.reject(&:blank?),
-      summary_detail_ja: {
-        "introduction" => scalar_out[:introduction].to_s.strip,
-        "conclusion" => scalar_out[:conclusion].to_s.strip
-      },
-      summary_body_ja: scalar_out[:summary_body_ja].to_s.strip
-    )
+    Success(translated_attributes(scalar_out, key_out))
   rescue DeepL::Exceptions::QuotaExceeded
     mark_quota_exceeded!
     logger.warn "DeepL quota exceeded for article #{article.id}; blocking DeepL until month reset"
@@ -89,7 +51,49 @@ class DeeplTranslationService < OperationService
     Failure(:deepl_error)
   end
 
-  #: (Array[String] texts, ?context: String?) -> Array[String]
+  #: (Article article) -> Array[String]
+  def translation_keys(article)
+    Array(article.summary_key).map(&:to_s).reject(&:blank?)
+  end
+
+  #: (Article article) -> Hash[Symbol, String]
+  def translation_scalars(article)
+    detail = article.summary_detail || {}
+    {
+      title_ja: article.title_ko.to_s,
+      introduction: detail["introduction"].to_s,
+      conclusion: detail["conclusion"].to_s,
+      summary_body_ja: article.summary_body.to_s
+    }
+  end
+
+  # nil을 빈 문자열로 바꾸면 ArticleJapaneseAgent 폴백을 건너뛰고 일본어 컬럼을
+  # 비우거나 summary_key 항목을 유실하므로 scalar와 key 영역 모두 실패로 처리한다.
+  #: (Article article, Hash[Symbol, String?] scalars, Array[String?] keys) -> bool
+  def nil_translation?(article, scalars, keys)
+    nil_labels = scalars.select { |_, value| value.nil? }.keys
+    nil_labels << :summary_key_ja if keys.any?(&:nil?)
+    return false if nil_labels.empty?
+
+    logger.warn "DeepL returned a nil translation for article #{article.id} " \
+                "(#{nil_labels.join(', ')}); falling back"
+    true
+  end
+
+  #: (Hash[Symbol, String?] scalars, Array[String?] keys) -> Hash[Symbol, untyped]
+  def translated_attributes(scalars, keys)
+    {
+      title_ja: scalars[:title_ja].to_s.strip,
+      summary_key_ja: keys.map { |text| text.to_s.strip }.reject(&:blank?),
+      summary_detail_ja: {
+        "introduction" => scalars[:introduction].to_s.strip,
+        "conclusion" => scalars[:conclusion].to_s.strip
+      },
+      summary_body_ja: scalars[:summary_body_ja].to_s.strip
+    }
+  end
+
+  #: (Array[String] texts, ?context: String?) -> Array[String?]
   def translate(texts, context: nil)
     # DeepL은 빈 문자열을 거부할 수 있어 공백으로 치환해 인덱스 정렬을 유지한다.
     payload = texts.map { |text| text.presence || " " }

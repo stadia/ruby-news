@@ -230,6 +230,10 @@ jobs:
           PGGSSENCMODE: disable
         run: bin/rails test
 
+      # 위 두 스위트의 병합 스냅샷으로 판정하며 실패는 test 잡을 실패시킨다.
+      - name: Check quality gates
+        run: bin/rake quality
+
       # 마이그레이션만으로 커밋된 schema.rb를 재현할 수 있는지 본다. schema.rb가 있으면
       # 빈 DB의 `db:migrate`가 그것을 먼저 로드하므로, 파일을 치우고 별도 DB에서 전체
       # 마이그레이션을 실제로 돌린다. 워킹트리의 schema.rb는 Prepare database가 이미

@@ -149,23 +149,14 @@ PR에서는 돌지 않는다. 계측 고유 비용은 15초 남짓이지만 별�
 
 This project uses automated quality gates. **Run `bin/rake quality` before declaring any task complete.** Report the gate numbers in your response so regressions are visible.
 
-### Gates
-- **Line coverage** >= 70.0% (SimpleCov)
-- **Branch coverage** >= 50.0% (SimpleCov)
-- **Flog max (method)** <= 93 (app code only; views/components excluded)
-- **Flog max (class)** <= 289 (app code only; views/components excluded)
-
-### Thresholds
-Thresholds live in `config/quality_thresholds.yml`.
+### Gates and thresholds
+`config/quality_thresholds.yml` is the source of truth for thresholds. The gates measure SimpleCov line/branch coverage and Flog method/class maxima.
+Flog measures `app/` and `lib/quality/`, excluding views, components, and independent CLI skill bundles in `app/skills/` (also excluded from Zeitwerk autoloading).
+CI runs `bin/rake quality` in the `test` job after RSpec and Minitest; a failed gate fails the job.
 
 ### Coverage snapshot note
 - `bin/rake quality` reads coverage from `coverage/.quality_last_run.json` first.
 - `bin/rails test` (full suite) refreshes that snapshot.
 - Partial test runs only update `coverage/.last_run.json`, so they do not lower the quality gate coverage baseline.
-- If coverage looks stale, run `bin/rails test` once before `bin/rake quality`.
-
-### Current Baseline (as of setup)
-- Line Coverage: ~43% (needs improvement to reach 60%)
-- Branch Coverage: ~51% (needs improvement to reach 50%)
-- Flog method max: ~373 (needs refactoring to reach 20)
-- Flog class max: ~406 (needs refactoring to reach 70)
+- To refresh merged coverage as CI does, run `bundle exec rspec`, then `bin/rails test`, then `bin/rake quality`.
+- Use the current gate output as the baseline; do not rely on historical measurements in this document.

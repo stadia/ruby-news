@@ -22,7 +22,7 @@ module Posts::FederationIngest
       # `find_by federated_url: nil` 이 무관한 로컬 post 를 매칭한다.
       logger.warn { "from_activitypub_object: id-less object bypassed the inbox filter (inReplyTo=#{in_reply_to.truncate(200).inspect})" } if hash["id"].blank?
 
-      attachments = Array.wrap(hash["attachment"]).select { |a| a.is_a?(Hash) && (a["type"] == "Document" || a["type"] == "Image") }
+      attachments = Array.wrap(hash["attachment"]).select { |a| a.is_a?(Hash) && %w[Document Image].include?(a["type"]) }
 
       object = {
         federated_url: hash["id"],
@@ -95,19 +95,18 @@ module Posts::FederationIngest
         end
 
         return { parent_id: nil, article_id: target.id } if target.is_a?(Article)
-
-        return { parent_id: target.id, article_id: target.article_id }
-      end
-
-      if (parent = Post.find_by(federated_url: in_reply_to))
-        { parent_id: parent.id, article_id: parent.article_id }
       else
-        # Unresolved inReplyTo: 새 객체는 부모 없이 저장되고, Update는 기존
-        # parent/article을 유지한다. orphan은 프로덕션에서도 보여야 하므로
-        # debug가 아니라 warn으로 남긴다.
-        logger.warn { "reply_target_attributes: unresolved inReplyTo #{in_reply_to.inspect}; leaving parent/article unset (kept as-is on update)" }
-        {}
+        target = Post.find_by(federated_url: in_reply_to)
+        unless target
+          # Unresolved inReplyTo: 새 객체는 부모 없이 저장되고, Update는 기존
+          # parent/article을 유지한다. orphan은 프로덕션에서도 보여야 하므로
+          # debug가 아니라 warn으로 남긴다.
+          logger.warn { "reply_target_attributes: unresolved inReplyTo #{in_reply_to.inspect}; leaving parent/article unset (kept as-is on update)" }
+          return {}
+        end
       end
+
+      { parent_id: target.id, article_id: target.article_id }
     end
 
     #: (String, String?) -> bool
@@ -117,7 +116,7 @@ module Posts::FederationIngest
       return false unless path.match?(%r{\A/federation/published/articles/\d+/?\z}) ||
         path.match?(%r{\A/articles/[^/.]+(?:\.(?:html|md))?/?\z})
 
-      Post.kept.comments.where(article_id: nil).exists?(federated_url: federated_url)
+      Post.kept.comments.exists?(article_id: nil, federated_url: federated_url)
     end
 
     # Only routes we publish or serve locally may resolve to a local target.
@@ -209,13 +208,12 @@ module Posts::FederationIngest
     #      검증하므로(draft 장문 제외) 빈 문자열을 돌려주면 인바운드 저장이 실패한다.
     #: (Hash[String, untyped], attachments: Array[Hash[String, untyped]]) -> String
     def extract_body_from_activitypub_object(hash, attachments:)
-      localized_content = hash["contentMap"]
-        .then { |content_map| content_map.is_a?(Hash) ? content_map.values : [] }
+      content_map = hash["contentMap"]
+      candidates = content_map.is_a?(Hash) ? content_map.values : []
+      body = (candidates + [ hash["content"], hash["summary"] ]).lazy
         .filter_map { |value| value.to_s.squish.presence }
         .first
-
-      body = localized_content || hash["content"].to_s.squish.presence || hash["summary"].to_s.squish.presence
-      return body if body.present?
+      return body if body
 
       attachment_names = attachments.filter_map { |attachment| attachment["name"].to_s.squish.presence }
       attachment_names.join(" · ").presence || I18n.t("posts.remote_attachment_only_body")
