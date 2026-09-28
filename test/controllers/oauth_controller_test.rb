@@ -28,7 +28,9 @@ class OauthControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "GET Discord install permits anonymous visitors" do
-    Configs::Discord.stub(:configured?, true) { get "/discord/install" }
+    Configs::Discord.stub(:configured?, true) do
+      Configs::Discord.stub(:client_id, "dc-123") { get "/discord/install" }
+    end
 
     assert_response :redirect
     assert_equal "discord.com", URI.parse(response.location).host
