@@ -164,11 +164,19 @@ class OauthAccounts::CallbacksTest < ActiveSupport::TestCase
     refute OauthAccount.find_by!(provider: "google_oauth2", uid: "google-123").raw_info.dig("info", "email_verified")
   end
 
-  test "신규 user면 signup completion 결과와 suggested username을 반환한다" do
-    result = OauthAccounts::Callbacks.handle_callback(auth: google_auth_hash(email: "new-user@example.com", name: "New User"))
+  test "신규 user면 username 중복 조회 없이 signup completion 결과를 반환한다" do
+    username_queries = []
+    subscriber = lambda do |event|
+      sql = event.payload[:sql]
+      username_queries << sql if sql.match?(/SELECT .*"users"\."username"/m)
+    end
+
+    result = ActiveSupport::Notifications.subscribed(subscriber, "sql.active_record") do
+      OauthAccounts::Callbacks.handle_callback(auth: google_auth_hash(email: "new-user@example.com", name: "New User"))
+    end
 
     assert_instance_of OauthAccounts::Callbacks::CompleteSignup, result
-    assert_equal "new_user", result.suggested_username
+    assert_empty username_queries
     assert_equal "new-user@example.com", result.signup_payload["email"]
   end
 

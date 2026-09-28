@@ -41,6 +41,7 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
     redirect_to new_user_session_path, alert: t("users.omniauth_callbacks.not_configured", provider: "GitHub")
   end
 
+  # 콜백 결과에 따라 가입 세션을 저장·정리하고 로그인 또는 가입 화면으로 이동한다.
   def handle_oauth_callback
     result = oauth_callback_result
 
@@ -62,6 +63,7 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
     redirect_to new_user_session_path, alert: t("devise.omniauth_callbacks.failure", kind: provider_name, reason: "OAuth 인증 처리 실패")
   end
 
+  # 미들웨어의 인증 정보를 HTTP 세션에 의존하지 않는 콜백 함수에 전달한다.
   #: () -> untyped
   def oauth_callback_result
     OauthAccounts::Callbacks.handle_callback(auth: request.env["omniauth.auth"])

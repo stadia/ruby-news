@@ -16,7 +16,8 @@ module OauthAccounts
     end
 
     class << self
-      #: (signup_payload: untyped, username: String, locale: String, signup_host: String) -> Result
+      # 가입 payload와 입력한 username으로 사용자 및 OAuth 계정을 함께 등록한다.
+      #: (signup_payload: Hash[String, untyped], username: String, locale: String, signup_host: String) -> Result
       def register_user(signup_payload:, username:, locale:, signup_host:)
         payload = signup_payload.with_indifferent_access
         user = build_user(payload:, username:, locale:, signup_host:)

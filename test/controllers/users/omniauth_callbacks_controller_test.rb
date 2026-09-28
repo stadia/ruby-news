@@ -21,32 +21,17 @@ class Users::OmniauthCallbacksControllerTest < ActionDispatch::IntegrationTest
     OmniAuth.config.mock_auth[:google_oauth2] = nil
   end
 
-  test "apple callback에서 signup completion 결과면 oauth signup으로 이동한다" do
+  test "apple callback에서 signup payload를 세션에 저장하고 oauth signup으로 이동한다" do
+    payload = { "provider" => "apple", "uid" => "apple-123", "email" => "new-user@example.com" }
+
     Configs::AppleOauth.stub(:configured?, true) do
-      OauthAccounts::Callbacks.stub(:handle_callback, OauthAccounts::Callbacks::CompleteSignup.new(suggested_username: "new_user", signup_payload: { "uid" => "apple-123" })) do
+      OauthAccounts::Callbacks.stub(:handle_callback, OauthAccounts::Callbacks::CompleteSignup.new(signup_payload: payload)) do
         OmniAuth.config.test_mode = true
         OmniAuth.config.mock_auth[:apple] = OmniAuth::AuthHash.new(provider: "apple", uid: "apple-123")
 
         get user_apple_omniauth_callback_path
 
         assert_redirected_to new_user_oauth_registration_path
-      end
-    end
-  ensure
-    OmniAuth.config.test_mode = false
-    OmniAuth.config.mock_auth[:apple] = nil
-  end
-
-  test "signup completion 결과면 signup payload를 세션에 저장한다" do
-    payload = { "provider" => "apple", "uid" => "apple-123", "email" => "new-user@example.com" }
-
-    Configs::AppleOauth.stub(:configured?, true) do
-      OauthAccounts::Callbacks.stub(:handle_callback, OauthAccounts::Callbacks::CompleteSignup.new(suggested_username: "new_user", signup_payload: payload)) do
-        OmniAuth.config.test_mode = true
-        OmniAuth.config.mock_auth[:apple] = OmniAuth::AuthHash.new(provider: "apple", uid: "apple-123")
-
-        get user_apple_omniauth_callback_path
-
         assert_equal payload, session[:oauth_signup]
       end
     end
@@ -60,7 +45,7 @@ class Users::OmniauthCallbacksControllerTest < ActionDispatch::IntegrationTest
     OmniAuth.config.mock_auth[:google_oauth2] = OmniAuth::AuthHash.new(provider: "google_oauth2", uid: "google-123")
 
     Configs::GoogleOauth.stub(:configured?, true) do
-      signup = OauthAccounts::Callbacks::CompleteSignup.new(suggested_username: "new_user", signup_payload: { "uid" => "google-123" })
+      signup = OauthAccounts::Callbacks::CompleteSignup.new(signup_payload: { "uid" => "google-123" })
       OauthAccounts::Callbacks.stub(:handle_callback, signup) do
         get user_google_oauth2_omniauth_callback_path
       end
