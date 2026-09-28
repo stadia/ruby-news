@@ -142,6 +142,7 @@ class BlogBodyTest < ActiveSupport::TestCase
     "중첩 리스트" => "<ul><li>a<ul><li>b</li></ul></li></ul><ol><li><p>x</p></li></ol>",
     "하이라이트" => %(<p><mark style="color: var(--highlight-1);">색</mark> a&nbsp;b</p>),
     "앞 줄바꿈이 있는 코드 블록" => %(<pre data-language="ruby">\n\nputs 1\n</pre>),
+    "code 안의 앞 줄바꿈" => "<pre><code>\n\nx</code></pre>",
     "문단 안의 표" => "<p>a<table><tr><td>t</td></tr></table></p>"
   }.freeze
 
@@ -162,8 +163,35 @@ class BlogBodyTest < ActiveSupport::TestCase
     assert_equal "\nputs 1", Nokogiri::HTML5.fragment(render_sanitize(saved)).at_css("pre").text
   end
 
+  test "이미지 첨부가 있는 코드 블록의 첫 빈 줄을 저장과 편집 왕복에서 보존한다" do
+    saved = BlogBody.sanitize(attachment(url: "https://cdn.example/a.webp") + "<pre>\n\nx</pre>")
+
+    assert_equal "\nx", Nokogiri::HTML5.fragment(saved).at_css("pre").text
+    assert_equal "\nx", Nokogiri::HTML5.fragment(BlogBody.editor_value(saved)).at_css("pre").text
+    assert_equal saved, BlogBody.sanitize(BlogBody.editor_value(saved))
+  end
+
+  test "figure 이미지가 있는 코드 블록도 편집 왕복에서 첫 빈 줄을 보존한다" do
+    saved = BlogBody.sanitize(%(<figure><img src="https://cdn.example/a.webp" alt=""></figure><pre>\n\nx</pre>))
+
+    assert_equal "\nx", Nokogiri::HTML5.fragment(BlogBody.editor_value(saved)).at_css("pre").text
+    assert_equal saved, BlogBody.sanitize(BlogBody.editor_value(saved))
+  end
+
+  test "저장 정제기는 화면 sanitize 헬퍼의 vendor를 사용한다" do
+    assert_equal ActionView::Helpers::SanitizeHelper.sanitizer_vendor.safe_list_sanitizer, BlogBody::SANITIZER
+  end
+
+  test "HTML4 정제는 코드 블록 첫 줄바꿈을 보존하며 멱등이다" do
+    sanitizer = Rails::HTML4::SafeListSanitizer.new
+    once = sanitizer.sanitize("<pre>\n\nx</pre>", scrubber: BlogBody::SCRUBBER)
+
+    assert_equal "<pre>\n\nx</pre>", once
+    assert_equal once, sanitizer.sanitize(once, scrubber: BlogBody::SCRUBBER)
+  end
+
   test "HTML4로 정제되어 저장된 본문은 다시 정제하면 화면에 보이던 모양이 되고, 그 뒤로는 그대로다" do
-    # 이전 BlogBody.sanitize(HTML4)가 표·목록 사이에 줄바꿈을 넣고 tbody는 넣지 않았던 형태.
+    # 이전 BlogBody.sanitize(HTML4)가 표 행 안(셀 앞뒤)과 중첩 목록 뒤에 줄바꿈을 넣고 tbody는 넣지 않았던 형태.
     legacy = "<table><tr>\n<th>a</th>\n<td>b</td>\n</tr></table><ul><li>a<ul><li>b</li></ul>\n</li></ul>"
 
     resaved = BlogBody.sanitize(legacy)

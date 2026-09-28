@@ -65,6 +65,15 @@ class RenderedBodySanitizationTest < ActionDispatch::IntegrationTest
     assert_not_includes response.body, DISALLOWED_MARKER
   end
 
+  test "blog show preserves the first blank line in a saved code block" do
+    posts(:blog_published).update_column(:body, BlogBody.sanitize("<pre>\n\nputs 1</pre>"))
+
+    get user_profile_blog_post_url(username: users(:john).username, slug: "lf-published-fixture")
+
+    assert_response :success
+    assert_includes response.body, "<pre>\n\nputs 1</pre>"
+  end
+
   test "post show (Components::Posts::PostCard) sanitizes the body at render time" do
     posts(:short_with_article).update_column(:body, PAYLOAD)
 

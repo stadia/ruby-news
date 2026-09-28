@@ -52,7 +52,8 @@ module BlogBody
     end
 
     # HTML5 파서는 <pre> 바로 뒤의 줄바꿈 하나를 버리는데 Nokogiri 직렬화는 그 줄바꿈을
-    # 되돌려 쓰지 않는다. 그대로 두면 정제할 때마다 코드 블록 첫 줄의 빈 줄이 하나씩 사라진다.
+    # 되돌려 쓰지 않는다. HTML4는 줄바꿈을 그대로 보존하므로 HTML5 경로만 보정한다.
+    # 그대로 두면 정제할 때마다 코드 블록 첫 줄의 빈 줄이 하나씩 사라진다.
     #: (Nokogiri::XML::Node) -> untyped
     def scrub(node)
       keep_leading_newline(node) if node.name == "pre" && node.document.is_a?(Nokogiri::HTML5::Document)
@@ -103,8 +104,8 @@ module BlogBody
   end
 
   SCRUBBER = Scrubber.new
-  # 화면의 sanitize 헬퍼와 같은 파서. HTML5를 못 쓰는 환경(JRuby 등)에서는 헬퍼도 HTML4로 내려간다.
-  SANITIZER = Rails::HTML::Sanitizer.best_supported_vendor.safe_list_sanitizer
+  # 화면의 sanitize 헬퍼와 같은 vendor를 사용한다.
+  SANITIZER = ActionView::Helpers::SanitizeHelper.sanitizer_vendor.safe_list_sanitizer
 
   class << self
     #: (String?) -> String
@@ -126,7 +127,7 @@ module BlogBody
         attachment = image_attachment(figure)
         figure.replace(attachment) if attachment
       end
-      fragment.to_html
+      serialize(fragment)
     end
 
     private
@@ -139,6 +140,16 @@ module BlogBody
       fragment.css("action-text-attachment").each do |node|
         figure = image_figure(node)
         figure ? node.replace(figure) : node.remove
+      end
+      serialize(fragment)
+    end
+
+    # HTML5가 <pre> 바로 뒤의 첫 LF를 생략하므로 직렬화 전에 되돌린다.
+    #: (Nokogiri::HTML5::DocumentFragment) -> String
+    def serialize(fragment)
+      fragment.css("pre").each do |node|
+        text = node.children.first
+        text.content = "\n#{text.content}" if text&.text? && text.content.start_with?("\n")
       end
       fragment.to_html
     end
