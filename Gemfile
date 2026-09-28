@@ -150,7 +150,7 @@ gem "prosopite"
 gem "rack-cors"
 
 gem "rails_semantic_logger"
-gem "reactionview", "~> 0.4.0"
+gem "reactionview", "~> 0.6.0"
 # OpenAPI/Swagger documentation
 gem "discordrb-webhooks"
 gem "resend"
