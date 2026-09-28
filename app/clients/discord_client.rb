@@ -45,6 +45,8 @@ class DiscordClient
   class << self
     #: (client_id: String, redirect_uri: String, state: String) -> String
     def authorize_url(client_id:, redirect_uri:, state:)
+      raise ApiError, "Discord client_id is not configured" if client_id.blank?
+
       query = {
         client_id:,
         scope: "bot webhook.incoming",
@@ -59,6 +61,9 @@ class DiscordClient
 
     #: (String code, client_id: String, client_secret: String, redirect_uri: String) -> ActiveSupport::HashWithIndifferentAccess
     def exchange_code(code, client_id:, client_secret:, redirect_uri:)
+      raise ApiError, "Discord client_id is not configured" if client_id.blank?
+      raise ApiError, "Discord client_secret is not configured" if client_secret.blank?
+
       response = Faraday.post(TOKEN_URL) do |req|
         apply_timeouts(req)
         req.headers["Content-Type"] = "application/x-www-form-urlencoded"
@@ -109,7 +114,7 @@ class DiscordClient
     # 이 조회가 위조 응답을 막지는 않는다. 저장 전에 webhook이 살아 있고
     # 이 앱이 승인한 서버·채널의 Incoming webhook인지 확인하는 방어 심층화다.
     # 실패 메시지는 운영 진단용이며 webhook 토큰을 담지 않는다.
-    #: (Hash[untyped, untyped] oauth, client_id: (String | Integer)?) -> void
+    #: (Hash[untyped, untyped] oauth, client_id: String) -> void
     def verify_oauth_target!(oauth, client_id:)
       guild = oauth[:guild]
       webhook = oauth[:webhook]
@@ -118,7 +123,6 @@ class DiscordClient
       match = WEBHOOK_URL_PATTERN.match(webhook[:url])
       raise ApiError, "Invalid Discord webhook URL" unless match
 
-      client_id = client_id.to_s
       raise ApiError, "Discord client_id is not configured" if client_id.blank?
 
       # 공급자 호스트에 고정한 URL로만 조회하며 리다이렉트를 따라가지 않는다.

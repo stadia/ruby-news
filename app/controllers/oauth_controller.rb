@@ -40,7 +40,7 @@ class OauthController < ApplicationController
     when "discord"
       session[:discord_oauth_state] = state
       DiscordClient.authorize_url(
-        client_id: Configs::Discord.client_id,
+        client_id: Configs::Discord.client_id.to_s,
         redirect_uri: discord_oauth_callback_url,
         state:
       )

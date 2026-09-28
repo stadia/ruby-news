@@ -63,7 +63,28 @@ class DiscordClientTest < ActiveSupport::TestCase
     end
   end
 
-  test "Faraday 요청에 timeout을 설정한다" do
+  test "authorize_url은 빈 client_id로 승인 URL을 만들지 않는다" do
+    [ nil, "", " \t" ].each do |client_id|
+      assert_raises(DiscordClient::ApiError) do
+        DiscordClient.authorize_url(client_id:, redirect_uri: "https://example.com/callback", state: "abc")
+      end
+    end
+  end
+
+  test "exchange_code는 빈 자격증명을 HTTP 요청 전에 거부한다" do
+    [ nil, "", " \t" ].each do |blank_value|
+      [ { client_id: blank_value, client_secret: "secret" },
+        { client_id: "dc-123", client_secret: blank_value } ].each do |credentials|
+        Faraday.stub(:post, ->(*) { flunk "빈 자격증명을 전송했습니다" }) do
+          assert_raises(DiscordClient::ApiError) do
+            DiscordClient.exchange_code("code", **credentials, redirect_uri: "https://example.com/callback")
+          end
+        end
+      end
+    end
+  end
+
+  test "exchange_code는 전달받은 OAuth 폼과 요청 timeout을 설정한다" do
     timeout_values = []
     request_params = nil
     response = Struct.new(:success?, :status, :body).new(true, 200, { "guild" => { "id" => "G1" } }.to_json)
@@ -158,7 +179,7 @@ class DiscordClientTest < ActiveSupport::TestCase
 
   test "OAuth verification compares application_id as a string" do
     with_webhook_response(webhook_response(verified_webhook)) do
-      assert_nil DiscordClient.verify_oauth_target!(approved_oauth, client_id: 12345)
+      assert_nil DiscordClient.verify_oauth_target!(approved_oauth, client_id: "12345")
     end
   end
 

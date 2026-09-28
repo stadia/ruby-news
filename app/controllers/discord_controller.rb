@@ -15,15 +15,21 @@ class DiscordController < ApplicationController
       return
     end
 
+    unless Configs::Discord.configured?
+      logger.warn("Discord OAuth callback: client_id/client_secret/bot_token not configured")
+      redirect_to oauth_result_path(provider: "discord", success: "false", error: t("oauth.errors.discord_not_configured"))
+      return
+    end
+
     return if redirect_provider_error?("discord")
 
     # 토큰 교환이 성공하면 Discord는 이미 webhook을 만든 상태다. 이 뒤에서
     # 연동이 실패하면 새 webhook을 정리해 사용자 서버에 남지 않게 한다.
-    client_id = Configs::Discord.client_id
+    client_id = Configs::Discord.client_id.to_s
     oauth = DiscordClient.exchange_code(
       params[:code],
       client_id:,
-      client_secret: Configs::Discord.client_secret,
+      client_secret: Configs::Discord.client_secret.to_s,
       redirect_uri: discord_oauth_callback_url
     )
     guild = oauth[:guild]
