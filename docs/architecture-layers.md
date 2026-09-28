@@ -55,13 +55,9 @@ Packwerk 패키지는 디렉터리 단위라서 domain과 infrastructure는 흐�
 
 ## 기존 위반(기준선)
 
-기존 위반은 `package_todo.yml`에 기준선으로 남긴다. `bin/packwerk check`는 이 목록에 없는 새 위반이 생기면 실패한다. 목록에 있는데 이미 고쳐진 stale 항목이 있어도 실패한다.
+새 패키지 도입 시 불가피하게 남기는 기존 위반은 `package_todo.yml`에 기준선으로 기록한다. `bin/packwerk check`는 이 목록에 없는 새 위반이 생기면 실패한다. 목록에 있는데 이미 고쳐진 stale 항목이 있어도 실패한다.
 
-| 파일 | 참조 | 원인 | 방침 |
-| --- | --- | --- | --- |
-| `app/clients/discord_client.rb` | `Configs::Discord` | client가 webhook 설정을 DB에서 직접 읽는다 | 설정을 인자로 받게 한다(#1029) |
-| `app/clients/slack_client.rb` | `Configs::Slack` | 위와 같다 | #1029 |
-| `app/clients/mastodon_client.rb`, `twitter_client.rb` | `Preference` | OAuth 설정을 `Preference`에서 직접 읽는다 | 참조 제거, 서비스에서 조회·토큰 저장(#1033) |
+현재 기준선 위반 없음(#1029 완료로 `app/clients/package_todo.yml` 삭제).
 
 위반을 고치면 `bin/packwerk update-todo`로 목록을 줄인다. 새 위반을 목록에 추가하는 용도로 `update-todo`를 쓰지 않는다. 새 패키지 도입 시 불가피한 기존 위반을 추가한다면 이 문서의 기준선 표에 원인과 방침을 적고 PR 설명에 이유를 남긴 뒤 갱신한다.
 

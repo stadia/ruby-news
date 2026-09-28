@@ -16,9 +16,20 @@ class SlackController < ApplicationController
       return
     end
 
+    unless Configs::Slack.configured?
+      logger.warn("Slack OAuth callback: client_id/client_secret not configured")
+      redirect_to oauth_result_path(provider: "slack", success: "false", error: t("oauth.errors.slack_not_configured"))
+      return
+    end
+
     return if redirect_provider_error?("slack")
 
-    oauth = SlackClient.exchange_code(params[:code], redirect_uri: slack_oauth_callback_url)
+    oauth = SlackClient.exchange_code(
+      params[:code],
+      client_id: Configs::Slack.client_id.to_s,
+      client_secret: Configs::Slack.client_secret.to_s,
+      redirect_uri: slack_oauth_callback_url
+    )
     SlackClient.verify_oauth_target!(oauth)
     team = oauth.fetch("team")
     incoming_webhook = oauth.fetch("incoming_webhook")
