@@ -190,6 +190,19 @@ class BlogBodyTest < ActiveSupport::TestCase
     assert_equal once, sanitizer.sanitize(once, scrubber: BlogBody::SCRUBBER)
   end
 
+  test "HTML5를 지원하지 않는 환경에서도 HTML4 코드 블록을 scrub한다" do
+    fragment = Loofah.html4_fragment("<pre>\n\nx</pre>")
+    html5 = Nokogiri.send(:remove_const, :HTML5)
+
+    begin
+      fragment.scrub!(BlogBody::SCRUBBER)
+    ensure
+      Nokogiri.const_set(:HTML5, html5)
+    end
+
+    assert_equal "\n\nx", fragment.at_css("pre").text
+  end
+
   test "HTML4로 정제되어 저장된 본문은 다시 정제하면 화면에 보이던 모양이 되고, 그 뒤로는 그대로다" do
     # 이전 BlogBody.sanitize(HTML4)가 표 행 안(셀 앞뒤)과 중첩 목록 뒤에 줄바꿈을 넣고 tbody는 넣지 않았던 형태.
     legacy = "<table><tr>\n<th>a</th>\n<td>b</td>\n</tr></table><ul><li>a<ul><li>b</li></ul>\n</li></ul>"

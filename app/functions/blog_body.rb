@@ -54,9 +54,10 @@ module BlogBody
     # HTML5 파서는 <pre> 바로 뒤의 줄바꿈 하나를 버리는데 Nokogiri 직렬화는 그 줄바꿈을
     # 되돌려 쓰지 않는다. HTML4는 줄바꿈을 그대로 보존하므로 HTML5 경로만 보정한다.
     # 그대로 두면 정제할 때마다 코드 블록 첫 줄의 빈 줄이 하나씩 사라진다.
+    # bottom-up 순서라 허용하지 않는 태그를 풀어 끌어올린 텍스트도 보정한다.
     #: (Nokogiri::XML::Node) -> untyped
     def scrub(node)
-      keep_leading_newline(node) if node.name == "pre" && node.document.is_a?(Nokogiri::HTML5::Document)
+      keep_leading_newline(node) if node.name == "pre" && defined?(Nokogiri::HTML5::Document) && node.document.is_a?(Nokogiri::HTML5::Document)
       super
     end
 
