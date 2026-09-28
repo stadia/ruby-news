@@ -18,7 +18,12 @@ class SlackController < ApplicationController
 
     return if redirect_provider_error?("slack")
 
-    oauth = SlackClient.exchange_code(params[:code], redirect_uri: slack_oauth_callback_url)
+    oauth = SlackClient.exchange_code(
+      params[:code],
+      client_id: Configs::Slack.client_id,
+      client_secret: Configs::Slack.client_secret,
+      redirect_uri: slack_oauth_callback_url
+    )
     SlackClient.verify_oauth_target!(oauth)
     team = oauth.fetch("team")
     incoming_webhook = oauth.fetch("incoming_webhook")

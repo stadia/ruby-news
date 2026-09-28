@@ -12,11 +12,6 @@ app/models:
     - layer
     files:
     - app/clients/discord_client.rb
-  "::Configs::Slack":
-    violations:
-    - layer
-    files:
-    - app/clients/slack_client.rb
   "::Preference":
     violations:
     - layer

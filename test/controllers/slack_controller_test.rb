@@ -50,6 +50,36 @@ class SlackControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to oauth_result_path(provider: "slack", success: "false", error: I18n.t("oauth.errors.slack_not_configured"))
   end
 
+  test "GET callback exchanges the code with configured credentials" do
+    state = start_slack_install
+    oauth = approved_slack_oauth
+    api = Struct.new(:response) do
+      def oauth_v2_access(client_id:, client_secret:, code:, redirect_uri:)
+        unless [ client_id, client_secret, code, redirect_uri ] ==
+               [ "configured-client", "configured-secret", "callback-code", "http://www.example.com/slack/oauth/callback" ]
+          raise ArgumentError, "Unexpected OAuth request parameters"
+        end
+
+        response
+      end
+
+      def auth_test
+        { "team_id" => "TCALLBACK" }
+      end
+    end.new(oauth)
+
+    Configs::Slack.stub(:client_id, "configured-client") do
+      Configs::Slack.stub(:client_secret, "configured-secret") do
+        SlackClient.stub(:oauth_client, api) do
+          get slack_oauth_callback_path, params: { code: "callback-code", state: }
+        end
+      end
+    end
+
+    assert_redirected_to oauth_result_path(provider: "slack", success: "true", channel_name: "new")
+    assert_equal "CNEW", SlackChannel.find_by!(remote_id: "TCALLBACK").channel_id
+  end
+
   test "GET callback redirects to failure result when code exchange fails" do
     sign_in_as(users(:john))
     state = start_slack_install

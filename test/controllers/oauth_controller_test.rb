@@ -10,6 +10,23 @@ class OauthControllerTest < ActionDispatch::IntegrationTest
     assert_equal "slack.com", URI.parse(response.location).host
   end
 
+  test "GET Slack install uses the configured client and scope" do
+    Configs::Slack.stub(:configured?, true) do
+      Configs::Slack.stub(:client_id, "configured-client") do
+        Configs::Slack.stub(:install_scope, "incoming-webhook,chat:write") do
+          get "/slack/install"
+        end
+      end
+    end
+
+    query = URI.decode_www_form(URI.parse(response.location).query).to_h
+
+    assert_equal "configured-client", query.fetch("client_id")
+    assert_equal "incoming-webhook,chat:write", query.fetch("scope")
+    assert_equal slack_oauth_callback_url, query.fetch("redirect_uri")
+    assert_match(/\A[0-9a-f]{32}\z/, query.fetch("state"))
+  end
+
   test "GET Discord install permits anonymous visitors" do
     Configs::Discord.stub(:configured?, true) { get "/discord/install" }
 
