@@ -193,4 +193,49 @@ class MastodonServiceTest < ActiveSupport::TestCase
 
     assert_equal "Mastodon", service.send(:platform_name)
   end
+
+  test "platform_client는 Preference 설정을 조회해 전달한다" do
+    config = Preference.create!(name: "mastodon_oauth", value: {
+      "site" => "https://social.example", "client_id" => "test-id", "client_secret" => "test-secret",
+      "access_token" => "test-access-token", "refresh_token" => "test-refresh-token",
+      "expires_at" => 1.hour.from_now.to_i
+    })
+    Preference.stub(:get_object, ->(key) { assert_equal "mastodon_oauth", key; config }) do
+      config.stub(:update!, ->(*) { flunk "만료되지 않은 토큰은 저장하지 않아야 합니다" }) do
+        client = MastodonService.new.send(:platform_client)
+
+        assert_equal "Bearer test-access-token", client.client.headers["Authorization"]
+      end
+    end
+
+    assert_equal "test-access-token", config.reload.access_token
+  end
+
+  test "platform_client는 설정과 토큰 누락을 ArgumentError로 알린다" do
+    Preference.stub(:get_object, nil) do
+      error = assert_raises(ArgumentError) { MastodonService.new.send(:platform_client) }
+      assert_match(/OAuth/, error.message)
+    end
+    config = Preference.new(name: "mastodon_oauth", value: { "access_token" => nil })
+
+    Preference.stub(:get_object, config) do
+      error = assert_raises(ArgumentError) { MastodonService.new.send(:platform_client) }
+      assert_match(/토큰/, error.message)
+    end
+  end
+
+
+  test "Mastodon은 만료된 토큰도 갱신하거나 저장하지 않는다" do
+    config = Preference.create!(name: "mastodon_oauth", value: {
+      "site" => "https://social.example", "access_token" => "expired-token",
+      "refresh_token" => "old-refresh-token", "expires_at" => 1.hour.ago.to_i
+    })
+    original_value = config.value.deep_dup
+    Preference.stub(:get_object, config) do
+      client = MastodonService.new.send(:platform_client)
+
+      assert_equal "Bearer expired-token", client.client.headers["Authorization"]
+    end
+    assert_equal original_value, config.reload.value
+  end
 end
