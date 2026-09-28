@@ -3,14 +3,21 @@
 require "test_helper"
 
 # 어두운 테마의 Lexxy 하이라이트 팔레트(#1025)를 tokens.css 원본에서 읽어 WCAG 대비를 잰다.
-# 시스템 테스트(test/system/highlight_contrast_test.rb)는 CI에서 돌지 않으므로 여기서 값을 지킨다.
+# 브라우저 검증과 별도로 팔레트·표면 매핑 및 Lexxy 업그레이드 계약을 빠르게 검증한다.
 class HighlightPaletteTest < ActiveSupport::TestCase
   TOKENS = Rails.root.join("app/assets/tailwind/tokens.css").read
+  BASE_TOKENS = TOKENS[/^    :root \{(.*?)^    \}/m, 1]
+  DARK_TOKENS = TOKENS[/^    :root,\s*\.theme-dark,\s*\.dark \{(.*?)^    \}/m, 1]
+  REMAP = TOKENS[/^:root:not\(\.theme-light, \.light\) \{(.*?)^\}/m, 1]
+  LEXXY_VARIABLES = Lexxy::Engine.root.join("app/assets/stylesheets/lexxy-variables.css").read
+  HIGHLIGHT_NAME = /--highlight(?:-bg)?-\d+/
+  SURFACES = %w[--color-bg-primary --color-bg-secondary].freeze
+  GAMUT_EPSILON = 0.001 # 소수 셋째 자리 OKLCH 반올림 오차만 허용한다.
   MIN_CONTRAST = 4.5
   HIGHLIGHTS = (1..9).to_a.freeze
 
   test "어두운 테마에서 루트의 --highlight-*를 시맨틱 토큰으로 다시 정의한다" do
-    remap = TOKENS[/^:root:not\(\.theme-light, \.light\) \{(.*?)^\}/m, 1]
+    remap = REMAP
 
     assert remap, "레이어 밖의 :root:not(.theme-light, .light) 블록이 없다"
     HIGHLIGHTS.each do |n|
@@ -19,8 +26,21 @@ class HighlightPaletteTest < ActiveSupport::TestCase
     end
   end
 
+  test "Lexxy 원본과 어두운 테마 재정의의 하이라이트 이름 집합이 같다" do
+    assert_equal highlight_names(LEXXY_VARIABLES).uniq.sort, highlight_names(REMAP).uniq.sort
+  end
+
+  test "Lexxy 하이라이트 정의 선택자는 root 하나뿐이다" do
+    css = LEXXY_VARIABLES.gsub(%r{/\*.*?\*/}m, "")
+    selectors = css.scan(/([^{}]+)\{([^{}]*)\}/).filter_map do |selector, declarations|
+      selector.strip if highlight_names(declarations).any?
+    end
+
+    assert_equal [ ":root" ], selectors
+  end
+
   test "어두운 테마의 하이라이트 글자는 본문 배경과 모든 배경색 하이라이트 위에서 4.5:1 이상이다" do
-    surfaces = %w[--neutral-900 --neutral-800].map { |name| srgb(token(name)) }
+    surfaces = SURFACES.map { |name| srgb(token(name)) }
     backgrounds = HIGHLIGHTS.flat_map do |n|
       *color, alpha = srgb(token("--semantic-highlight-bg-#{n}"))
       surfaces.map { |surface| composite(color, alpha, surface) }
@@ -35,9 +55,9 @@ class HighlightPaletteTest < ActiveSupport::TestCase
   end
 
   test "어두운 테마의 배경색 하이라이트 위 기본 본문 글자는 4.5:1 이상이다" do
-    text = srgb(token("--neutral-50")).first(3)
+    text = srgb(token("--color-text-primary")).first(3)
 
-    HIGHLIGHTS.product(%w[--neutral-900 --neutral-800]) do |n, surface_name|
+    HIGHLIGHTS.product(SURFACES) do |n, surface_name|
       *color, alpha = srgb(token("--semantic-highlight-bg-#{n}"))
       background = composite(color, alpha, srgb(token(surface_name)))
 
@@ -47,11 +67,21 @@ class HighlightPaletteTest < ActiveSupport::TestCase
 
   private
 
-  # tokens.css의 어두운 테마 기본값(:root 블록의 첫 정의)을 읽는다.
-  def token(name)
-    match = TOKENS.match(/#{Regexp.escape(name)}:\s*oklch\(([\d.]+) ([\d.]+) ([\d.]+)(?: \/ ([\d.]+))?\)/)
+  def highlight_names(css)
+    css.scan(/(#{HIGHLIGHT_NAME.source})\s*:/).flatten
+  end
 
-    assert match, "#{name} 토큰이 없다"
+  # 기본 :root와 어두운 테마 블록만 읽고 var() 참조를 따라간다.
+  # 밝은 테마에 같은 이름을 추가해도 정의 순서에 영향을 받지 않는다.
+  def token(name)
+    values = "#{BASE_TOKENS}\n#{DARK_TOKENS}".scan(/(--[\w-]+):\s*([^;]+);/).to_h
+    value = values.fetch(name)
+    reference = value.match(/\Avar\((--[\w-]+)\)\z/)
+    return token(reference[1]) if reference
+
+    match = value.match(/\Aoklch\(([\d.]+) ([\d.]+) ([\d.]+)(?: \/ ([\d.]+))?\)\z/)
+
+    assert match, "#{name} OKLCH 토큰이 없다"
     match.captures.compact.map(&:to_f)
   end
 
@@ -67,6 +97,10 @@ class HighlightPaletteTest < ActiveSupport::TestCase
       (-1.2684380046 * l) + (2.6097574011 * m) - (0.3413193965 * s),
       (-0.0041960863 * l) - (0.7034186147 * m) + (1.7076147010 * s)
     ]
+    linear.each do |channel|
+      assert_operator channel, :>=, -GAMUT_EPSILON, "sRGB 색역 하한 초과: #{linear.inspect}"
+      assert_operator channel, :<=, 1 + GAMUT_EPSILON, "sRGB 색역 상한 초과: #{linear.inspect}"
+    end
     linear.map { |channel| encode(channel.clamp(0.0, 1.0)) } + [ alpha || 1.0 ]
   end
 

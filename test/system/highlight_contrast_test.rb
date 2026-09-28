@@ -63,6 +63,17 @@ class HighlightContrastTest < ApplicationSystemTestCase
     assert_readable highlight_contrasts(".post-composer-editor .lexxy-editor__content mark", "lexxy-editor.post-composer-editor")
   end
 
+  test "밝은 테마에서는 Lexxy 원래 하이라이트 글자색을 유지한다" do
+    visit user_profile_blog_post_path(username: @user.username, slug: posts(:blog_published))
+    page.execute_script("localStorage.theme = 'light'")
+    page.refresh
+
+    assert_selector "html.theme-light"
+    color = page.evaluate_script("getComputedStyle(document.documentElement).getPropertyValue('--highlight-6').trim()")
+
+    assert_equal "rgb(5, 98, 185)", color
+  end
+
   private
 
   def visit_in_dark_theme(path)

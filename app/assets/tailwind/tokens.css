@@ -153,9 +153,12 @@
         /* Prose */
         --color-prose-heading: var(--brand-primary-light);
 
-        /* Lexxy Highlight (Dark): 글자색은 lexxy 팔레트와 같은 hue를 L 0.80으로 올리고,
-           배경색은 같은 색을 알파 0.3 → 0.15로 줄인다. 글자색은 bg-app·bg-surface와
-           모든 배경색 하이라이트 위에서 4.85:1 이상, 기본 본문 글자는 배경색 위 9.27:1 이상.
+        /* Lexxy Highlight (Dark): lexxy 0.9.33 lexxy-variables.css의
+           --highlight-1..9 / --highlight-bg-1..9에서 파생했다. 업그레이드할 때
+           원본과 대조해 hue와 개수를 다시 맞춘다. 글자색은 같은 hue를 L 0.80으로
+           올리고, 색역을 넘는 chroma는 줄였다. 배경 알파는 0.3 → 0.15로 줄인다.
+           글자색은 bg-app·bg-surface 및 모든 배경색 하이라이트 위에서 4.5:1 이상이다
+           (검증: test/assets/highlight_palette_test.rb).
            아래 레이어 밖 블록이 lexxy의 --highlight-*를 이 값으로 바꾼다. */
         --semantic-highlight-1: oklch(0.800 0.100 96.2);
         --semantic-highlight-2: oklch(0.800 0.131 54.1);
@@ -265,8 +268,10 @@
 /* ========================================
    Lexxy Highlight Palette (Dark Theme)
    lexxy-variables.css는 밝은 배경 기준 --highlight-*를 레이어 없는 :root에 두고
-   app.css 뒤에 로드된다. @layer base 안의 값은 레이어 없는 규칙에 지므로 레이어 밖에서,
-   :root(0-1-0)보다 높은 명시도(0-2-0)로 다시 정의한다. 기본값이 어두운 테마인
+   stylesheet_link_tag :app이 펼친 앱 CSS 다음에 로드된다.
+   @layer base 안의 값은 로드 순서와 무관하게 레이어 없는 규칙에 지므로 레이어 밖에 둔다.
+   같은 :root 명시도로는 나중에 로드된 lexxy가 이기므로, 원본 :root(0-1-0)보다
+   높은 명시도(0-2-0)로 다시 정의한다. 기본값이 어두운 테마인
    tokens.css와 맞추려고 theme-light가 아닌 루트 전부에 적용한다.
    저장된 본문은 var(--highlight-N)만 참조하므로 글 화면과 편집기가 함께 바뀐다.
    ======================================== */
