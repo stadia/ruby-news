@@ -7,11 +7,6 @@
 # bin/packwerk update-todo
 ---
 app/models:
-  "::Configs::Discord":
-    violations:
-    - layer
-    files:
-    - app/clients/discord_client.rb
   "::Configs::Slack":
     violations:
     - layer

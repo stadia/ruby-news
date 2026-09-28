@@ -59,7 +59,7 @@ Packwerk 패키지는 디렉터리 단위라서 domain과 infrastructure는 흐�
 
 | 파일 | 참조 | 원인 | 방침 |
 | --- | --- | --- | --- |
-| `app/clients/discord_client.rb` | `Configs::Discord` | client가 webhook 설정을 DB에서 직접 읽는다 | 설정을 인자로 받게 한다(#1029) |
+| `app/clients/discord_client.rb` | `Configs::Discord` | 참조 제거 완료 | 호출부에서 OAuth 값 전달(#1031) |
 | `app/clients/slack_client.rb` | `Configs::Slack` | 위와 같다 | #1029 |
 | `app/clients/mastodon_client.rb`, `twitter_client.rb` | `Preference` | OAuth 설정을 `Preference`에서 직접 읽는다 | #1029 |
 

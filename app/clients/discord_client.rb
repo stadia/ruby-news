@@ -43,10 +43,10 @@ class DiscordClient
   end
 
   class << self
-    #: (redirect_uri: String, state: String) -> String
-    def authorize_url(redirect_uri:, state:)
+    #: (client_id: String, redirect_uri: String, state: String) -> String
+    def authorize_url(client_id:, redirect_uri:, state:)
       query = {
-        client_id: Configs::Discord.client_id,
+        client_id:,
         scope: "bot webhook.incoming",
         permissions: MANAGE_WEBHOOKS_PERMISSION,
         redirect_uri:,
@@ -57,14 +57,14 @@ class DiscordClient
       "#{AUTHORIZE_URL}?#{query}"
     end
 
-    #: (String code, redirect_uri: String) -> ActiveSupport::HashWithIndifferentAccess
-    def exchange_code(code, redirect_uri:)
+    #: (String code, client_id: String, client_secret: String, redirect_uri: String) -> ActiveSupport::HashWithIndifferentAccess
+    def exchange_code(code, client_id:, client_secret:, redirect_uri:)
       response = Faraday.post(TOKEN_URL) do |req|
         apply_timeouts(req)
         req.headers["Content-Type"] = "application/x-www-form-urlencoded"
         req.body = URI.encode_www_form(
-          client_id: Configs::Discord.client_id,
-          client_secret: Configs::Discord.client_secret,
+          client_id:,
+          client_secret:,
           grant_type: "authorization_code",
           code:,
           redirect_uri:
@@ -109,8 +109,8 @@ class DiscordClient
     # 이 조회가 위조 응답을 막지는 않는다. 저장 전에 webhook이 살아 있고
     # 이 앱이 승인한 서버·채널의 Incoming webhook인지 확인하는 방어 심층화다.
     # 실패 메시지는 운영 진단용이며 webhook 토큰을 담지 않는다.
-    #: (Hash[untyped, untyped] oauth) -> void
-    def verify_oauth_target!(oauth)
+    #: (Hash[untyped, untyped] oauth, client_id: (String | Integer)?) -> void
+    def verify_oauth_target!(oauth, client_id:)
       guild = oauth[:guild]
       webhook = oauth[:webhook]
       validate_oauth_target!(guild, webhook)
@@ -118,7 +118,7 @@ class DiscordClient
       match = WEBHOOK_URL_PATTERN.match(webhook[:url])
       raise ApiError, "Invalid Discord webhook URL" unless match
 
-      client_id = Configs::Discord.client_id.to_s
+      client_id = client_id.to_s
       raise ApiError, "Discord client_id is not configured" if client_id.blank?
 
       # 공급자 호스트에 고정한 URL로만 조회하며 리다이렉트를 따라가지 않는다.

@@ -390,13 +390,20 @@ class DiscordControllerTest < ActionDispatch::IntegrationTest
              application_id: "dc-123", type: 1 }.to_json
     response = verification || Struct.new(:success?, :status, :body).new(true, 200, body)
     Configs::Discord.stub(:client_id, "dc-123") do
-      Faraday.stub(:get, ->(_url, &block) {
-        request = Struct.new(:options).new(Struct.new(:open_timeout, :timeout).new)
-        block.call(request)
-        response
-      }) do
-        DiscordClient.stub(:delete_webhook, ->(url) { cleanup_urls << url; nil }) do
-          DiscordClient.stub(:exchange_code, oauth_response) { yield }
+      Configs::Discord.stub(:client_secret, "discord-secret") do
+        Faraday.stub(:get, ->(_url, &block) {
+          request = Struct.new(:options).new(Struct.new(:open_timeout, :timeout).new)
+          block.call(request)
+          response
+        }) do
+          DiscordClient.stub(:delete_webhook, ->(url) { cleanup_urls << url; nil }) do
+            DiscordClient.stub(:exchange_code, ->(_code, client_id:, client_secret:, redirect_uri:) {
+              assert_equal "dc-123", client_id
+              assert_equal "discord-secret", client_secret
+              assert_equal discord_oauth_callback_url, redirect_uri
+              oauth_response
+            }) { yield }
+          end
         end
       end
     end
