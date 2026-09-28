@@ -34,6 +34,8 @@ class OauthController < ApplicationController
     when "slack"
       session[:slack_oauth_state] = state
       SlackClient.authorize_url(
+        client_id: Configs::Slack.client_id.to_s,
+        scope: Configs::Slack.install_scope,
         redirect_uri: slack_oauth_callback_url,
         state:
       )

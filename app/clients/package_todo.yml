@@ -7,11 +7,6 @@
 # bin/packwerk update-todo
 ---
 app/models:
-  "::Configs::Slack":
-    violations:
-    - layer
-    files:
-    - app/clients/slack_client.rb
   "::Preference":
     violations:
     - layer

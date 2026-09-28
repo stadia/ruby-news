@@ -171,7 +171,9 @@ class DiscordControllerTest < ActionDispatch::IntegrationTest
 
   test "GET callback rejects Slack install state" do
     sign_in_as(users(:john))
-    Configs::Slack.stub(:configured?, true) { get "/slack/install" }
+    Configs::Slack.stub(:configured?, true) do
+      Configs::Slack.stub(:client_id, "configured-client") { get "/slack/install" }
+    end
     slack_state = URI.decode_www_form(URI.parse(response.location).query).to_h.fetch("state")
 
     refuse_code_exchange do
