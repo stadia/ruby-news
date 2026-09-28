@@ -4,6 +4,10 @@ require "test_helper"
 require "uri"
 
 class SlackControllerTest < ActionDispatch::IntegrationTest
+  setup do
+    Preference.create!(name: "slack_oauth", value: { client_id: "configured-client", client_secret: "configured-secret" })
+  end
+
   test "anonymous callback still requires a valid install state" do
     refuse_code_exchange do
       get slack_oauth_callback_path, params: { code: "anonymous-code", state: "anonymous-state" }
@@ -84,11 +88,45 @@ class SlackControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(users(:john))
     state = start_slack_install
 
-    SlackClient.stub(:exchange_code, ->(*) { raise SlackClient::ApiError, "invalid_code" }) do
+    SlackClient.stub(:exchange_code, ->(code, client_id:, client_secret:, redirect_uri:) {
+      assert_equal "invalid-code", code
+      assert_slack_credentials(client_id, client_secret, redirect_uri)
+      raise SlackClient::ApiError, "invalid_code"
+    }) do
       get slack_oauth_callback_path, params: { code: "invalid-code", state: }
     end
 
     assert_redirected_to oauth_result_path(provider: "slack", success: "false", error: "연동을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.")
+  end
+
+  test "콜백 시점에 설정이 없어지면 교환하지 않고 설정 안내와 원인을 남긴다" do
+    %i[client_id client_secret].each do |missing_setting|
+      state = start_slack_install
+
+      warnings = capture_warnings do
+        Configs::Slack.stub(missing_setting, nil) do
+          assert_no_difference("SlackChannel.count") do
+            refuse_code_exchange do
+              get slack_oauth_callback_path, params: { code: "callback-code", state: }
+            end
+          end
+        end
+      end
+
+      assert_redirected_to oauth_result_path(provider: "slack", success: "false", error: I18n.t("oauth.errors.slack_not_configured"))
+      assert(warnings.any? { |message| message.include?("Slack OAuth callback") && message.include?("not configured") })
+      warnings.each { |message| refute_includes message, "configured-secret" }
+    end
+  end
+
+  test "유효하지 않은 state는 콜백 설정 확인보다 먼저 거부한다" do
+    Configs::Slack.stub(:configured?, -> { flunk "state 검증 전에 설정을 확인했습니다" }) do
+      refuse_code_exchange do
+        get slack_oauth_callback_path, params: { code: "invalid-code", state: "invalid-state" }
+      end
+    end
+
+    expect_invalid_state_rejection
   end
 
   test "GET callback handles access_denied without exchanging a code" do
@@ -167,7 +205,11 @@ class SlackControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(users(:john))
     state = start_slack_install
 
-    SlackClient.stub(:exchange_code, ->(*) { raise SlackClient::ApiError, "invalid_code" }) do
+    SlackClient.stub(:exchange_code, ->(code, client_id:, client_secret:, redirect_uri:) {
+      assert_equal "first-code", code
+      assert_slack_credentials(client_id, client_secret, redirect_uri)
+      raise SlackClient::ApiError, "invalid_code"
+    }) do
       get slack_oauth_callback_path, params: { code: "first-code", state: }
     end
 
@@ -404,8 +446,17 @@ class SlackControllerTest < ActionDispatch::IntegrationTest
       end
     end.new({ "team_id" => team_id })
     SlackClient.stub(:oauth_client, api) do
-      SlackClient.stub(:exchange_code, oauth_response) { yield }
+      SlackClient.stub(:exchange_code, ->(_code, client_id:, client_secret:, redirect_uri:) {
+        assert_slack_credentials(client_id, client_secret, redirect_uri)
+        oauth_response
+      }) { yield }
     end
+  end
+
+  def assert_slack_credentials(client_id, client_secret, redirect_uri)
+    assert_equal "configured-client", client_id
+    assert_equal "configured-secret", client_secret
+    assert_equal slack_oauth_callback_url, redirect_uri
   end
 
   # 세션에 저장된 state를 얻으려면 install을 거쳐야 한다.

@@ -3,6 +3,45 @@
 require "test_helper"
 
 class SlackClientTest < ActiveSupport::TestCase
+  test "authorize_url은 빈 client_id로 승인 URL을 만들지 않는다" do
+    [ nil, "", " \t" ].each do |client_id|
+      assert_raises(SlackClient::ApiError) do
+        SlackClient.authorize_url(client_id:, scope: "incoming-webhook", redirect_uri: "https://example.com/callback", state: "abc")
+      end
+    end
+  end
+
+  test "exchange_code는 빈 자격증명을 API 요청 전에 거부한다" do
+    [ nil, "", " \t" ].each do |blank_value|
+      [ { client_id: blank_value, client_secret: "secret" },
+        { client_id: "client-123", client_secret: blank_value } ].each do |credentials|
+        SlackClient.stub(:oauth_client, ->(*) { flunk "빈 자격증명으로 API를 호출했습니다" }) do
+          assert_raises(SlackClient::ApiError) do
+            SlackClient.exchange_code("code", **credentials, redirect_uri: "https://example.com/callback")
+          end
+        end
+      end
+    end
+  end
+
+  test "exchange_code는 SlackError와 Faraday timeout을 ApiError로 변환한다" do
+    [ Slack::Web::Api::Errors::SlackError.new("invalid_code"), Faraday::TimeoutError.new("execution expired") ].each do |failure|
+      api = Struct.new(:exception) do
+        def oauth_v2_access(client_id:, client_secret:, code:, redirect_uri:)
+          raise exception
+        end
+      end.new(failure)
+
+      error = assert_raises(SlackClient::ApiError) do
+        SlackClient.stub(:oauth_client, api) do
+          SlackClient.exchange_code("code", client_id: "client-123", client_secret: "secret", redirect_uri: "https://example.com/callback")
+        end
+      end
+
+      assert_includes error.message, failure.message
+    end
+  end
+
   test "authorization URL uses the supplied client and scope" do
     url = SlackClient.authorize_url(
       client_id: "injected-client", scope: "incoming-webhook,chat:write",

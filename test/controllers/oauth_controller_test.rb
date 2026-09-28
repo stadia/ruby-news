@@ -4,7 +4,9 @@ require "test_helper"
 
 class OauthControllerTest < ActionDispatch::IntegrationTest
   test "GET Slack install permits anonymous visitors" do
-    Configs::Slack.stub(:configured?, true) { get "/slack/install" }
+    Configs::Slack.stub(:configured?, true) do
+      Configs::Slack.stub(:client_id, "configured-client") { get "/slack/install" }
+    end
 
     assert_response :redirect
     assert_equal "slack.com", URI.parse(response.location).host

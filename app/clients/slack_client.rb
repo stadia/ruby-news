@@ -59,6 +59,8 @@ class SlackClient
 
     #: (client_id: String, scope: String, redirect_uri: String, state: String) -> String
     def authorize_url(client_id:, scope:, redirect_uri:, state:)
+      raise ApiError, "Slack client_id is not configured" if client_id.blank?
+
       query = {
         client_id:,
         scope:,
@@ -71,6 +73,9 @@ class SlackClient
 
     #: (String code, client_id: String, client_secret: String, redirect_uri: String) -> ActiveSupport::HashWithIndifferentAccess
     def exchange_code(code, client_id:, client_secret:, redirect_uri:)
+      raise ApiError, "Slack client_id is not configured" if client_id.blank?
+      raise ApiError, "Slack client_secret is not configured" if client_secret.blank?
+
       response = oauth_client.oauth_v2_access(
         client_id:,
         client_secret:,
