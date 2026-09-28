@@ -76,6 +76,27 @@ class TwitterService < SocialMediaService
 
   #: () -> TwitterClient
   def platform_client
-    TwitterClient.new
+    oauth_config = Preference.get_object("xcom_oauth")
+    raise ArgumentError, "OAuth 설정이 비어있습니다: xcom_oauth" if oauth_config.nil?
+    raise ArgumentError, "액세스 토큰이 비어있습니다: xcom_oauth" if oauth_config.access_token.blank?
+
+    refresh_token_if_expired(oauth_config)
+    TwitterClient.new(oauth_config:)
+  end
+
+  #: (Preference config) -> void
+  def refresh_token_if_expired(config)
+    token = OAuth2::AccessToken.from_hash(OauthClient.build(config), {
+      access_token: config.access_token,
+      refresh_token: config.refresh_token,
+      expires_at: config.expires_at
+    })
+    return unless token.expired?
+
+    token = token.refresh!
+    config.update(access_token: token.token,
+      refresh_token: token.refresh_token,
+      expires_at: token.expires_at
+    )
   end
 end

@@ -17,9 +17,3 @@ app/models:
     - layer
     files:
     - app/clients/slack_client.rb
-  "::Preference":
-    violations:
-    - layer
-    files:
-    - app/clients/mastodon_client.rb
-    - app/clients/twitter_client.rb

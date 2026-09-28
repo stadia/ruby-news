@@ -79,6 +79,6 @@ class MastodonService < SocialMediaService
 
   #: () -> MastodonClient
   def platform_client
-    MastodonClient.new
+    MastodonClient.new(oauth_config: Preference.get_object("mastodon_oauth"))
   end
 end

@@ -254,4 +254,102 @@ class TwitterServiceTest < ActiveSupport::TestCase
       assert_equal 404, result.failure
     end
   end
+
+  test "platform_client는 Preference 설정을 조회해 전달한다" do
+    config = Preference.create!(name: "xcom_oauth", value: {
+      "site" => "https://social.example", "client_id" => "test-id", "client_secret" => "test-secret",
+      "access_token" => "test-access-token", "refresh_token" => "test-refresh-token",
+      "expires_at" => 1.hour.from_now.to_i
+    })
+    Preference.stub(:get_object, ->(key) { assert_equal "xcom_oauth", key; config }) do
+      config.stub(:update, ->(*) { flunk "만료되지 않은 토큰은 저장하지 않아야 합니다" }) do
+        client = TwitterService.new.send(:platform_client)
+
+        assert_equal "Bearer test-access-token", client.client.headers["Authorization"]
+      end
+    end
+
+    assert_equal "test-access-token", config.reload.access_token
+  end
+
+  test "platform_client는 설정과 토큰 누락을 ArgumentError로 알린다" do
+    Preference.stub(:get_object, nil) do
+      assert_raises(ArgumentError) { TwitterService.new.send(:platform_client) }
+    end
+    config = Preference.new(name: "xcom_oauth", value: { "access_token" => nil })
+
+    Preference.stub(:get_object, config) do
+      assert_raises(ArgumentError) { TwitterService.new.send(:platform_client) }
+    end
+  end
+
+
+  test "만료된 토큰은 클라이언트 생성 전에 갱신하고 저장한다" do
+    config = Preference.create!(name: "xcom_oauth", value: {
+      "client_id" => "test-id", "client_secret" => "test-secret",
+      "access_token" => "expired-token", "refresh_token" => "old-refresh-token",
+      "expires_at" => 1.hour.ago.to_i
+    })
+    oauth_client = OauthClient.build(config)
+    refresh_stubs = Faraday::Adapter::Test::Stubs.new do |stub|
+      stub.post("/2/oauth2/token") do |env|
+        body = URI.decode_www_form(env.body).to_h
+
+        assert_equal "refresh_token", body["grant_type"]
+        assert_equal "old-refresh-token", body["refresh_token"]
+        [ 200, { "Content-Type" => "application/json" }, {
+          access_token: "refreshed-token", refresh_token: "new-refresh-token", expires_in: 3600
+        }.to_json ]
+      end
+    end
+    oauth_client.connection.adapter(:test, refresh_stubs)
+    post_stubs = Faraday::Adapter::Test::Stubs.new do |stub|
+      stub.post("/2/tweets") do |env|
+        assert_equal "Bearer refreshed-token", env.request_headers["Authorization"]
+        [ 200, { "Content-Type" => "application/json" }, "{}" ]
+      end
+    end
+
+    Preference.stub(:get_object, config) do
+      OauthClient.stub(:build, oauth_client) do
+        client = TwitterService.new.send(:platform_client)
+
+        assert_equal "refreshed-token", config.reload.access_token
+        assert_equal "new-refresh-token", config.refresh_token
+        assert_operator config.expires_at, :>, Time.current.to_i
+        client.client.adapter(:test, post_stubs)
+        client.post("테스트")
+      end
+    end
+
+    refresh_stubs.verify_stubbed_calls
+    post_stubs.verify_stubbed_calls
+  end
+
+  test "토큰 갱신 실패 시 기존 설정을 저장하거나 클라이언트를 생성하지 않는다" do
+    config = Preference.create!(name: "xcom_oauth", value: {
+      "client_id" => "test-id", "client_secret" => "test-secret",
+      "access_token" => "expired-token", "refresh_token" => "old-refresh-token",
+      "expires_at" => 1.hour.ago.to_i
+    })
+    original_value = config.value.deep_dup
+    oauth_client = OauthClient.build(config)
+    stubs = Faraday::Adapter::Test::Stubs.new do |stub|
+      stub.post("/2/oauth2/token") { [ 400, { "Content-Type" => "application/json" }, '{"error":"invalid_grant"}' ] }
+    end
+    oauth_client.connection.adapter(:test, stubs)
+
+    Preference.stub(:get_object, config) do
+      OauthClient.stub(:build, oauth_client) do
+        config.stub(:update, ->(*) { flunk "갱신 실패 시 저장하지 않아야 합니다" }) do
+          stub_constructor(TwitterClient, ->(*) { flunk "갱신 실패 시 클라이언트를 생성하지 않아야 합니다" }) do
+            assert_raises(OAuth2::Error) { TwitterService.new.send(:platform_client) }
+          end
+        end
+      end
+    end
+
+    assert_equal original_value, config.reload.value
+    stubs.verify_stubbed_calls
+  end
 end

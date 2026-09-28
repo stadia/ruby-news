@@ -5,14 +5,13 @@
 class TwitterClient
   attr_reader :client
 
-  def initialize
-    oauth_config = Preference.get_object("xcom_oauth")
+  #: (oauth_config: untyped) -> void
+  def initialize(oauth_config:)
     raise ArgumentError, "OAuth 설정이 비어있습니다: xcom_oauth" if oauth_config.blank?
+    raise ArgumentError, "액세스 토큰이 비어있습니다: xcom_oauth" if oauth_config.access_token.blank?
 
-    oauth_client = OauthClient.build(oauth_config)
-    token = check_token(oauth_client, oauth_config)
     @client = Faraday.new(url: "https://api.x.com/2/", request: { open_timeout: HttpTimeouts::OPEN, timeout: HttpTimeouts::REQUEST }) do |faraday|
-      faraday.headers["Authorization"] = "Bearer #{token.token}"
+      faraday.headers["Authorization"] = "Bearer #{oauth_config.access_token}"
       faraday.response :logger, nil, { bodies: true, log_level: :info }
       faraday.request :json
       faraday.response :json
@@ -27,29 +26,5 @@ class TwitterClient
   def delete(tweet_id)
     response = client.delete("tweets/#{tweet_id}")
     response
-  end
-
-  private
-
-  def check_token(client, config)
-    return if config.access_token.nil?
-
-    token = OAuth2::AccessToken.from_hash(client,
-      {
-        access_token: config.access_token,
-        refresh_token: config.refresh_token,
-        expires_at: config.expires_at
-      }
-    )
-
-    if token.expired?
-      token = token.refresh!
-      config.update(access_token: token.token,
-        refresh_token: token.refresh_token,
-        expires_at: token.expires_at
-      )
-    end
-
-    token
   end
 end
