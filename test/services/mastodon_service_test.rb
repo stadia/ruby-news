@@ -201,7 +201,7 @@ class MastodonServiceTest < ActiveSupport::TestCase
       "expires_at" => 1.hour.from_now.to_i
     })
     Preference.stub(:get_object, ->(key) { assert_equal "mastodon_oauth", key; config }) do
-      config.stub(:update, ->(*) { flunk "만료되지 않은 토큰은 저장하지 않아야 합니다" }) do
+      config.stub(:update!, ->(*) { flunk "만료되지 않은 토큰은 저장하지 않아야 합니다" }) do
         client = MastodonService.new.send(:platform_client)
 
         assert_equal "Bearer test-access-token", client.client.headers["Authorization"]
@@ -213,12 +213,14 @@ class MastodonServiceTest < ActiveSupport::TestCase
 
   test "platform_client는 설정과 토큰 누락을 ArgumentError로 알린다" do
     Preference.stub(:get_object, nil) do
-      assert_raises(ArgumentError) { MastodonService.new.send(:platform_client) }
+      error = assert_raises(ArgumentError) { MastodonService.new.send(:platform_client) }
+      assert_match(/OAuth/, error.message)
     end
     config = Preference.new(name: "mastodon_oauth", value: { "access_token" => nil })
 
     Preference.stub(:get_object, config) do
-      assert_raises(ArgumentError) { MastodonService.new.send(:platform_client) }
+      error = assert_raises(ArgumentError) { MastodonService.new.send(:platform_client) }
+      assert_match(/토큰/, error.message)
     end
   end
 

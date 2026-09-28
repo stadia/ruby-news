@@ -78,14 +78,16 @@ class TwitterService < SocialMediaService
   def platform_client
     oauth_config = Preference.get_object("xcom_oauth")
     raise ArgumentError, "OAuth 설정이 비어있습니다: xcom_oauth" if oauth_config.nil?
-    raise ArgumentError, "액세스 토큰이 비어있습니다: xcom_oauth" if oauth_config.access_token.blank?
 
     refresh_token_if_expired(oauth_config)
-    TwitterClient.new(oauth_config:)
+    TwitterClient.new(access_token: oauth_config.access_token.to_s)
   end
 
   #: (Preference config) -> void
   def refresh_token_if_expired(config)
+    # 빈 토큰의 입력 검증은 TwitterClient에 맡기고 OAuth2 갱신은 건너뛴다.
+    return if config.access_token.blank?
+
     token = OAuth2::AccessToken.from_hash(OauthClient.build(config), {
       access_token: config.access_token,
       refresh_token: config.refresh_token,
@@ -94,9 +96,14 @@ class TwitterService < SocialMediaService
     return unless token.expired?
 
     token = token.refresh!
-    config.update(access_token: token.token,
-      refresh_token: token.refresh_token,
-      expires_at: token.expires_at
-    )
+    begin
+      config.update!(access_token: token.token,
+        refresh_token: token.refresh_token,
+        expires_at: token.expires_at
+      )
+    rescue ActiveRecord::ActiveRecordError
+      logger.error "X.com 토큰 갱신 후 저장 실패: 재인증이 필요합니다"
+      raise
+    end
   end
 end

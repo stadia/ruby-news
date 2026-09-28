@@ -79,6 +79,9 @@ class MastodonService < SocialMediaService
 
   #: () -> MastodonClient
   def platform_client
-    MastodonClient.new(oauth_config: Preference.get_object("mastodon_oauth"))
+    config = Preference.get_object("mastodon_oauth")
+    raise ArgumentError, "OAuth 설정이 비어있습니다: mastodon_oauth" if config.nil?
+
+    MastodonClient.new(site: config.site.to_s, access_token: config.access_token.to_s)
   end
 end

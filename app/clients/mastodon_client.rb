@@ -5,15 +5,14 @@
 class MastodonClient
   attr_reader :client
 
-  #: (oauth_config: untyped) -> void
-  def initialize(oauth_config:)
-    raise ArgumentError, "OAuth 설정이 비어있습니다: mastodon_oauth" if oauth_config.blank?
-    raise ArgumentError, "액세스 토큰이 비어있습니다: mastodon_oauth" if oauth_config.access_token.blank?
-    raise ArgumentError, "Mastodon 인스턴스 주소가 비어있습니다" if oauth_config.site.blank?
+  #: (site: String, access_token: String) -> void
+  def initialize(site:, access_token:)
+    raise ArgumentError, "액세스 토큰이 비어있습니다: mastodon_oauth" if access_token.blank?
+    raise ArgumentError, "Mastodon 인스턴스 주소가 비어있습니다" if site.blank?
 
-    @client = Faraday.new(url: oauth_config.site, request: { open_timeout: HttpTimeouts::OPEN, timeout: HttpTimeouts::REQUEST }) do |faraday|
-      faraday.headers["Authorization"] = "Bearer #{oauth_config.access_token}"
-      faraday.response :logger, nil, { bodies: true, log_level: :info }
+    @client = Faraday.new(url: site, request: { open_timeout: HttpTimeouts::OPEN, timeout: HttpTimeouts::REQUEST }) do |faraday|
+      faraday.headers["Authorization"] = "Bearer #{access_token}"
+      faraday.response :logger, nil, { headers: false, bodies: false, log_level: :info }
       faraday.request :json
       faraday.response :json
     end

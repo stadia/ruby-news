@@ -257,12 +257,12 @@ class TwitterServiceTest < ActiveSupport::TestCase
 
   test "platform_client는 Preference 설정을 조회해 전달한다" do
     config = Preference.create!(name: "xcom_oauth", value: {
-      "site" => "https://social.example", "client_id" => "test-id", "client_secret" => "test-secret",
+      "client_id" => "test-id", "client_secret" => "test-secret",
       "access_token" => "test-access-token", "refresh_token" => "test-refresh-token",
       "expires_at" => 1.hour.from_now.to_i
     })
     Preference.stub(:get_object, ->(key) { assert_equal "xcom_oauth", key; config }) do
-      config.stub(:update, ->(*) { flunk "만료되지 않은 토큰은 저장하지 않아야 합니다" }) do
+      config.stub(:update!, ->(*) { flunk "만료되지 않은 토큰은 저장하지 않아야 합니다" }) do
         client = TwitterService.new.send(:platform_client)
 
         assert_equal "Bearer test-access-token", client.client.headers["Authorization"]
@@ -274,12 +274,14 @@ class TwitterServiceTest < ActiveSupport::TestCase
 
   test "platform_client는 설정과 토큰 누락을 ArgumentError로 알린다" do
     Preference.stub(:get_object, nil) do
-      assert_raises(ArgumentError) { TwitterService.new.send(:platform_client) }
+      error = assert_raises(ArgumentError) { TwitterService.new.send(:platform_client) }
+      assert_match(/OAuth/, error.message)
     end
     config = Preference.new(name: "xcom_oauth", value: { "access_token" => nil })
 
     Preference.stub(:get_object, config) do
-      assert_raises(ArgumentError) { TwitterService.new.send(:platform_client) }
+      error = assert_raises(ArgumentError) { TwitterService.new.send(:platform_client) }
+      assert_match(/토큰/, error.message)
     end
   end
 
@@ -295,6 +297,7 @@ class TwitterServiceTest < ActiveSupport::TestCase
       stub.post("/2/oauth2/token") do |env|
         body = URI.decode_www_form(env.body).to_h
 
+        assert_equal "Basic #{Base64.strict_encode64("test-id:test-secret")}", env.request_headers["Authorization"]
         assert_equal "refresh_token", body["grant_type"]
         assert_equal "old-refresh-token", body["refresh_token"]
         [ 200, { "Content-Type" => "application/json" }, {
@@ -341,7 +344,7 @@ class TwitterServiceTest < ActiveSupport::TestCase
 
     Preference.stub(:get_object, config) do
       OauthClient.stub(:build, oauth_client) do
-        config.stub(:update, ->(*) { flunk "갱신 실패 시 저장하지 않아야 합니다" }) do
+        config.stub(:update!, ->(*) { flunk "갱신 실패 시 저장하지 않아야 합니다" }) do
           stub_constructor(TwitterClient, ->(*) { flunk "갱신 실패 시 클라이언트를 생성하지 않아야 합니다" }) do
             assert_raises(OAuth2::Error) { TwitterService.new.send(:platform_client) }
           end
@@ -350,6 +353,44 @@ class TwitterServiceTest < ActiveSupport::TestCase
     end
 
     assert_equal original_value, config.reload.value
+    stubs.verify_stubbed_calls
+  end
+
+  test "갱신 성공 후 저장 실패는 재인증 필요 로그를 남기고 예외를 전파한다" do
+    config = Preference.create!(name: "xcom_oauth", value: {
+      "client_id" => "test-id", "client_secret" => "test-secret",
+      "access_token" => "expired-token", "refresh_token" => "old-refresh-token",
+      "expires_at" => 1.hour.ago.to_i
+    })
+    original_value = config.value.deep_dup
+    oauth_client = OauthClient.build(config)
+    stubs = Faraday::Adapter::Test::Stubs.new do |stub|
+      stub.post("/2/oauth2/token") do
+        [ 200, { "Content-Type" => "application/json" }, {
+          access_token: "refreshed-token", refresh_token: "new-refresh-token", expires_in: 3600
+        }.to_json ]
+      end
+    end
+    oauth_client.connection.adapter(:test, stubs)
+    service = TwitterService.new
+    messages = []
+    # 실제 모델 검증 실패를 일으키도록 조회한 레코드의 필수 값을 비운다.
+    config.name = ""
+    Preference.stub(:get_object, config) do
+      OauthClient.stub(:build, oauth_client) do
+        service.logger.stub(:error, ->(message) { messages << message }) do
+          stub_constructor(TwitterClient, ->(*) { flunk "저장 실패 시 클라이언트를 만들지 않아야 합니다" }) do
+            assert_raises(ActiveRecord::RecordInvalid) { service.send(:platform_client) }
+          end
+        end
+      end
+    end
+
+    assert_equal original_value, config.reload.value
+    assert_match(/재인증/, messages.join)
+    %w[expired-token old-refresh-token refreshed-token new-refresh-token test-secret].each do |secret|
+      refute_includes messages.join, secret
+    end
     stubs.verify_stubbed_calls
   end
 end
