@@ -347,6 +347,7 @@ Dark interfaces need visible separation. Priority order:
 - `text-content-muted` on `bg-surface-muted` (다크 4.04:1, 미달 — 이 조합을 만들지 않는다)
 - `text-{success,warning,danger,info}-text` on `bg-*/10` 틴트
 - `border-input` on `bg-app`, `bg-surface` (3:1)
+- Lexxy 글자색 `--highlight-1..9` on `bg-app`, `bg-surface`, 모든 `--highlight-bg-*` (다크는 `--semantic-highlight-*`로 바꿔 4.5:1 이상, `test/assets/highlight_palette_test.rb`. 라이트는 Lexxy 원래 값이며 1·2·4·7번이 4.10~4.30:1로 미달 — 별도 이슈 후보)
 
 ---
 
