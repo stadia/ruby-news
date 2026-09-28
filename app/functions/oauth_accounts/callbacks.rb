@@ -11,13 +11,17 @@ module OauthAccounts
 
     # 콜백 처리 결과를 표현하는 불변 sum type.
     # 기존 user와 매칭되면 SignIn, 신규면 CompleteSignup을 반환한다.
+    # HTTP 세션은 다루지 않는다. 결과의 저장·정리는 호출자 책임이다.
     # 멤버 타입: sorbet/rbi/shims/data_definitions.rbi
     SignIn = Data.define(:user)
-    CompleteSignup = Data.define(:suggested_username)
+    CompleteSignup = Data.define(:signup_payload)
+
+    SIGNUP_PAYLOAD_KEYS = %i[provider uid email email_verified relay_email name raw_info].freeze
 
     class << self
-      #: (auth: untyped, session: untyped) -> (SignIn | CompleteSignup)
-      def handle_callback(auth:, session:)
+      # 인증 정보를 정규화해 로그인 사용자 또는 가입에 필요한 payload를 반환한다.
+      #: (auth: untyped) -> (SignIn | CompleteSignup)
+      def handle_callback(auth:)
         oauth_data = build_auth_result(auth:)
         user = match_user(
           provider: oauth_data[:provider],
@@ -30,15 +34,15 @@ module OauthAccounts
         if user
           upsert_oauth_account(user:, oauth_data:)
 
-          session.delete(:oauth_signup)
           return SignIn.new(user:)
         end
 
-        session[:oauth_signup] = oauth_data.slice(:provider, :uid, :email, :email_verified, :relay_email, :name, :raw_info).deep_stringify_keys
-
-        CompleteSignup.new(suggested_username: suggest_username(name: oauth_data[:name], email: oauth_data[:email]))
+        CompleteSignup.new(
+          signup_payload: oauth_data.slice(*SIGNUP_PAYLOAD_KEYS).deep_stringify_keys
+        )
       end
 
+      # 가입 화면에서 사용할 중복 없는 username을 이름 또는 이메일로 제안한다.
       def suggest_username(name:, email:)
         base = sanitize(name).presence || sanitize(email.to_s.split("@").first).presence || "user"
         base = "user#{base}" if base.length < MIN_LENGTH
