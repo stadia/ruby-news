@@ -59,8 +59,7 @@ Packwerk 패키지는 디렉터리 단위라서 domain과 infrastructure는 흐�
 
 | 파일 | 참조 | 원인 | 방침 |
 | --- | --- | --- | --- |
-| `app/clients/discord_client.rb` | `Configs::Discord` | client가 webhook 설정을 DB에서 직접 읽는다 | 설정을 인자로 받게 한다(#1029) |
-| `app/clients/slack_client.rb` | `Configs::Slack` | 위와 같다 | #1029 |
+| `app/clients/slack_client.rb` | `Configs::Slack` | OAuth 설정을 DB에서 직접 읽는다 | #1029 |
 | `app/clients/mastodon_client.rb`, `twitter_client.rb` | `Preference` | OAuth 설정을 `Preference`에서 직접 읽는다 | #1029 |
 
 위반을 고치면 `bin/packwerk update-todo`로 목록을 줄인다. 새 위반을 목록에 추가하는 용도로 `update-todo`를 쓰지 않는다. 새 패키지 도입 시 불가피한 기존 위반을 추가한다면 이 문서의 기준선 표에 원인과 방침을 적고 PR 설명에 이유를 남긴 뒤 갱신한다.

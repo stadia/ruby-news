@@ -4,6 +4,16 @@ require "test_helper"
 require "uri"
 
 class DiscordControllerTest < ActionDispatch::IntegrationTest
+  setup do
+    Preference.create!(name: "discord_oauth", value: { client_id: "dc-123", client_secret: "discord-secret" })
+    @original_bot_token = ENV["DISCORD_BOT_TOKEN"]
+    ENV["DISCORD_BOT_TOKEN"] = "test-bot-token"
+  end
+
+  teardown do
+    ENV["DISCORD_BOT_TOKEN"] = @original_bot_token
+  end
+
   test "anonymous callback still requires a valid install state" do
     refuse_code_exchange do
       get discord_oauth_callback_path, params: { code: "anonymous-code", state: "anonymous-state" }
@@ -38,11 +48,50 @@ class DiscordControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(users(:john))
     state = start_discord_install
 
-    DiscordClient.stub(:exchange_code, ->(*) { raise DiscordClient::ApiError, "Token exchange failed" }) do
+    DiscordClient.stub(:exchange_code, ->(code, client_id:, client_secret:, redirect_uri:) {
+      assert_equal "invalid-code", code
+      assert_discord_credentials(client_id, client_secret, redirect_uri)
+      raise DiscordClient::ApiError, "Token exchange failed"
+    }) do
       get discord_oauth_callback_path, params: { code: "invalid-code", state: }
     end
 
     assert_redirected_to oauth_result_path(provider: "discord", success: "false", error: "연동을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.")
+  end
+
+  test "콜백 시점에 필수 설정이 없어지면 교환하지 않고 설정 안내와 원인을 남긴다" do
+    %i[client_id client_secret bot_token].each do |missing_setting|
+      state = start_discord_install
+
+      warnings = capture_warnings do
+        Configs::Discord.stub(missing_setting, nil) do
+          DiscordClient.stub(:delete_webhook, ->(_url) { flunk "교환 전에는 정리할 웹훅이 없습니다" }) do
+            assert_no_difference("DiscordChannel.count") do
+              refuse_code_exchange do
+                get discord_oauth_callback_path, params: { code: "callback-code", state: }
+              end
+            end
+          end
+        end
+      end
+
+      assert_redirected_to oauth_result_path(provider: "discord", success: "false", error: I18n.t("oauth.errors.discord_not_configured"))
+      assert(warnings.any? { |message| message.include?("Discord OAuth callback") && message.include?("not configured") })
+      warnings.each do |message|
+        refute_includes message, "discord-secret"
+        refute_includes message, "test-bot-token"
+      end
+    end
+  end
+
+  test "유효하지 않은 state는 콜백 설정 확인보다 먼저 거부한다" do
+    Configs::Discord.stub(:configured?, -> { flunk "state 검증 전에 설정을 확인했습니다" }) do
+      refuse_code_exchange do
+        get discord_oauth_callback_path, params: { code: "invalid-code", state: "invalid-state" }
+      end
+    end
+
+    expect_invalid_state_rejection
   end
 
   test "GET callback handles access_denied without exchanging a code" do
@@ -105,7 +154,11 @@ class DiscordControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(users(:john))
     state = start_discord_install
 
-    DiscordClient.stub(:exchange_code, ->(*) { raise DiscordClient::ApiError, "invalid_code" }) do
+    DiscordClient.stub(:exchange_code, ->(code, client_id:, client_secret:, redirect_uri:) {
+      assert_equal "first-code", code
+      assert_discord_credentials(client_id, client_secret, redirect_uri)
+      raise DiscordClient::ApiError, "invalid_code"
+    }) do
       get discord_oauth_callback_path, params: { code: "first-code", state: }
     end
 
@@ -250,6 +303,21 @@ class DiscordControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ approved_discord_oauth[:webhook][:url] ], cleanup_urls
   end
 
+  test "다른 application_id의 웹훅은 정리하고 채널을 만들지 않는다" do
+    state = start_discord_install
+    cleanup_urls = []
+
+    assert_no_difference("DiscordChannel.count") do
+      with_approved_discord_target(approved_discord_oauth, application_id: "other", cleanup_urls:) do
+        get discord_oauth_callback_path, params: { code: "wrong-application", state: }
+      end
+    end
+
+    assert_redirected_to oauth_result_path(provider: "discord", success: "false", error: I18n.t("oauth.errors.provider_failure"))
+    assert_nil DiscordChannel.find_by(remote_id: "G_SETUP")
+    assert_equal [ "https://discord.com/api/webhooks/124/newtoken" ], cleanup_urls
+  end
+
   test "a webhook URL outside Discord is never sent a cleanup request" do
     state = start_discord_install
     cleanup_urls = []
@@ -384,19 +452,24 @@ class DiscordControllerTest < ActionDispatch::IntegrationTest
   end
 
 
-  def with_approved_discord_target(oauth_response, guild_id: "G_SETUP", channel_id: "C_PICK", cleanup_urls: [], verification: nil)
+  def with_approved_discord_target(oauth_response, guild_id: "G_SETUP", channel_id: "C_PICK", application_id: "dc-123", cleanup_urls: [], verification: nil)
     webhook = oauth_response[:webhook] || {}
     body = { id: URI.parse(webhook[:url].to_s).path.split("/")[-2], guild_id:, channel_id:,
-             application_id: "dc-123", type: 1 }.to_json
+             application_id:, type: 1 }.to_json
     response = verification || Struct.new(:success?, :status, :body).new(true, 200, body)
     Configs::Discord.stub(:client_id, "dc-123") do
-      Faraday.stub(:get, ->(_url, &block) {
-        request = Struct.new(:options).new(Struct.new(:open_timeout, :timeout).new)
-        block.call(request)
-        response
-      }) do
-        DiscordClient.stub(:delete_webhook, ->(url) { cleanup_urls << url; nil }) do
-          DiscordClient.stub(:exchange_code, oauth_response) { yield }
+      Configs::Discord.stub(:client_secret, "discord-secret") do
+        Faraday.stub(:get, ->(_url, &block) {
+          request = Struct.new(:options).new(Struct.new(:open_timeout, :timeout).new)
+          block.call(request)
+          response
+        }) do
+          DiscordClient.stub(:delete_webhook, ->(url) { cleanup_urls << url; nil }) do
+            DiscordClient.stub(:exchange_code, ->(_code, client_id:, client_secret:, redirect_uri:) {
+              assert_discord_credentials(client_id, client_secret, redirect_uri)
+              oauth_response
+            }) { yield }
+          end
         end
       end
     end
@@ -414,7 +487,16 @@ class DiscordControllerTest < ActionDispatch::IntegrationTest
 
   # state 검증에 걸리면 토큰 교환까지 가면 안 된다. 호출되면 테스트를 실패시킨다.
   def refuse_code_exchange(&)
-    DiscordClient.stub(:exchange_code, ->(*) { flunk "state 검증에 실패했는데 exchange_code가 호출됐습니다" }, &)
+    DiscordClient.stub(:exchange_code, ->(_code, client_id:, client_secret:, redirect_uri:) {
+      assert_discord_credentials(client_id, client_secret, redirect_uri)
+      flunk "거부할 콜백에서 exchange_code가 호출됐습니다"
+    }, &)
+  end
+
+  def assert_discord_credentials(client_id, client_secret, redirect_uri)
+    assert_equal "dc-123", client_id
+    assert_equal "discord-secret", client_secret
+    assert_equal discord_oauth_callback_url, redirect_uri
   end
 
   def expect_invalid_state_rejection
