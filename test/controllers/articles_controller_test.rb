@@ -198,6 +198,147 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
     assert_select "h1", text: /#{Regexp.escape(article.title_ko)}/
   end
 
+  test "GET show exposes article metadata and readable structured data" do
+    article = articles(:ruby_article)
+    article.tag_list.add("ruby")
+    article.save!
+
+    get article_path(article)
+
+    assert_response :success
+    assert_select "meta[property='og:type'][content='article']"
+    assert_select "meta[name='description'][content='Ruby 3.4의 주요 개선사항']"
+    assert_select "meta[property='article:tag'][content='ruby']"
+    assert_select "meta[name='robots']", count: 0
+    breadcrumbs = structured_data("BreadcrumbList").fetch("itemListElement")
+
+    assert_equal [ "홈", "지난 글들", "Ruby 3.4의 놀라운 새 기능들" ], breadcrumbs.map { |item| item.fetch("name") }
+  end
+
+  test "GET show provides article source dates and speakable selectors without a thumbnail" do
+    article = articles(:ruby_article)
+
+    get article_path(article)
+
+    schema = structured_data("NewsArticle")
+
+    assert_equal "Ruby 3.4의 놀라운 새 기능들", schema.fetch("headline")
+    assert_equal "ko-KR", schema.fetch("inLanguage")
+    assert_equal "https://ruby-news.dev", schema.fetch("publisher").fetch("url")
+    assert_equal article.url, schema.fetch("translationOfWork").fetch("url")
+    assert_equal [ "h1", "#article-detail-body" ], schema.fetch("speakable").fetch("cssSelector")
+    assert_equal article.published_at.iso8601, schema.fetch("datePublished")
+    assert_equal article.reload.updated_at.iso8601, schema.fetch("dateModified")
+    assert_not schema.key?("image")
+  end
+
+  test "GET show on Japanese host keeps publisher tied to host when content locale is Korean" do
+    host! "ruby-news.jp"
+    cookies[:locale] = "ko"
+
+    get article_path(articles(:ruby_article))
+
+    assert_response :success
+    schema = structured_data("NewsArticle")
+
+    assert_equal "ko-KR", schema.fetch("inLanguage")
+    assert_equal "https://ruby-news.jp", schema.fetch("publisher").fetch("url")
+    assert_equal "https://ruby-news.jp", schema.fetch("author").fetch("url")
+    assert_select "meta[name='robots']", count: 0
+  end
+
+  test "GET show noindexes Japanese fallback until a translated summary exists" do
+    article = articles(:ruby_article)
+    article.update_columns(title_ja: "Ruby 日本語の見出し", summary_key_ja: nil)
+    host! "ruby-news.jp"
+
+    get article_path(article)
+
+    assert_response :success
+    assert_select "meta[name='robots'][content='noindex, follow']"
+    assert_equal "ja-JP", structured_data("NewsArticle").fetch("inLanguage")
+
+    article.update_columns(summary_key_ja: [ "日本語の要約" ])
+    get article_path(article)
+
+    assert_response :success
+    assert_select "meta[name='robots']", count: 0
+    assert_select "meta[name='description'][content='日本語の要約']"
+  end
+
+  test "GET show uses attached thumbnail in Open Graph and article schema" do
+    article = articles(:ruby_article)
+    article.thumbnail.attach(io: StringIO.new("thumbnail"), filename: "thumbnail.png", content_type: "image/png")
+
+    get article_path(article)
+
+    assert_response :success
+    image = structured_data("NewsArticle").fetch("image")
+
+    assert_includes image, "/rails/active_storage/blobs/redirect/"
+    assert_includes image, "thumbnail.png"
+    assert_select "meta[property='og:image'][content='#{image}']"
+  end
+
+  test "GET show omits article schema when its display title is blank" do
+    article = articles(:ruby_article)
+    article.update_columns(title: "", title_ko: nil, published_at: nil)
+
+    get article_path(article)
+
+    assert_response :success
+    assert_nil structured_data("NewsArticle")
+    assert_not_nil structured_data("BreadcrumbList")
+    assert_select "meta[property='article:published_time']", count: 0
+    assert_select "h2", text: I18n.t("articles.show.related_heading"), count: 0
+  end
+
+  test "GET show without tags omits Open Graph article tags" do
+    article = articles(:site_only_article)
+
+    get article_path(article)
+
+    assert_response :success
+    assert_equal "Hacker News에서 본 Ruby 소식", structured_data("NewsArticle").fetch("headline")
+    assert_select "meta[property='article:tag']", count: 0
+  end
+
+  test "GET show ranks only kept confirmed similar articles and limits results to four" do
+    article = articles(:ruby_article)
+    embedding = [ 1.0 ] + Array.new(3071, 0.0)
+    article.update_columns(embedding: embedding)
+    candidates = %i[korean_content_article youtube_ruby_talk site_only_article similar_article one].map.with_index do |fixture, index|
+      candidate = articles(fixture)
+      candidate.update_columns(title_ko: "유사 기사 #{index}", embedding: [ 1.0, (index + 1) * 0.1 ] + Array.new(3070, 0.0))
+      candidate
+    end
+    articles(:two).update_columns(title_ko: "삭제된 유사 기사", embedding: embedding, deleted_at: Time.current)
+    articles(:unnormalized_url_article).update_columns(title_ko: nil, embedding: embedding)
+
+    get article_path(article)
+
+    assert_response :success
+    assert_select "h2", text: I18n.t("articles.show.related_heading")
+    candidates.first(4).each { |candidate| assert_select "h3", text: candidate.title_ko }
+    assert_select "h3", text: candidates.last.title_ko, count: 0
+    assert_select "h3", text: article.title_ko, count: 0
+    assert_select "h3", text: "삭제된 유사 기사", count: 0
+    assert_select "h3", text: articles(:unnormalized_url_article).title, count: 0
+  end
+
+  test "GET show rejects discarded articles and unsupported JSON representation" do
+    article = articles(:ruby_article)
+
+    get article_path(article, format: :json)
+
+    assert_response :not_acceptable
+
+    article.update_columns(deleted_at: Time.current)
+    get article_path(article)
+
+    assert_response :not_found
+  end
+
   test "GET show without summary key items does not render an empty summary box" do
     article = articles(:site_only_article)
     article.update!(summary_key: nil, summary_key_ja: nil)
@@ -323,6 +464,11 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
   end
 
   private
+
+  def structured_data(type)
+    response.parsed_body.css("script[type='application/ld+json']").map { |script| JSON.parse(script.text) }
+      .find { |schema| schema["@type"] == type }
+  end
 
   def capture_like_queries
     queries = []

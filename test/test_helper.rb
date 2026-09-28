@@ -16,6 +16,8 @@ end
 
 ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
+require_relative "support/test_database_guard"
+TestDatabaseGuard.acquire!(ActiveRecord::Base.configurations.configs_for(env_name: "test", name: "primary").configuration_hash)
 require "rails/test_help"
 require "minitest/mock"
 

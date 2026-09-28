@@ -79,56 +79,8 @@ class ArticlesController < ApplicationController
   def show
     @comments = @article.posts.comments.kept.includes(:user)
 
-    # 현재 로케일(.jp=ja) 번역이 없으면 한국어 원문으로 폴백된 상태이므로,
-    # 검색/AI에 "한국어를 일본어로" 노출하지 않도록 noindex 처리한다
-    # (번역 완료 시 자동 색인 복귀).
-    @robots_noindex = !@article.available_in?(I18n.locale)
-
-    @page_title = @article.display_title
-    @page_description = @article.summary_key_preview
-    @page_keywords = @article.tags.map(&:name).join(",") unless @article.tags.empty?
-    @og_type = "article"
-    @og_image = rails_blob_url(@article.thumbnail, disposition: "inline") if @article.thumbnail.attached?
-    @og_article = {
-      published_time: @article.published_at&.iso8601,
-      modified_time:  @article.updated_at.iso8601,
-      tag:            @article.tags.map(&:name).presence
-    }.compact
-    if @article.display_title.present?
-      # publisher(발행 주체 = 어느 사이트냐)는 쿠키·사용자 로케일이 아니라
-      # 실제 요청 호스트로 결정한다. in_language 는 실제 렌더 콘텐츠 언어이므로
-      # I18n.locale 기준을 유지한다.
-      publisher = HomeController.publisher_schema(Hosts.locale_for_host(request.host))
-      news_article_attrs = {
-        headline:            @article.display_title,
-        description:         @article.summary_key_preview,
-        url:                 article_url(@article),
-        date_published:      @article.published_at&.iso8601,
-        date_modified:       @article.updated_at.iso8601,
-        in_language:         I18n.locale == :ja ? "ja-JP" : "ko-KR",
-        is_based_on:         @article.url,
-        translation_of_work: SchemaDotOrg::CreativeWork.new(url: @article.url),
-        speakable:           article_speakable,
-        author:              publisher,
-        publisher:           publisher
-      }
-      news_article_attrs[:image] = @og_image if @og_image
-      @news_article = SchemaDotOrg::NewsArticle.new(**news_article_attrs)
-    end
-    @breadcrumbs = SchemaDotOrg.make_breadcrumbs([
-      { name: t("layout.nav.home"),  url: root_url },
-      { name: t("articles.index.heading"), url: articles_url },
-      { name: @article.display_title }
-    ])
-
-    # Only load similar articles if embedding exists
-    @similar_articles = if @article.embedding.present?
-      Article.kept.confirmed.where.not(id: @article.id)
-             .nearest_neighbors(:embedding, @article.embedding, distance: "cosine")
-             .limit(4)
-    else
-      Article.none
-    end
+    prepare_article_metadata
+    @similar_articles = similar_articles
 
     @comment = Post.new
     respond_to do |format|
@@ -178,6 +130,58 @@ class ArticlesController < ApplicationController
   end
 
   private
+    def prepare_article_metadata
+      # 현재 로케일(.jp=ja) 번역이 없으면 한국어 원문으로 폴백된 상태이므로,
+      # 검색/AI에 "한국어를 일본어로" 노출하지 않도록 noindex 처리한다.
+      @robots_noindex = !@article.available_in?(I18n.locale)
+      @page_title = @article.display_title
+      @page_description = @article.summary_key_preview
+      tags = @article.tags.map(&:name)
+      @page_keywords = tags.join(",") if tags.any?
+      @og_type = "article"
+      @og_image = rails_blob_url(@article.thumbnail, disposition: "inline") if @article.thumbnail.attached?
+      @og_article = {
+        published_time: @article.published_at&.iso8601,
+        modified_time: @article.updated_at.iso8601,
+        tag: tags.presence
+      }.compact
+      @news_article = build_news_article if @page_title.present?
+      @breadcrumbs = SchemaDotOrg.make_breadcrumbs([
+        { name: t("layout.nav.home"), url: root_url },
+        { name: t("articles.index.heading"), url: articles_url },
+        { name: @page_title }
+      ])
+    end
+
+    def build_news_article
+      # publisher(발행 주체)는 쿠키·사용자 로케일이 아니라 실제 요청 호스트로
+      # 결정한다. in_language는 실제 렌더 콘텐츠 언어이므로 I18n.locale을 쓴다.
+      publisher = HomeController.publisher_schema(Hosts.locale_for_host(request.host))
+      attrs = {
+        headline: @page_title,
+        description: @page_description,
+        url: article_url(@article),
+        date_published: @og_article[:published_time],
+        date_modified: @og_article[:modified_time],
+        in_language: I18n.locale == :ja ? "ja-JP" : "ko-KR",
+        is_based_on: @article.url,
+        translation_of_work: SchemaDotOrg::CreativeWork.new(url: @article.url),
+        speakable: article_speakable,
+        author: publisher,
+        publisher: publisher
+      }
+      attrs[:image] = @og_image if @og_image
+      SchemaDotOrg::NewsArticle.new(**attrs)
+    end
+
+    def similar_articles
+      return Article.none if @article.embedding.blank?
+
+      Article.kept.confirmed.where.not(id: @article.id)
+             .nearest_neighbors(:embedding, @article.embedding, distance: "cosine")
+             .limit(4)
+    end
+
     # Use callbacks to share common setup or constraints between actions.
     def set_article
       id = params[:id]
