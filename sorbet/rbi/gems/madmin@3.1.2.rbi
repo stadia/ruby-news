@@ -584,69 +584,83 @@ class Madmin::Fields::Time < ::Madmin::Field; end
 #
 # pkg:gem/madmin#lib/madmin/filter.rb:3
 class Madmin::Filter
-  # pkg:gem/madmin#lib/madmin/filter.rb:29
+  # pkg:gem/madmin#lib/madmin/filter.rb:32
   def initialize(field, operator, value); end
 
-  # pkg:gem/madmin#lib/madmin/filter.rb:51
+  # pkg:gem/madmin#lib/madmin/filter.rb:55
   def apply(scope); end
 
-  # pkg:gem/madmin#lib/madmin/filter.rb:35
+  # pkg:gem/madmin#lib/madmin/filter.rb:38
   def column; end
 
-  # pkg:gem/madmin#lib/madmin/filter.rb:15
+  # pkg:gem/madmin#lib/madmin/filter.rb:18
   def field; end
 
-  # pkg:gem/madmin#lib/madmin/filter.rb:15
+  # pkg:gem/madmin#lib/madmin/filter.rb:18
   def operator; end
 
   # The params for this filter, used to keep it in links
   #
-  # pkg:gem/madmin#lib/madmin/filter.rb:71
+  # pkg:gem/madmin#lib/madmin/filter.rb:75
   def to_h; end
 
-  # pkg:gem/madmin#lib/madmin/filter.rb:39
+  # pkg:gem/madmin#lib/madmin/filter.rb:42
   def type; end
 
   # The value in the column's type, or its element type for arrays. Datetimes are parsed in Time.zone, like form input
   #
-  # pkg:gem/madmin#lib/madmin/filter.rb:76
+  # pkg:gem/madmin#lib/madmin/filter.rb:80
   def typed_value; end
 
-  # pkg:gem/madmin#lib/madmin/filter.rb:47
+  # pkg:gem/madmin#lib/madmin/filter.rb:50
   def valid?; end
 
-  # pkg:gem/madmin#lib/madmin/filter.rb:15
+  # pkg:gem/madmin#lib/madmin/filter.rb:18
   def value; end
 
-  # pkg:gem/madmin#lib/madmin/filter.rb:43
+  # pkg:gem/madmin#lib/madmin/filter.rb:46
   def value?; end
 
   private
 
-  # pkg:gem/madmin#lib/madmin/filter.rb:92
+  # pkg:gem/madmin#lib/madmin/filter.rb:100
+  def as_text(attribute); end
+
+  # pkg:gem/madmin#lib/madmin/filter.rb:108
   def blank_values; end
 
-  # pkg:gem/madmin#lib/madmin/filter.rb:88
+  # pkg:gem/madmin#lib/madmin/filter.rb:104
   def escaped_value; end
+
+  # pkg:gem/madmin#lib/madmin/filter.rb:92
+  def matching_operator?; end
+
+  # pkg:gem/madmin#lib/madmin/filter.rb:96
+  def uuid?; end
 
   # Arrays filter by their elements
   #
-  # pkg:gem/madmin#lib/madmin/filter.rb:83
+  # pkg:gem/madmin#lib/madmin/filter.rb:87
   def value_type; end
 
   class << self
     # A new row in the filters form, for the first filterable column
     #
-    # pkg:gem/madmin#lib/madmin/filter.rb:24
+    # pkg:gem/madmin#lib/madmin/filter.rb:27
     def blank(resource); end
 
     # Skips conditions for unknown columns or operators, and values that don't
     # cast to the column's type
     #
-    # pkg:gem/madmin#lib/madmin/filter.rb:19
+    # pkg:gem/madmin#lib/madmin/filter.rb:22
     def from_params(resource, params); end
   end
 end
+
+# Operators that match the value as text instead of casting it to the column's type
+#
+# pkg:gem/madmin#lib/madmin/filter.rb:16
+Madmin::Filter::MATCHING_OPERATORS = T.let(T.unsafe(nil), Array)
 
 # pkg:gem/madmin#lib/madmin/filter.rb:4
 Madmin::Filter::OPERATORS = T.let(T.unsafe(nil), Hash)
@@ -1198,6 +1212,8 @@ class Madmin::ResourceController < ::Madmin::ApplicationController
   def _layout(lookup_context, formats, keys); end
   def _layout_from_proc; end
   def cast_fields(attributes); end
+  def destroy_errors; end
+  def destroy_failed(message); end
   def enforce_readonly; end
   def field_for(name); end
   def filters; end
