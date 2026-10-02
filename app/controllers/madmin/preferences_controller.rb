@@ -7,9 +7,8 @@ module Madmin
 
     def resource_params
       params_hash = super
-      record = @record || resource.model.new(name: params_hash[:name])
-      record_methods = record.methods
-      params_hash.delete_if { |key, _value| !record_methods.include?(key.to_sym) }
+      record = resource.model.new(name: params_hash.fetch("name", @record&.name))
+      params_hash.delete_if { |key, _value| !record.respond_to?("#{key}=") }
       params_hash
     end
   end

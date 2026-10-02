@@ -81,6 +81,7 @@ module Madmin
       else
                     resources
       end
+      resources = filters.reduce(resources) { |scope, filter| filter.apply(scope) }
       resources.includes(:site).reorder(sort_column => sort_direction)
     end
 

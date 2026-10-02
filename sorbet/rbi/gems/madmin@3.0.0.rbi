@@ -9,48 +9,60 @@
 #
 # pkg:gem/madmin#lib/madmin/engine.rb:1
 module Madmin
-  # pkg:gem/madmin#lib/madmin.rb:42
+  # pkg:gem/madmin#lib/madmin.rb:46
   def importmap; end
 
-  # pkg:gem/madmin#lib/madmin.rb:42
+  # pkg:gem/madmin#lib/madmin.rb:46
   def importmap=(val); end
 
-  # pkg:gem/madmin#lib/madmin.rb:43
+  # pkg:gem/madmin#lib/madmin.rb:47
   def menu; end
 
-  # pkg:gem/madmin#lib/madmin.rb:43
+  # pkg:gem/madmin#lib/madmin.rb:47
   def menu=(val); end
 
-  # pkg:gem/madmin#lib/madmin.rb:46
+  # pkg:gem/madmin#lib/madmin.rb:48
+  def per_page; end
+
+  # pkg:gem/madmin#lib/madmin.rb:48
+  def per_page=(val); end
+
+  # pkg:gem/madmin#lib/madmin.rb:51
   def resource_locations; end
 
-  # pkg:gem/madmin#lib/madmin.rb:46
+  # pkg:gem/madmin#lib/madmin.rb:51
   def resource_locations=(val); end
 
-  # pkg:gem/madmin#lib/madmin.rb:44
+  # pkg:gem/madmin#lib/madmin.rb:49
   def site_name; end
 
-  # pkg:gem/madmin#lib/madmin.rb:44
+  # pkg:gem/madmin#lib/madmin.rb:49
   def site_name=(val); end
 
-  # pkg:gem/madmin#lib/madmin.rb:45
+  # pkg:gem/madmin#lib/madmin.rb:50
   def stylesheets; end
 
-  # pkg:gem/madmin#lib/madmin.rb:45
+  # pkg:gem/madmin#lib/madmin.rb:50
   def stylesheets=(val); end
 
   class << self
-    # pkg:gem/madmin#lib/madmin.rb:42
+    # pkg:gem/madmin#lib/madmin.rb:46
     def importmap; end
 
-    # pkg:gem/madmin#lib/madmin.rb:42
+    # pkg:gem/madmin#lib/madmin.rb:46
     def importmap=(val); end
 
-    # pkg:gem/madmin#lib/madmin.rb:43
+    # pkg:gem/madmin#lib/madmin.rb:47
     def menu; end
 
-    # pkg:gem/madmin#lib/madmin.rb:43
+    # pkg:gem/madmin#lib/madmin.rb:47
     def menu=(val); end
+
+    # pkg:gem/madmin#lib/madmin.rb:48
+    def per_page; end
+
+    # pkg:gem/madmin#lib/madmin.rb:48
+    def per_page=(val); end
 
     # pkg:gem/madmin#lib/madmin/engine.rb:3
     def railtie_helpers_paths; end
@@ -61,45 +73,59 @@ module Madmin
     # pkg:gem/madmin#lib/madmin/engine.rb:3
     def railtie_routes_url_helpers(include_path_helpers = T.unsafe(nil)); end
 
-    # pkg:gem/madmin#lib/madmin.rb:102
+    # pkg:gem/madmin#lib/madmin.rb:144
     def reset_resources!; end
 
-    # pkg:gem/madmin#lib/madmin.rb:88
+    # Returns the Madmin::Resource class for a model or model name, falling
+    # back to the resource that declares the model when none is named after it
+    #
+    # pkg:gem/madmin#lib/madmin.rb:126
     def resource_by_name(name); end
+
+    # The one resource whose `model` is +klass+ or, failing that, its nearest
+    # superclass, or nil. Two resources declaring the same model with neither
+    # matching its name is ambiguous, and guessing would silently link to the
+    # wrong admin page, so that raises.
+    #
+    # pkg:gem/madmin#lib/madmin.rb:90
+    def resource_declaring(klass); end
 
     # Returns a Madmin::Resource class for the given object
     #
-    # pkg:gem/madmin#lib/madmin.rb:53
+    # pkg:gem/madmin#lib/madmin.rb:61
     def resource_for(object); end
 
-    # pkg:gem/madmin#lib/madmin.rb:46
+    # pkg:gem/madmin#lib/madmin.rb:51
     def resource_locations; end
 
-    # pkg:gem/madmin#lib/madmin.rb:46
+    # pkg:gem/madmin#lib/madmin.rb:51
     def resource_locations=(val); end
 
-    # pkg:gem/madmin#lib/madmin.rb:72
+    # pkg:gem/madmin#lib/madmin.rb:108
     def resource_name_for(object); end
 
-    # pkg:gem/madmin#lib/madmin.rb:107
+    # pkg:gem/madmin#lib/madmin.rb:150
     def resource_names; end
 
-    # pkg:gem/madmin#lib/madmin.rb:98
+    # pkg:gem/madmin#lib/madmin.rb:140
     def resources; end
 
-    # pkg:gem/madmin#lib/madmin.rb:44
+    # pkg:gem/madmin#lib/madmin.rb:104
+    def resources_by_model; end
+
+    # pkg:gem/madmin#lib/madmin.rb:49
     def site_name; end
 
-    # pkg:gem/madmin#lib/madmin.rb:44
+    # pkg:gem/madmin#lib/madmin.rb:49
     def site_name=(val); end
 
-    # pkg:gem/madmin#lib/madmin.rb:80
+    # pkg:gem/madmin#lib/madmin.rb:116
     def sti_resource_name_for(object); end
 
-    # pkg:gem/madmin#lib/madmin.rb:45
+    # pkg:gem/madmin#lib/madmin.rb:50
     def stylesheets; end
 
-    # pkg:gem/madmin#lib/madmin.rb:45
+    # pkg:gem/madmin#lib/madmin.rb:50
     def stylesheets=(val); end
 
     # pkg:gem/madmin#lib/madmin/engine.rb:3
@@ -116,6 +142,8 @@ module Madmin::ApplicationHelper
 
   def clear_search_params; end
   def default_url_options=(val); end
+  def index_path_with(**changes); end
+  def link_to_record(resource, record, **options); end
 
   class << self
     def _routes; end
@@ -125,7 +153,7 @@ end
 
 class Madmin::BaseController < ::ActionController::Base
   include ::ActiveStorage::SetCurrent
-  include ::Pagy::Method
+  include ::Madmin::Pagination
 
   private
 
@@ -168,6 +196,7 @@ module Madmin::BaseController::HelperMethods
   include ::ActionDispatch::Routing::PolymorphicRoutes
   include ::ActionDispatch::Routing::UrlFor
   include ::Madmin::ApplicationHelper
+  include ::Madmin::FiltersHelper
   include ::Madmin::NavHelper
   include ::Madmin::SortHelper
 end
@@ -177,16 +206,29 @@ class Madmin::Engine < ::Rails::Engine; end
 
 # pkg:gem/madmin#lib/madmin/field.rb:2
 class Madmin::Field
-  # pkg:gem/madmin#lib/madmin/field.rb:9
+  # pkg:gem/madmin#lib/madmin/field.rb:13
   def initialize(attribute_name:, model:, resource:, options:); end
+
+  # Whether the value returned by `cast` can be saved. The form is shown again with an error when it can't.
+  #
+  # pkg:gem/madmin#lib/madmin/field.rb:42
+  def accepts?(value); end
 
   # pkg:gem/madmin#lib/madmin/field.rb:3
   def attribute_name; end
 
-  # pkg:gem/madmin#lib/madmin/field.rb:49
+  # Converts the submitted form value into the value assigned to the record
+  #
+  # pkg:gem/madmin#lib/madmin/field.rb:37
+  def cast(value); end
+
+  # pkg:gem/madmin#lib/madmin/field.rb:63
   def default_index_attributes; end
 
-  # pkg:gem/madmin#lib/madmin/field.rb:32
+  # pkg:gem/madmin#lib/madmin/field.rb:79
+  def filter_type; end
+
+  # pkg:gem/madmin#lib/madmin/field.rb:46
   def label; end
 
   # pkg:gem/madmin#lib/madmin/field.rb:3
@@ -195,43 +237,79 @@ class Madmin::Field
   # pkg:gem/madmin#lib/madmin/field.rb:3
   def options; end
 
-  # pkg:gem/madmin#lib/madmin/field.rb:61
+  # pkg:gem/madmin#lib/madmin/field.rb:75
   def paginateable?; end
 
-  # pkg:gem/madmin#lib/madmin/field.rb:53
+  # pkg:gem/madmin#lib/madmin/field.rb:67
   def required?; end
 
   # pkg:gem/madmin#lib/madmin/field.rb:3
   def resource; end
 
-  # pkg:gem/madmin#lib/madmin/field.rb:57
+  # pkg:gem/madmin#lib/madmin/field.rb:71
   def searchable?; end
 
-  # pkg:gem/madmin#lib/madmin/field.rb:28
+  # pkg:gem/madmin#lib/madmin/field.rb:32
   def to_param; end
 
-  # pkg:gem/madmin#lib/madmin/field.rb:20
+  # pkg:gem/madmin#lib/madmin/field.rb:24
   def to_partial_path(name); end
 
-  # pkg:gem/madmin#lib/madmin/field.rb:16
+  # pkg:gem/madmin#lib/madmin/field.rb:20
   def value(record); end
 
   # Used for checking visibility of attribute on an view
   #
-  # pkg:gem/madmin#lib/madmin/field.rb:37
+  # pkg:gem/madmin#lib/madmin/field.rb:51
   def visible?(action); end
+
+  private
+
+  # Only database columns can be filtered, and not encrypted ones since their
+  # stored values can't be compared. `filter: false` turns it off
+  #
+  # pkg:gem/madmin#lib/madmin/field.rb:87
+  def filterable?; end
 
   class << self
     # pkg:gem/madmin#lib/madmin/field.rb:5
     def field_type; end
+
+    # The kind of index filter a field offers (:string, :number, :date,
+    # :datetime or :boolean), or nil for none
+    #
+    # pkg:gem/madmin#lib/madmin/field.rb:11
+    def filter_type; end
   end
 end
 
-# pkg:gem/madmin#lib/madmin.rb:16
+# pkg:gem/madmin#lib/madmin.rb:18
 module Madmin::Fields; end
 
+# PostgreSQL array columns, shown and edited as comma separated values
+#
+# pkg:gem/madmin#lib/madmin/fields/array.rb:4
+class Madmin::Fields::Array < ::Madmin::Field
+  # pkg:gem/madmin#lib/madmin/fields/array.rb:11
+  def cast(value); end
+
+  # pkg:gem/madmin#lib/madmin/fields/array.rb:7
+  def text(record); end
+
+  class << self
+    # pkg:gem/madmin#lib/madmin/fields/array.rb:5
+    def filter_type; end
+  end
+end
+
 # pkg:gem/madmin#lib/madmin/fields/attachment.rb:3
-class Madmin::Fields::Attachment < ::Madmin::Field; end
+class Madmin::Fields::Attachment < ::Madmin::Field
+  # Path for removing the attachment, or nil when the attachment resource
+  # or its destroy route has been removed from the app
+  #
+  # pkg:gem/madmin#lib/madmin/fields/attachment.rb:6
+  def remove_path(attachment); end
+end
 
 # pkg:gem/madmin#lib/madmin/fields/attachments.rb:3
 class Madmin::Fields::Attachments < ::Madmin::Field
@@ -241,10 +319,10 @@ end
 
 # pkg:gem/madmin#lib/madmin/fields/belongs_to.rb:3
 class Madmin::Fields::BelongsTo < ::Madmin::Field
-  # pkg:gem/madmin#lib/madmin/fields/belongs_to.rb:18
+  # pkg:gem/madmin#lib/madmin/fields/belongs_to.rb:19
   def associated_resource; end
 
-  # pkg:gem/madmin#lib/madmin/fields/belongs_to.rb:23
+  # pkg:gem/madmin#lib/madmin/fields/belongs_to.rb:24
   def associated_resource_for(object); end
 
   # pkg:gem/madmin#lib/madmin/fields/belongs_to.rb:14
@@ -258,25 +336,55 @@ class Madmin::Fields::BelongsTo < ::Madmin::Field
 end
 
 # pkg:gem/madmin#lib/madmin/fields/boolean.rb:3
-class Madmin::Fields::Boolean < ::Madmin::Field; end
+class Madmin::Fields::Boolean < ::Madmin::Field
+  class << self
+    # pkg:gem/madmin#lib/madmin/fields/boolean.rb:4
+    def filter_type; end
+  end
+end
 
 # pkg:gem/madmin#lib/madmin/fields/currency.rb:3
 class Madmin::Fields::Currency < ::Madmin::Field
-  # pkg:gem/madmin#lib/madmin/fields/currency.rb:10
+  # Filter values are in major units, which minor_units columns don't store
+  #
+  # pkg:gem/madmin#lib/madmin/fields/currency.rb:13
+  def filter_type; end
+
+  # pkg:gem/madmin#lib/madmin/fields/currency.rb:17
   def searchable?; end
 
-  # pkg:gem/madmin#lib/madmin/fields/currency.rb:4
+  # pkg:gem/madmin#lib/madmin/fields/currency.rb:6
   def value(record); end
+
+  class << self
+    # pkg:gem/madmin#lib/madmin/fields/currency.rb:4
+    def filter_type; end
+  end
 end
 
 # pkg:gem/madmin#lib/madmin/fields/date.rb:3
-class Madmin::Fields::Date < ::Madmin::Field; end
+class Madmin::Fields::Date < ::Madmin::Field
+  class << self
+    # pkg:gem/madmin#lib/madmin/fields/date.rb:4
+    def filter_type; end
+  end
+end
 
 # pkg:gem/madmin#lib/madmin/fields/date_time.rb:3
-class Madmin::Fields::DateTime < ::Madmin::Field; end
+class Madmin::Fields::DateTime < ::Madmin::Field
+  class << self
+    # pkg:gem/madmin#lib/madmin/fields/date_time.rb:4
+    def filter_type; end
+  end
+end
 
 # pkg:gem/madmin#lib/madmin/fields/decimal.rb:3
-class Madmin::Fields::Decimal < ::Madmin::Field; end
+class Madmin::Fields::Decimal < ::Madmin::Field
+  class << self
+    # pkg:gem/madmin#lib/madmin/fields/decimal.rb:4
+    def filter_type; end
+  end
+end
 
 # pkg:gem/madmin#lib/madmin/fields/enum.rb:3
 class Madmin::Fields::Enum < ::Madmin::Field
@@ -291,31 +399,36 @@ class Madmin::Fields::File < ::Madmin::Field
 end
 
 # pkg:gem/madmin#lib/madmin/fields/float.rb:3
-class Madmin::Fields::Float < ::Madmin::Field; end
+class Madmin::Fields::Float < ::Madmin::Field
+  class << self
+    # pkg:gem/madmin#lib/madmin/fields/float.rb:4
+    def filter_type; end
+  end
+end
 
 # pkg:gem/madmin#lib/madmin/fields/has_many.rb:3
 class Madmin::Fields::HasMany < ::Madmin::Field
-  include ::Pagy::Method
+  include ::Madmin::Pagination
 
-  # pkg:gem/madmin#lib/madmin/fields/has_many.rb:22
+  # pkg:gem/madmin#lib/madmin/fields/has_many.rb:25
   def associated_resource; end
 
-  # pkg:gem/madmin#lib/madmin/fields/has_many.rb:27
+  # pkg:gem/madmin#lib/madmin/fields/has_many.rb:30
   def associated_resource_for(object); end
 
-  # pkg:gem/madmin#lib/madmin/fields/has_many.rb:18
+  # pkg:gem/madmin#lib/madmin/fields/has_many.rb:20
   def index_path(format: T.unsafe(nil)); end
 
-  # pkg:gem/madmin#lib/madmin/fields/has_many.rb:4
+  # pkg:gem/madmin#lib/madmin/fields/has_many.rb:6
   def options_for_select(record); end
 
-  # pkg:gem/madmin#lib/madmin/fields/has_many.rb:32
+  # pkg:gem/madmin#lib/madmin/fields/has_many.rb:35
   def paginateable?; end
 
   # pkg:gem/madmin#lib/madmin/fields/has_many.rb:39
   def paginated_value(record, params); end
 
-  # pkg:gem/madmin#lib/madmin/fields/has_many.rb:14
+  # pkg:gem/madmin#lib/madmin/fields/has_many.rb:16
   def to_param; end
 end
 
@@ -326,10 +439,28 @@ class Madmin::Fields::HasOne < ::Madmin::Field
 end
 
 # pkg:gem/madmin#lib/madmin/fields/integer.rb:3
-class Madmin::Fields::Integer < ::Madmin::Field; end
+class Madmin::Fields::Integer < ::Madmin::Field
+  class << self
+    # pkg:gem/madmin#lib/madmin/fields/integer.rb:4
+    def filter_type; end
+  end
+end
 
 # pkg:gem/madmin#lib/madmin/fields/json.rb:3
-class Madmin::Fields::Json < ::Madmin::Field; end
+class Madmin::Fields::Json < ::Madmin::Field
+  # Still being text after the cast means it could not be parsed
+  #
+  # pkg:gem/madmin#lib/madmin/fields/json.rb:22
+  def accepts?(value); end
+
+  # pkg:gem/madmin#lib/madmin/fields/json.rb:15
+  def cast(value); end
+
+  # Text that isn't JSON is shown as it is, so it can be corrected in the form
+  #
+  # pkg:gem/madmin#lib/madmin/fields/json.rb:5
+  def json(record); end
+end
 
 # pkg:gem/madmin#lib/madmin/fields/nested_has_many.rb:3
 class Madmin::Fields::NestedHasMany < ::Madmin::Fields::HasMany
@@ -363,18 +494,55 @@ end
 # pkg:gem/madmin#lib/madmin/fields/nested_has_many.rb:4
 Madmin::Fields::NestedHasMany::DEFAULT_ATTRIBUTES = T.let(T.unsafe(nil), Array)
 
+# pkg:gem/madmin#lib/madmin/fields/nested_has_one.rb:3
+class Madmin::Fields::NestedHasOne < ::Madmin::Fields::HasOne
+  # pkg:gem/madmin#lib/madmin/fields/nested_has_one.rb:6
+  def nested_attributes; end
+
+  # pkg:gem/madmin#lib/madmin/fields/nested_has_one.rb:10
+  def resource; end
+
+  # pkg:gem/madmin#lib/madmin/fields/nested_has_one.rb:33
+  def to_model; end
+
+  # pkg:gem/madmin#lib/madmin/fields/nested_has_one.rb:14
+  def to_param; end
+
+  # Index and show link to the record like a has_one, and the form shares
+  # its fields with nested_has_many
+  #
+  # pkg:gem/madmin#lib/madmin/fields/nested_has_one.rb:20
+  def to_partial_path(name); end
+
+  private
+
+  # pkg:gem/madmin#lib/madmin/fields/nested_has_one.rb:39
+  def permitted_fields; end
+
+  # pkg:gem/madmin#lib/madmin/fields/nested_has_one.rb:43
+  def skipped_fields; end
+end
+
+# pkg:gem/madmin#lib/madmin/fields/nested_has_one.rb:4
+Madmin::Fields::NestedHasOne::DEFAULT_ATTRIBUTES = T.let(T.unsafe(nil), Array)
+
 # pkg:gem/madmin#lib/madmin/fields/password.rb:3
 class Madmin::Fields::Password < ::Madmin::Field; end
 
 # pkg:gem/madmin#lib/madmin/fields/polymorphic.rb:3
 class Madmin::Fields::Polymorphic < ::Madmin::Field
-  # pkg:gem/madmin#lib/madmin/fields/polymorphic.rb:16
+  # pkg:gem/madmin#lib/madmin/fields/polymorphic.rb:21
   def associated_resource_for(object); end
+
+  # pkg:gem/madmin#lib/madmin/fields/polymorphic.rb:17
+  def cast(value); end
 
   # pkg:gem/madmin#lib/madmin/fields/polymorphic.rb:4
   def options_for_select(record); end
 
-  # pkg:gem/madmin#lib/madmin/fields/polymorphic.rb:12
+  # `type` is no longer used, but customized form partials may still submit it
+  #
+  # pkg:gem/madmin#lib/madmin/fields/polymorphic.rb:13
   def to_param; end
 end
 
@@ -389,18 +557,111 @@ end
 
 # pkg:gem/madmin#lib/madmin/fields/string.rb:3
 class Madmin::Fields::String < ::Madmin::Field
-  # pkg:gem/madmin#lib/madmin/fields/string.rb:4
+  # pkg:gem/madmin#lib/madmin/fields/string.rb:6
   def searchable?; end
+
+  class << self
+    # pkg:gem/madmin#lib/madmin/fields/string.rb:4
+    def filter_type; end
+  end
 end
 
 # pkg:gem/madmin#lib/madmin/fields/text.rb:3
 class Madmin::Fields::Text < ::Madmin::Field
-  # pkg:gem/madmin#lib/madmin/fields/text.rb:4
+  # pkg:gem/madmin#lib/madmin/fields/text.rb:6
   def searchable?; end
+
+  class << self
+    # pkg:gem/madmin#lib/madmin/fields/text.rb:4
+    def filter_type; end
+  end
 end
 
 # pkg:gem/madmin#lib/madmin/fields/time.rb:3
 class Madmin::Fields::Time < ::Madmin::Field; end
+
+# One condition from the index filters, like `created_at gte 2026-08-15T09:00`
+#
+# pkg:gem/madmin#lib/madmin/filter.rb:3
+class Madmin::Filter
+  # pkg:gem/madmin#lib/madmin/filter.rb:29
+  def initialize(field, operator, value); end
+
+  # pkg:gem/madmin#lib/madmin/filter.rb:51
+  def apply(scope); end
+
+  # pkg:gem/madmin#lib/madmin/filter.rb:35
+  def column; end
+
+  # pkg:gem/madmin#lib/madmin/filter.rb:15
+  def field; end
+
+  # pkg:gem/madmin#lib/madmin/filter.rb:15
+  def operator; end
+
+  # The params for this filter, used to keep it in links
+  #
+  # pkg:gem/madmin#lib/madmin/filter.rb:71
+  def to_h; end
+
+  # pkg:gem/madmin#lib/madmin/filter.rb:39
+  def type; end
+
+  # The value in the column's type, or its element type for arrays. Datetimes are parsed in Time.zone, like form input
+  #
+  # pkg:gem/madmin#lib/madmin/filter.rb:76
+  def typed_value; end
+
+  # pkg:gem/madmin#lib/madmin/filter.rb:47
+  def valid?; end
+
+  # pkg:gem/madmin#lib/madmin/filter.rb:15
+  def value; end
+
+  # pkg:gem/madmin#lib/madmin/filter.rb:43
+  def value?; end
+
+  private
+
+  # pkg:gem/madmin#lib/madmin/filter.rb:92
+  def blank_values; end
+
+  # pkg:gem/madmin#lib/madmin/filter.rb:88
+  def escaped_value; end
+
+  # Arrays filter by their elements
+  #
+  # pkg:gem/madmin#lib/madmin/filter.rb:83
+  def value_type; end
+
+  class << self
+    # A new row in the filters form, for the first filterable column
+    #
+    # pkg:gem/madmin#lib/madmin/filter.rb:24
+    def blank(resource); end
+
+    # Skips conditions for unknown columns or operators, and values that don't
+    # cast to the column's type
+    #
+    # pkg:gem/madmin#lib/madmin/filter.rb:19
+    def from_params(resource, params); end
+  end
+end
+
+# pkg:gem/madmin#lib/madmin/filter.rb:4
+Madmin::Filter::OPERATORS = T.let(T.unsafe(nil), Hash)
+
+# pkg:gem/madmin#lib/madmin/filter.rb:13
+Madmin::Filter::WITHOUT_VALUE = T.let(T.unsafe(nil), Array)
+
+module Madmin::FiltersHelper
+  def filter_column_options(resource); end
+  def filter_input_type(type); end
+  def filter_operator_options(type); end
+  def filter_value_label(filter); end
+end
+
+Madmin::FiltersHelper::FILTER_INPUT_TYPES = T.let(T.unsafe(nil), Hash)
 
 # pkg:gem/madmin#lib/madmin/generator_helpers.rb:2
 module Madmin::GeneratorHelpers
@@ -480,26 +741,26 @@ class Madmin::Menu
   def reset; end
 end
 
-# pkg:gem/madmin#lib/madmin/menu.rb:55
+# pkg:gem/madmin#lib/madmin/menu.rb:56
 class Madmin::Menu::Item
   include ::Madmin::Menu::Node
 
-  # pkg:gem/madmin#lib/madmin/menu.rb:60
+  # pkg:gem/madmin#lib/madmin/menu.rb:61
   def initialize(label:, url: T.unsafe(nil), position: T.unsafe(nil), parent: T.unsafe(nil), **options); end
 
-  # pkg:gem/madmin#lib/madmin/menu.rb:58
+  # pkg:gem/madmin#lib/madmin/menu.rb:59
   def children; end
 
-  # pkg:gem/madmin#lib/madmin/menu.rb:58
+  # pkg:gem/madmin#lib/madmin/menu.rb:59
   def label; end
 
-  # pkg:gem/madmin#lib/madmin/menu.rb:58
+  # pkg:gem/madmin#lib/madmin/menu.rb:59
   def parent; end
 
-  # pkg:gem/madmin#lib/madmin/menu.rb:58
+  # pkg:gem/madmin#lib/madmin/menu.rb:59
   def position; end
 
-  # pkg:gem/madmin#lib/madmin/menu.rb:58
+  # pkg:gem/madmin#lib/madmin/menu.rb:59
   def url; end
 end
 
@@ -508,15 +769,102 @@ module Madmin::Menu::Node
   # pkg:gem/madmin#lib/madmin/menu.rb:32
   def add(options); end
 
-  # pkg:gem/madmin#lib/madmin/menu.rb:44
+  # pkg:gem/madmin#lib/madmin/menu.rb:45
   def items; end
 end
 
-# pkg:gem/madmin#lib/madmin.rb:48
+# pkg:gem/madmin#lib/madmin.rb:53
 class Madmin::MissingResource < ::StandardError; end
+
+# pkg:gem/madmin#lib/madmin.rb:56
+class Madmin::MissingRoute < ::StandardError; end
 
 module Madmin::NavHelper
   def nav_link_to(name = T.unsafe(nil), options = T.unsafe(nil), html_options = T.unsafe(nil), &block); end
+end
+
+# Holds the numbers for a single page of results. Knows nothing about the database.
+#
+# Non-ActiveRecord adapters overriding `paginate_collection` can return one of
+# these (or any object responding to the same methods) alongside their records.
+#
+# pkg:gem/madmin#lib/madmin/page.rb:6
+class Madmin::Page
+  # pkg:gem/madmin#lib/madmin/page.rb:11
+  def initialize(count:, page: T.unsafe(nil), per_page: T.unsafe(nil), param: T.unsafe(nil)); end
+
+  # pkg:gem/madmin#lib/madmin/page.rb:9
+  def count; end
+
+  # pkg:gem/madmin#lib/madmin/page.rb:31
+  def from; end
+
+  # pkg:gem/madmin#lib/madmin/page.rb:18
+  def last; end
+
+  # pkg:gem/madmin#lib/madmin/page.rb:43
+  def next; end
+
+  # pkg:gem/madmin#lib/madmin/page.rb:27
+  def offset; end
+
+  # Pages past the end are served empty rather than raising or clamping
+  #
+  # pkg:gem/madmin#lib/madmin/page.rb:23
+  def overflow?; end
+
+  # pkg:gem/madmin#lib/madmin/page.rb:9
+  def page; end
+
+  # pkg:gem/madmin#lib/madmin/page.rb:9
+  def param; end
+
+  # pkg:gem/madmin#lib/madmin/page.rb:9
+  def per_page; end
+
+  # pkg:gem/madmin#lib/madmin/page.rb:39
+  def prev; end
+
+  # Page numbers to link to, with :gap where pages are skipped
+  #   [1, :gap, 9, 10, 11, :gap, 20]
+  #
+  # pkg:gem/madmin#lib/madmin/page.rb:49
+  def series(slots: T.unsafe(nil)); end
+
+  # pkg:gem/madmin#lib/madmin/page.rb:35
+  def to; end
+end
+
+# pkg:gem/madmin#lib/madmin/page.rb:7
+Madmin::Page::SERIES_SLOTS = T.let(T.unsafe(nil), Integer)
+
+# Paginates ActiveRecord relations using only the relation API (count, order,
+# offset, limit) so the SQL is generated by whichever database adapter is in use.
+#
+# pkg:gem/madmin#lib/madmin/pagination.rb:4
+module Madmin::Pagination
+  private
+
+  # pkg:gem/madmin#lib/madmin/pagination.rb:13
+  def count_for(collection); end
+
+  # pkg:gem/madmin#lib/madmin/pagination.rb:42
+  def descending?(order); end
+
+  # pkg:gem/madmin#lib/madmin/pagination.rb:38
+  def orders_by?(order, column_names); end
+
+  # Returns [Madmin::Page, records]
+  #
+  # pkg:gem/madmin#lib/madmin/pagination.rb:8
+  def paginate(collection, page: T.unsafe(nil), per_page: T.unsafe(nil), param: T.unsafe(nil)); end
+
+  # Appends the primary key to the ordering so rows with equal sort values keep
+  # a stable position across pages. It follows the direction of the existing
+  # ordering so indexes on the sort column can still be used.
+  #
+  # pkg:gem/madmin#lib/madmin/pagination.rb:24
+  def with_tiebreaker(collection); end
 end
 
 # pkg:gem/madmin#lib/madmin/resource.rb:2
@@ -561,7 +909,7 @@ class Madmin::Resource
   def scopes?; end
 
   class << self
-    # pkg:gem/madmin#lib/madmin/resource.rb:44
+    # pkg:gem/madmin#lib/madmin/resource.rb:51
     def attribute(name, type = T.unsafe(nil), **options); end
 
     # pkg:gem/madmin#lib/madmin/resource.rb:5
@@ -573,10 +921,10 @@ class Madmin::Resource
     # pkg:gem/madmin#lib/madmin/resource.rb:5
     def attributes?; end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:109
+    # pkg:gem/madmin#lib/madmin/resource.rb:138
     def becomes(record); end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:154
+    # pkg:gem/madmin#lib/madmin/resource.rb:187
     def collection_action(&block); end
 
     # pkg:gem/madmin#lib/madmin/resource.rb:7
@@ -590,40 +938,51 @@ class Madmin::Resource
 
     # Member actions that should also render in each row on the index page
     #
-    # pkg:gem/madmin#lib/madmin/resource.rb:150
+    # pkg:gem/madmin#lib/madmin/resource.rb:183
     def collection_member_actions; end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:121
+    # pkg:gem/madmin#lib/madmin/resource.rb:150
     def display_name(record); end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:105
+    # pkg:gem/madmin#lib/madmin/resource.rb:125
     def edit_path(record); end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:158
+    # pkg:gem/madmin#lib/madmin/resource.rb:191
     def field_for_type(type); end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:125
+    # pkg:gem/madmin#lib/madmin/resource.rb:174
+    def filterable_attributes; end
+
+    # pkg:gem/madmin#lib/madmin/resource.rb:154
     def friendly_model?; end
 
     # Returns singular name
     # For example: "Forum::Post" -> "Forum / Post"
     #
-    # pkg:gem/madmin#lib/madmin/resource.rb:79
+    # Uses the model's translation (`activerecord.models.forum/post`) when there is one
+    #
+    # pkg:gem/madmin#lib/madmin/resource.rb:88
     def friendly_name; end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:40
+    # Returns plural name
+    # For example: "Forum::Post" -> "Forum / Posts"
+    #
+    # pkg:gem/madmin#lib/madmin/resource.rb:94
+    def friendly_plural_name; end
+
+    # pkg:gem/madmin#lib/madmin/resource.rb:47
     def get_attribute(name); end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:93
+    # pkg:gem/madmin#lib/madmin/resource.rb:113
     def index_path(options = T.unsafe(nil)); end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:223
+    # pkg:gem/madmin#lib/madmin/resource.rb:258
     def infer_type(name); end
 
     # pkg:gem/madmin#lib/madmin/resource.rb:12
     def inherited(base); end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:145
+    # pkg:gem/madmin#lib/madmin/resource.rb:178
     def member_action(collection: T.unsafe(nil), &block); end
 
     # pkg:gem/madmin#lib/madmin/resource.rb:6
@@ -635,7 +994,7 @@ class Madmin::Resource
     # pkg:gem/madmin#lib/madmin/resource.rb:6
     def member_actions?; end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:275
+    # pkg:gem/madmin#lib/madmin/resource.rb:332
     def menu(options); end
 
     # pkg:gem/madmin#lib/madmin/resource.rb:9
@@ -650,7 +1009,7 @@ class Madmin::Resource
     # pkg:gem/madmin#lib/madmin/resource.rb:20
     def model(value = T.unsafe(nil)); end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:137
+    # pkg:gem/madmin#lib/madmin/resource.rb:166
     def model_column_names; end
 
     # pkg:gem/madmin#lib/madmin/resource.rb:28
@@ -659,29 +1018,48 @@ class Madmin::Resource
     # pkg:gem/madmin#lib/madmin/resource.rb:32
     def model_name; end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:268
+    # pkg:gem/madmin#lib/madmin/resource.rb:325
     def model_store_accessors; end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:97
+    # pkg:gem/madmin#lib/madmin/resource.rb:117
     def new_path; end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:113
+    # pkg:gem/madmin#lib/madmin/resource.rb:142
     def param_key; end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:117
+    # pkg:gem/madmin#lib/madmin/resource.rb:146
     def permitted_params; end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:129
+    # pkg:gem/madmin#lib/madmin/resource.rb:158
     def readonly?; end
+
+    # Whether a route is drawn for the given action on this resource's controller
+    # For example: PostResource.route?(:destroy)
+    #
+    # pkg:gem/madmin#lib/madmin/resource.rb:131
+    def route?(action); end
 
     # Support for isolated namespaces
     # Finds parent module class to include in polymorphic urls
     #
-    # pkg:gem/madmin#lib/madmin/resource.rb:85
+    # pkg:gem/madmin#lib/madmin/resource.rb:105
     def route_namespace; end
+
+    # Raises MissingRoute with instructions instead of a NoMethodError for
+    # the undefined route helper when the resource's routes aren't drawn
+    #
+    # pkg:gem/madmin#lib/madmin/resource.rb:307
+    def route_path(components, options = T.unsafe(nil)); end
 
     # pkg:gem/madmin#lib/madmin/resource.rb:36
     def scope(name); end
+
+    # Label for a scope button on the index. Looks up
+    # madmin.scopes.<param_key>.<name>, then madmin.scopes.<name> in I18n,
+    # falling back to the humanized scope name. Override for custom labels.
+    #
+    # pkg:gem/madmin#lib/madmin/resource.rb:43
+    def scope_label(name); end
 
     # pkg:gem/madmin#lib/madmin/resource.rb:8
     def scopes; end
@@ -692,19 +1070,19 @@ class Madmin::Resource
     # pkg:gem/madmin#lib/madmin/resource.rb:8
     def scopes?; end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:141
+    # pkg:gem/madmin#lib/madmin/resource.rb:170
     def searchable_attributes; end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:101
+    # pkg:gem/madmin#lib/madmin/resource.rb:121
     def show_path(record); end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:133
+    # pkg:gem/madmin#lib/madmin/resource.rb:162
     def sortable_columns; end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:252
+    # pkg:gem/madmin#lib/madmin/resource.rb:289
     def type_for_association(association); end
 
-    # pkg:gem/madmin#lib/madmin/resource.rb:264
+    # pkg:gem/madmin#lib/madmin/resource.rb:301
     def url_helpers; end
 
     private
@@ -738,6 +1116,19 @@ class Madmin::Resource
 
     # pkg:gem/madmin#lib/madmin/resource.rb:8
     def __class_attr_scopes=(new_value); end
+
+    # Locales without inflection rules of their own (most non-English ones) are left unpluralized
+    #
+    # pkg:gem/madmin#lib/madmin/resource.rb:359
+    def locale_inflections?; end
+
+    # Whether the model's translation spells out its own `one` / `other` forms
+    #
+    # pkg:gem/madmin#lib/madmin/resource.rb:350
+    def plural_translation?; end
+
+    # pkg:gem/madmin#lib/madmin/resource.rb:345
+    def translated_name(count: T.unsafe(nil)); end
   end
 end
 
@@ -806,13 +1197,16 @@ class Madmin::ResourceController < ::Madmin::ApplicationController
 
   def _layout(lookup_context, formats, keys); end
   def _layout_from_proc; end
-  def change_polymorphic(data); end
+  def cast_fields(attributes); end
   def enforce_readonly; end
+  def field_for(name); end
+  def filters; end
   def new_resource_params; end
   def paginate_collection(collection); end
   def resource; end
   def resource_name; end
   def resource_params; end
+  def save_record(attributes); end
   def scoped_resources; end
   def search_term; end
   def set_record; end
@@ -856,45 +1250,50 @@ module Madmin::ResourceController::HelperMethods
   include ::ActionDispatch::Routing::PolymorphicRoutes
   include ::ActionDispatch::Routing::UrlFor
   include ::Madmin::ApplicationHelper
+  include ::Madmin::FiltersHelper
   include ::Madmin::NavHelper
   include ::Madmin::SortHelper
   include ::Madmin::BaseController::HelperMethods
 
-  def resource(*_arg0, **_arg1, &_arg2); end
+  def filters(*, **, &); end
+  def resource(*, **, &); end
 end
 
 # pkg:gem/madmin#lib/madmin/search.rb:4
 class Madmin::Search
   # pkg:gem/madmin#lib/madmin/search.rb:7
-  def initialize(scoped_resource, resource, term); end
+  def initialize(scoped_resource, resource, term, filters = T.unsafe(nil)); end
+
+  # pkg:gem/madmin#lib/madmin/search.rb:5
+  def filters; end
 
   # pkg:gem/madmin#lib/madmin/search.rb:5
   def query; end
 
-  # pkg:gem/madmin#lib/madmin/search.rb:13
+  # pkg:gem/madmin#lib/madmin/search.rb:14
   def run; end
 
   private
 
-  # pkg:gem/madmin#lib/madmin/search.rb:56
+  # pkg:gem/madmin#lib/madmin/search.rb:54
   def column_to_query(attr); end
 
-  # pkg:gem/madmin#lib/madmin/search.rb:52
+  # pkg:gem/madmin#lib/madmin/search.rb:50
   def query_table_name(attr); end
 
-  # pkg:gem/madmin#lib/madmin/search.rb:27
+  # pkg:gem/madmin#lib/madmin/search.rb:25
   def query_template; end
 
-  # pkg:gem/madmin#lib/madmin/search.rb:41
+  # pkg:gem/madmin#lib/madmin/search.rb:39
   def query_values; end
 
-  # pkg:gem/madmin#lib/madmin/search.rb:48
+  # pkg:gem/madmin#lib/madmin/search.rb:46
   def search_attributes; end
 
-  # pkg:gem/madmin#lib/madmin/search.rb:23
+  # pkg:gem/madmin#lib/madmin/search.rb:21
   def search_results(resources); end
 
-  # pkg:gem/madmin#lib/madmin/search.rb:37
+  # pkg:gem/madmin#lib/madmin/search.rb:35
   def searchable_fields(attr); end
 end
 
