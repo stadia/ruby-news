@@ -679,7 +679,7 @@ class BinData::BasePrimitive < ::BinData::Base
   def initialize_shared_instance; end
 
   # pkg:gem/bindata#lib/bindata/base_primitive.rb:96
-  def method_missing(symbol, *args, **kwargs, &block); end
+  def method_missing(symbol, *, **, &); end
 
   # pkg:gem/bindata#lib/bindata/base_primitive.rb:79
   def snapshot; end
@@ -993,7 +993,7 @@ class BinData::Buffer < ::BinData::Base
   def initialize_instance; end
 
   # pkg:gem/bindata#lib/bindata/buffer.rb:87
-  def method_missing(symbol, *args, **kwargs, &block); end
+  def method_missing(*, **, &); end
 
   # The number of bytes used, ignoring the padding imposed by the buffer.
   #
@@ -1139,7 +1139,7 @@ class BinData::Choice < ::BinData::Base
   def initialize_shared_instance; end
 
   # pkg:gem/bindata#lib/bindata/choice.rb:93
-  def method_missing(symbol, *args, **kwargs, &block); end
+  def method_missing(*, **, &); end
 
   # pkg:gem/bindata#lib/bindata/choice.rb:89
   def respond_to?(symbol, include_all = T.unsafe(nil)); end
@@ -1231,7 +1231,7 @@ module BinData::DSLMixin
   def dsl_parser(parser_type = T.unsafe(nil)); end
 
   # pkg:gem/bindata#lib/bindata/dsl.rb:45
-  def method_missing(symbol, *args, **kwargs, &block); end
+  def method_missing(*, **, &); end
 
   # Assert object is not an array or string.
   #
@@ -1372,7 +1372,7 @@ class BinData::DSLMixin::DSLParser
   def hide(*args); end
 
   # pkg:gem/bindata#lib/bindata/dsl.rb:137
-  def method_missing(*args, **kwargs, &block); end
+  def method_missing(*, **, &); end
 
   # pkg:gem/bindata#lib/bindata/dsl.rb:76
   def namespace; end
@@ -1522,7 +1522,7 @@ class BinData::DelayedIO < ::BinData::Base
   def initialize_instance; end
 
   # pkg:gem/bindata#lib/bindata/delayed_io.rb:90
-  def method_missing(symbol, *args, **kwargs, &block); end
+  def method_missing(*, **, &); end
 
   # pkg:gem/bindata#lib/bindata/delayed_io.rb:82
   def num_bytes; end
@@ -2075,40 +2075,40 @@ module BinData::Int
 
     private
 
-    # pkg:gem/bindata#lib/bindata/int.rb:142
+    # pkg:gem/bindata#lib/bindata/int.rb:150
     def bits_per_word(nbits); end
 
     # pkg:gem/bindata#lib/bindata/int.rb:52
     def create_clamp_code(nbits, signed); end
 
-    # pkg:gem/bindata#lib/bindata/int.rb:134
+    # pkg:gem/bindata#lib/bindata/int.rb:142
     def create_int2uint_code(nbits); end
 
     # pkg:gem/bindata#lib/bindata/int.rb:74
     def create_raw_read_code(nbits, endian, signed); end
 
-    # pkg:gem/bindata#lib/bindata/int.rb:93
+    # pkg:gem/bindata#lib/bindata/int.rb:101
     def create_read_assemble_code(nbits, endian); end
 
     # pkg:gem/bindata#lib/bindata/int.rb:64
     def create_read_code(nbits, endian, signed); end
 
-    # pkg:gem/bindata#lib/bindata/int.rb:86
+    # pkg:gem/bindata#lib/bindata/int.rb:94
     def create_read_unpack_code(nbits, endian, signed); end
 
-    # pkg:gem/bindata#lib/bindata/int.rb:107
+    # pkg:gem/bindata#lib/bindata/int.rb:115
     def create_to_binary_s_code(nbits, endian, signed); end
 
-    # pkg:gem/bindata#lib/bindata/int.rb:138
+    # pkg:gem/bindata#lib/bindata/int.rb:146
     def create_uint2int_code(nbits); end
 
-    # pkg:gem/bindata#lib/bindata/int.rb:164
+    # pkg:gem/bindata#lib/bindata/int.rb:172
     def need_signed_conversion_code?(nbits, signed); end
 
-    # pkg:gem/bindata#lib/bindata/int.rb:149
+    # pkg:gem/bindata#lib/bindata/int.rb:157
     def pack_directive(nbits, endian, signed); end
 
-    # pkg:gem/bindata#lib/bindata/int.rb:122
+    # pkg:gem/bindata#lib/bindata/int.rb:130
     def val_as_packed_words(nbits, endian); end
   end
 end
@@ -2135,9 +2135,9 @@ end
 
 # Create classes on demand
 #
-# pkg:gem/bindata#lib/bindata/int.rb:172
+# pkg:gem/bindata#lib/bindata/int.rb:180
 module BinData::IntFactory
-  # pkg:gem/bindata#lib/bindata/int.rb:177
+  # pkg:gem/bindata#lib/bindata/int.rb:185
   def const_missing(name); end
 end
 
@@ -2178,7 +2178,7 @@ class BinData::LazyEvaluator
   def lazy_eval(val, overrides = T.unsafe(nil)); end
 
   # pkg:gem/bindata#lib/bindata/lazy.rb:65
-  def method_missing(symbol, *args, **kwargs); end
+  def method_missing(symbol, *, **, &); end
 
   # Returns a LazyEvaluator for the parent of this data object.
   #
@@ -2191,13 +2191,13 @@ class BinData::LazyEvaluator
   def callable?(obj); end
 
   # pkg:gem/bindata#lib/bindata/lazy.rb:78
-  def eval_symbol_in_parent_context(symbol, args, kwargs); end
+  def eval_symbol_in_parent_context(symbol, *, **, &); end
 
   # pkg:gem/bindata#lib/bindata/lazy.rb:95
-  def recursively_eval(val, args, kwargs); end
+  def recursively_eval(val, *, **, &); end
 
   # pkg:gem/bindata#lib/bindata/lazy.rb:83
-  def resolve_symbol_in_parent_context(symbol, args, kwargs); end
+  def resolve_symbol_in_parent_context(symbol, *, **, &); end
 end
 
 # Extracts args for Records and Buffers.
@@ -2295,7 +2295,7 @@ class BinData::Primitive < ::BinData::BasePrimitive
   def initialize_instance; end
 
   # pkg:gem/bindata#lib/bindata/primitive.rb:80
-  def method_missing(symbol, *args, **kwargs, &block); end
+  def method_missing(symbol, *, **, &); end
 
   # pkg:gem/bindata#lib/bindata/primitive.rb:76
   def respond_to?(symbol, include_private = T.unsafe(nil)); end
@@ -2833,7 +2833,7 @@ class BinData::Section < ::BinData::Base
   def initialize_instance; end
 
   # pkg:gem/bindata#lib/bindata/section.rb:68
-  def method_missing(symbol, *args, **kwargs, &block); end
+  def method_missing(*, **, &); end
 
   # pkg:gem/bindata#lib/bindata/section.rb:60
   def snapshot; end
@@ -3324,7 +3324,7 @@ class BinData::Struct::Snapshot < ::Hash
   def []=(key, value); end
 
   # pkg:gem/bindata#lib/bindata/struct.rb:296
-  def method_missing(symbol, *args, **kwargs); end
+  def method_missing(symbol, *, **, &); end
 
   private
 

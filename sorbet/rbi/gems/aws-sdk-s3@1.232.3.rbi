@@ -620,8 +620,8 @@ class Aws::S3::Bucket
   # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/bucket.rb:1299
   def lifecycle_configuration; end
 
-  # @api private
   # @raise [NotImplementedError]
+  # @api private
   # @api private
   #
   # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/bucket.rb:78
@@ -36250,6 +36250,24 @@ class Aws::S3::MultipartUpload
   # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/multipart_upload.rb:123
   def client; end
 
+  # Completes the upload, requires a list of completed parts. You can
+  # provide the list of parts with `:part_number` and `:etag` values.
+  #
+  #     upload.complete(multipart_upload: { parts: [
+  #       { part_number: 1, etag:'etag1' },
+  #       { part_number: 2, etag:'etag2' },
+  #       ...
+  #     ]})
+  #
+  # Alternatively, you can pass **`compute_parts: true`** and the part
+  # list will be computed by calling {Client#list_parts}.
+  #
+  #     upload.complete(compute_parts: true)
+  #
+  # @option options [Boolean] :compute_parts (false) When `true`,
+  #   the {Client#list_parts} method will be called to determine
+  #   the list of required part numbers and their ETags.
+  #
   # @example Request syntax with placeholder values
   #
   #   object = multipart_upload.complete({
@@ -36510,23 +36528,6 @@ class Aws::S3::MultipartUpload
   #
   #   [1]: https://docs.aws.amazon.com/AmazonS3/latest/dev/ServerSideEncryptionCustomerKeys.html
   # @return [Object]
-  # Completes the upload, requires a list of completed parts. You can
-  # provide the list of parts with `:part_number` and `:etag` values.
-  #
-  #     upload.complete(multipart_upload: { parts: [
-  #       { part_number: 1, etag:'etag1' },
-  #       { part_number: 2, etag:'etag2' },
-  #       ...
-  #     ]})
-  #
-  # Alternatively, you can pass **`compute_parts: true`** and the part
-  # list will be computed by calling {Client#list_parts}.
-  #
-  #     upload.complete(compute_parts: true)
-  #
-  # @option options [Boolean] :compute_parts (false) When `true`,
-  #   the {Client#list_parts} method will be called to determine
-  #   the list of required part numbers and their ETags.
   #
   # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/multipart_upload.rb:563
   def complete(options = T.unsafe(nil)); end
@@ -42349,6 +42350,11 @@ class Aws::S3::ObjectSummary
   # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/customizations/object_summary.rb:7
   def content_length; end
 
+  # Make the method redefinable
+  # @param (see Object#copy_from)
+  # @options (see Object#copy_from)
+  # @return (see Object#copy_from)
+  # @see Object#copy_from
   # @example Request syntax with placeholder values
   #
   #   object_summary.copy_from({
@@ -43169,11 +43175,6 @@ class Aws::S3::ObjectSummary
   #   the request fails with the HTTP status code `403 Forbidden` (access
   #   denied).
   # @return [Types::CopyObjectOutput]
-  # Make the method redefinable
-  # @param (see Object#copy_from)
-  # @options (see Object#copy_from)
-  # @return (see Object#copy_from)
-  # @see Object#copy_from
   #
   # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/object_summary.rb:1158
   def copy_from(source, options = T.unsafe(nil)); end
@@ -47928,7 +47929,7 @@ class Aws::S3::TransferManager
   # @see Client#get_object
   # @see Client#head_object
   #
-  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/transfer_manager.rb:248
+  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/transfer_manager.rb:249
   def download_file(destination, bucket:, key:, **options); end
 
   # @return [Object]
@@ -48048,7 +48049,7 @@ class Aws::S3::TransferManager
   #   * `:failed_uploads` - Number of files that failed to upload
   #   * `:errors` - Array of error objects for failed uploads (only present when failures occur)
   #
-  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/transfer_manager.rb:366
+  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/transfer_manager.rb:368
   def upload_directory(source, bucket:, **options); end
 
   # Uploads a file from disk to S3.
@@ -48124,7 +48125,7 @@ class Aws::S3::TransferManager
   # @see Client#complete_multipart_upload
   # @see Client#upload_part
   #
-  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/transfer_manager.rb:450
+  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/transfer_manager.rb:453
   def upload_file(source, bucket:, key:, **options); end
 
   # Uploads a stream in a streaming fashion to S3.
@@ -48180,12 +48181,12 @@ class Aws::S3::TransferManager
   # @see Client#complete_multipart_upload
   # @see Client#upload_part
   #
-  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/transfer_manager.rb:522
+  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/transfer_manager.rb:525
   def upload_stream(bucket:, key:, **options, &block); end
 
   private
 
-  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/transfer_manager.rb:541
+  # pkg:gem/aws-sdk-s3#lib/aws-sdk-s3/transfer_manager.rb:545
   def resolve_http_chunk_size(opts); end
 end
 

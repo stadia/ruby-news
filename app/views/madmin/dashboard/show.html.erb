@@ -6,8 +6,8 @@
 
   /* 카드 그림자 승격 */
   .dash-card {
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
     border-radius: 0.75rem;
     transition: box-shadow 0.2s ease, transform 0.15s ease;
   }
@@ -66,7 +66,7 @@
   /* 진행률 표시줄 */
   .progress-track {
     height: 6px;
-    background: #f1f5f9;
+    background: var(--hover-color);
     border-radius: 3px;
     overflow: hidden;
   }
@@ -105,7 +105,7 @@
     top: 1.35rem;
     width: 1px;
     height: calc(100% - 0.5rem);
-    background: #e5e7eb;
+    background: var(--border-color);
   }
   .activity-item:last-child::after { display: none; }
 
@@ -126,7 +126,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #6b7280;
+    color: var(--light-text-color);
     margin-bottom: 0.75rem;
   }
 
@@ -138,17 +138,17 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #6b7280;
+    color: var(--light-text-color);
     padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--border-color);
   }
   .dash-table td {
     padding: 0.6rem 0.75rem;
     font-size: 0.8rem;
-    border-bottom: 1px solid #f3f4f6;
-    color: #374151;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-color);
   }
-  .dash-table tr:hover td { background: #f9fafb; }
+  .dash-table tr:hover td { background: var(--hover-color); }
 
   /* 상태 배지 */
   .status-badge {
@@ -176,8 +176,8 @@
   <!-- ══════════════ 페이지 헤더 ══════════════ -->
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
     <div>
-      <h1 style="font-size: 1.5rem; font-weight: 700; color: #111827; margin: 0;">대시보드</h1>
-      <p style="font-size: 0.8rem; color: #6b7280; margin-top: 2px;">
+      <h1 style="font-size: 1.5rem; font-weight: 700; color: var(--text-color); margin: 0;">대시보드</h1>
+      <p style="font-size: 0.8rem; color: var(--light-text-color); margin-top: 2px;">
         AI 뉴스 플랫폼 운영 현황 — <%= l(Time.current, format: :short) %>
       </p>
     </div>
@@ -200,12 +200,12 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9.2a2 2 0 0 1 .15-.74L3.4 3.8A2 2 0 0 1 5.27 2h13.46a2 2 0 0 1 1.87 1.27l1.27 3.26a2 2 0 0 1 .15.74V18a2 2 0 0 1-2 2H4Z"/><path d="M10 2v4a2 2 0 0 1-2 2H2"/><path d="M9 14h6"/><path d="M9 18h6"/></svg>
         </div>
         <div style="flex:1; min-width:0;">
-          <div style="font-size:0.7rem; color:#6b7280; font-weight:500; text-transform:uppercase; letter-spacing:0.05em;">총 기사</div>
-          <div style="font-size:1.5rem; font-weight:700; color:#111827; line-height:1.2;"><%= number_with_delimiter(@articles_count) %></div>
+          <div style="font-size:0.7rem; color:var(--light-text-color); font-weight:500; text-transform:uppercase; letter-spacing:0.05em;">총 기사</div>
+          <div style="font-size:1.5rem; font-weight:700; color:var(--text-color); line-height:1.2;"><%= number_with_delimiter(@articles_count) %></div>
         </div>
       </div>
-      <div style="margin-top:0.5rem; font-size:0.7rem; color:#6b7280;">
-        이번 주 <strong style="color:#111827;"><%= @weekly_articles %></strong>건
+      <div style="margin-top:0.5rem; font-size:0.7rem; color:var(--light-text-color);">
+        이번 주 <strong style="color:var(--text-color);"><%= @weekly_articles %></strong>건
         <% if @prev_weekly_articles > 0 %>
           <% diff = @weekly_articles - @prev_weekly_articles %>
           <% pct = ((diff.to_f / @prev_weekly_articles) * 100).round %>
@@ -223,12 +223,12 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
         </div>
         <div style="flex:1; min-width:0;">
-          <div style="font-size:0.7rem; color:#6b7280; font-weight:500; text-transform:uppercase; letter-spacing:0.05em;">RSS 사이트</div>
-          <div style="font-size:1.5rem; font-weight:700; color:#111827; line-height:1.2;"><%= number_with_delimiter(@sites_count) %></div>
+          <div style="font-size:0.7rem; color:var(--light-text-color); font-weight:500; text-transform:uppercase; letter-spacing:0.05em;">RSS 사이트</div>
+          <div style="font-size:1.5rem; font-weight:700; color:var(--text-color); line-height:1.2;"><%= number_with_delimiter(@sites_count) %></div>
         </div>
       </div>
-      <div style="margin-top:0.5rem; font-size:0.7rem; color:#6b7280;">
-        활성 <strong style="color:#111827;"><%= @active_sites %></strong>개 (최근 1주)
+      <div style="margin-top:0.5rem; font-size:0.7rem; color:var(--light-text-color);">
+        활성 <strong style="color:var(--text-color);"><%= @active_sites %></strong>개 (최근 1주)
       </div>
     </div>
 
@@ -239,12 +239,12 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </div>
         <div style="flex:1; min-width:0;">
-          <div style="font-size:0.7rem; color:#6b7280; font-weight:500; text-transform:uppercase; letter-spacing:0.05em;">사용자</div>
-          <div style="font-size:1.5rem; font-weight:700; color:#111827; line-height:1.2;"><%= number_with_delimiter(@users_count) %></div>
+          <div style="font-size:0.7rem; color:var(--light-text-color); font-weight:500; text-transform:uppercase; letter-spacing:0.05em;">사용자</div>
+          <div style="font-size:1.5rem; font-weight:700; color:var(--text-color); line-height:1.2;"><%= number_with_delimiter(@users_count) %></div>
         </div>
       </div>
-      <div style="margin-top:0.5rem; font-size:0.7rem; color:#6b7280;">
-        인증 완료 <strong style="color:#111827;"><%= @confirmed_users %></strong>명
+      <div style="margin-top:0.5rem; font-size:0.7rem; color:var(--light-text-color);">
+        인증 완료 <strong style="color:var(--text-color);"><%= @confirmed_users %></strong>명
       </div>
     </div>
 
@@ -255,12 +255,12 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
         </div>
         <div style="flex:1; min-width:0;">
-          <div style="font-size:0.7rem; color:#6b7280; font-weight:500; text-transform:uppercase; letter-spacing:0.05em;">댓글</div>
-          <div style="font-size:1.5rem; font-weight:700; color:#111827; line-height:1.2;"><%= number_with_delimiter(@comments_count) %></div>
+          <div style="font-size:0.7rem; color:var(--light-text-color); font-weight:500; text-transform:uppercase; letter-spacing:0.05em;">댓글</div>
+          <div style="font-size:1.5rem; font-weight:700; color:var(--text-color); line-height:1.2;"><%= number_with_delimiter(@comments_count) %></div>
         </div>
       </div>
-      <div style="margin-top:0.5rem; font-size:0.7rem; color:#6b7280;">
-        이번 주 <strong style="color:#111827;"><%= @weekly_comments %></strong>건
+      <div style="margin-top:0.5rem; font-size:0.7rem; color:var(--light-text-color);">
+        이번 주 <strong style="color:var(--text-color);"><%= @weekly_comments %></strong>건
         <% if @prev_weekly_comments > 0 %>
           <% diff_c = @weekly_comments - @prev_weekly_comments %>
           <% pct_c = ((diff_c.to_f / @prev_weekly_comments) * 100).round %>
@@ -278,11 +278,11 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
         </div>
         <div style="flex:1; min-width:0;">
-          <div style="font-size:0.7rem; color:#6b7280; font-weight:500; text-transform:uppercase; letter-spacing:0.05em;">좋아요</div>
-          <div style="font-size:1.5rem; font-weight:700; color:#111827; line-height:1.2;"><%= number_with_delimiter(@likes_count) %></div>
+          <div style="font-size:0.7rem; color:var(--light-text-color); font-weight:500; text-transform:uppercase; letter-spacing:0.05em;">좋아요</div>
+          <div style="font-size:1.5rem; font-weight:700; color:var(--text-color); line-height:1.2;"><%= number_with_delimiter(@likes_count) %></div>
         </div>
       </div>
-      <div style="margin-top:0.5rem; font-size:0.7rem; color:#6b7280;">
+      <div style="margin-top:0.5rem; font-size:0.7rem; color:var(--light-text-color);">
         전체 활동 누적
       </div>
     </div>
@@ -306,8 +306,8 @@
           <% end %>
         </div>
         <div style="display: flex; justify-content: space-between; margin-top: 4px;">
-          <span style="font-size:0.65rem; color:#9ca3af;"><%= l(13.days.ago.to_date, format: :short) %></span>
-          <span style="font-size:0.65rem; color:#9ca3af;"><%= l(Date.current, format: :short) %></span>
+          <span style="font-size:0.65rem; color:var(--light-text-color);"><%= l(13.days.ago.to_date, format: :short) %></span>
+          <span style="font-size:0.65rem; color:var(--light-text-color);"><%= l(Date.current, format: :short) %></span>
         </div>
       </div>
 
@@ -315,7 +315,7 @@
       <div class="dash-card" style="padding: 1.25rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
           <div class="section-title" style="margin-bottom:0;">최신 기사</div>
-          <%= link_to "전체 보기 →", madmin_articles_path, style: "font-size:0.75rem; color:#4f46e5; text-decoration:none;" %>
+          <%= link_to "전체 보기 →", madmin_articles_path, style: "font-size:0.75rem; color:var(--link-color); text-decoration:none;" %>
         </div>
         <table class="dash-table">
           <thead>
@@ -329,13 +329,13 @@
             <% @recent_articles.each do |article| %>
               <tr>
                 <td style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                  <%= link_to article.title_ko.presence || article.title, madmin_article_path(article), style: "color:#1d4ed8; text-decoration:none; font-weight:500;" %>
+                  <%= link_to article.title_ko.presence || article.title, madmin_article_path(article), style: "color:var(--link-color); text-decoration:none; font-weight:500;" %>
                   <% if article.is_youtube %>
                     <span class="status-badge warning" style="margin-left:4px;">YT</span>
                   <% end %>
                 </td>
-                <td style="color:#6b7280;"><%= article.site&.name || "—" %></td>
-                <td style="text-align:right; color:#6b7280; white-space:nowrap;"><%= time_ago_in_words(article.created_at) %> 전</td>
+                <td style="color:var(--light-text-color);"><%= article.site&.name || "—" %></td>
+                <td style="text-align:right; color:var(--light-text-color); white-space:nowrap;"><%= time_ago_in_words(article.created_at) %> 전</td>
               </tr>
             <% end %>
           </tbody>
@@ -353,8 +353,8 @@
         <%# 요약 커버리지 ── %>
         <div style="margin-bottom: 1rem;">
           <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:4px;">
-            <span style="color:#374151; font-weight:500;">AI 요약 완료</span>
-            <span style="color:#6b7280;"><%= @summarized_count %> / <%= @articles_count %></span>
+            <span style="color:var(--text-color); font-weight:500;">AI 요약 완료</span>
+            <span style="color:var(--light-text-color);"><%= @summarized_count %> / <%= @articles_count %></span>
           </div>
           <div class="progress-track">
             <div class="progress-fill" style="width: <%= @articles_count > 0 ? (@summarized_count.to_f / @articles_count * 100).round : 0 %>%; background: oklch(0.723 0.192 150);"></div>
@@ -364,8 +364,8 @@
         <%# 포스팅 비율 ── %>
         <div style="margin-bottom: 1rem;">
           <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:4px;">
-            <span style="color:#374151; font-weight:500;">소셜 포스팅</span>
-            <span style="color:#6b7280;"><%= @posted_count %> / <%= @articles_count %></span>
+            <span style="color:var(--text-color); font-weight:500;">소셜 포스팅</span>
+            <span style="color:var(--light-text-color);"><%= @posted_count %> / <%= @articles_count %></span>
           </div>
           <div class="progress-track">
             <div class="progress-fill" style="width: <%= @articles_count > 0 ? (@posted_count.to_f / @articles_count * 100).round : 0 %>%; background: #8b5cf6;"></div>
@@ -375,8 +375,8 @@
         <%# 관련 기사 ── %>
         <div style="margin-bottom: 1rem;">
           <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:4px;">
-            <span style="color:#374151; font-weight:500;">관련성 표시</span>
-            <span style="color:#6b7280;"><%= @related_count %> / <%= @articles_count %></span>
+            <span style="color:var(--text-color); font-weight:500;">관련성 표시</span>
+            <span style="color:var(--light-text-color);"><%= @related_count %> / <%= @articles_count %></span>
           </div>
           <div class="progress-track">
             <div class="progress-fill" style="width: <%= @articles_count > 0 ? (@related_count.to_f / @articles_count * 100).round : 0 %>%; background: #f59e0b;"></div>
@@ -384,10 +384,10 @@
         </div>
 
         <%# 소스별 ── %>
-        <div style="font-size:0.75rem; font-weight:500; color:#374151; margin-bottom:0.5rem;">소스 유형별 사이트</div>
+        <div style="font-size:0.75rem; font-weight:500; color:var(--text-color); margin-bottom:0.5rem;">소스 유형별 사이트</div>
         <% @articles_by_client.each do |client, count| %>
-          <div style="display:flex; justify-content:space-between; align-items:center; padding:0.25rem 0; border-bottom:1px solid #f3f4f6;">
-            <span style="color:#6b7280;">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:0.25rem 0; border-bottom:1px solid var(--border-color);">
+            <span style="color:var(--light-text-color);">
               <% case client %>
               <% when :rss %>
                 📡 RSS
@@ -405,7 +405,7 @@
                 ❓ <%= client %>
               <% end %>
             </span>
-            <span style="font-weight:600; color:#111827;"><%= count %></span>
+            <span style="font-weight:600; color:var(--text-color);"><%= count %></span>
           </div>
         <% end %>
       </div>
@@ -416,16 +416,16 @@
         <div style="display:flex; gap:1rem; align-items:center;">
           <div style="flex:1; text-align:center;">
             <div style="font-size:1.8rem; font-weight:700; color:oklch(0.648 0.175 132);"><%= @notification_total > 0 ? (@notification_sent.to_f / @notification_total * 100).round(1) : 0 %>%</div>
-            <div style="font-size:0.7rem; color:#6b7280;">성공률</div>
+            <div style="font-size:0.7rem; color:var(--light-text-color);">성공률</div>
           </div>
-          <div style="border-left:1px solid #e5e7eb; padding-left:1rem;">
+          <div style="border-left:1px solid var(--border-color); padding-left:1rem;">
             <div style="font-size:0.75rem; margin-bottom:0.4rem;">
               <span class="status-badge success">✓ 성공</span>
-              <strong style="color:#111827; margin-left:4px;"><%= number_with_delimiter(@notification_sent) %></strong>
+              <strong style="color:var(--text-color); margin-left:4px;"><%= number_with_delimiter(@notification_sent) %></strong>
             </div>
             <div style="font-size:0.75rem;">
               <span class="status-badge danger">✗ 실패</span>
-              <strong style="color:#111827; margin-left:4px;"><%= number_with_delimiter(@notification_failed) %></strong>
+              <strong style="color:var(--text-color); margin-left:4px;"><%= number_with_delimiter(@notification_failed) %></strong>
             </div>
           </div>
         </div>
@@ -463,13 +463,13 @@
       <div style="display:flex; flex-direction:column; gap:0;">
         <% @recent_comments.each do |comment| %>
           <div class="activity-item" style="padding-bottom:0.75rem; padding-top:0.5rem;">
-            <div style="font-size:0.8rem; color:#374151; line-height:1.5;">
+            <div style="font-size:0.8rem; color:var(--text-color); line-height:1.5;">
               "<%= truncate(comment.body, length: 120) %>"
             </div>
-            <div style="font-size:0.7rem; color:#9ca3af; margin-top:2px;">
-              <strong style="color:#6b7280;"><%= comment.user&.name || "익명" %></strong> 님이
+            <div style="font-size:0.7rem; color:var(--light-text-color); margin-top:2px;">
+              <strong style="color:var(--light-text-color);"><%= comment.user&.name || "익명" %></strong> 님이
               <% if comment.article.present? %>
-                <%= link_to truncate(comment.article.title, length: 40), madmin_article_path(comment.article), style: "color:#4f46e5; text-decoration:none;" %>에 댓글
+                <%= link_to truncate(comment.article.title, length: 40), madmin_article_path(comment.article), style: "color:var(--link-color); text-decoration:none;" %>에 댓글
               <% end %>
               — <%= time_ago_in_words(comment.created_at) %> 전
             </div>
@@ -477,7 +477,7 @@
         <% end %>
       </div>
     <% else %>
-      <p style="color:#9ca3af; font-size:0.8rem; text-align:center; padding:1.5rem 0;">아직 댓글이 없습니다.</p>
+      <p style="color:var(--light-text-color); font-size:0.8rem; text-align:center; padding:1.5rem 0;">아직 댓글이 없습니다.</p>
     <% end %>
   </div>
 
@@ -488,9 +488,9 @@
       <% max_host_count = @top_hosts.values.first || 1 %>
       <% @top_hosts.each_with_index do |(host, count), idx| %>
         <div style="display:flex; align-items:center; gap:0.5rem; padding:0.3rem 0;">
-          <span style="width:1.5rem; text-align:right; font-size:0.7rem; color:#9ca3af; flex-shrink:0;"><%= idx + 1 %></span>
-          <span style="flex:1; font-size:0.8rem; color:#374151; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="<%= host %>"><%= host %></span>
-          <span style="font-size:0.75rem; font-weight:600; color:#111827; flex-shrink:0;"><%= number_with_delimiter(count) %></span>
+          <span style="width:1.5rem; text-align:right; font-size:0.7rem; color:var(--light-text-color); flex-shrink:0;"><%= idx + 1 %></span>
+          <span style="flex:1; font-size:0.8rem; color:var(--text-color); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="<%= host %>"><%= host %></span>
+          <span style="font-size:0.75rem; font-weight:600; color:var(--text-color); flex-shrink:0;"><%= number_with_delimiter(count) %></span>
           <div style="width:60px; flex-shrink:0;">
             <div class="progress-track" style="height:4px;">
               <div class="progress-fill" style="width:<%= (count.to_f / max_host_count * 100).round %>%; background:oklch(0.723 0.192 150);"></div>
@@ -502,7 +502,7 @@
   </div>
 
   <!-- ══════════════ 푸터 정보 ══════════════ -->
-  <div style="text-align:center; padding:1rem 0; font-size:0.7rem; color:#9ca3af;">
+  <div style="text-align:center; padding:1rem 0; font-size:0.7rem; color:var(--light-text-color);">
     AI 뉴스 관리자 대시보드 — Rails <%= Rails.version %> / Ruby <%= RUBY_VERSION %>
   </div>
 </div>

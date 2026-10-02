@@ -287,7 +287,7 @@ class Fedipub::Actor < ::Fedipub::ApplicationRecord
   sig { params(federated_url: ::String).returns(T.nilable(::Fedipub::FeaturedItem)) }
   def unfeature(federated_url); end
 
-  sig { void }
+  sig { returns(T.nilable(T.any(::Fedipub::Activity, T::Boolean))) }
   def untombstone!; end
 
   sig { returns(T.nilable(::String)) }
@@ -315,6 +315,9 @@ class Fedipub::Actor < ::Fedipub::ApplicationRecord
 
   sig { returns(T::Hash[::Symbol, ::String]) }
   def generate_key_pair; end
+
+  sig { returns(T::Boolean) }
+  def tombstone_from_sync!; end
 
   sig { returns(T::Boolean) }
   def use_entity_attributes?; end
@@ -1473,35 +1476,36 @@ class Fedipub::Maintenance::ActorsUpdater
   class << self
     # Fetches all distant actors again and update their local copy
     #
-    # A block can be passed with two arguments: the actor being updated and the update status
+    # A block receives the actor and one of :updated, :tombstoned, :not_found, :failed, :ignored_local.
+    # :failed covers unexpected exceptions or an unsuccessful sync without a tombstone.
     #
     # @param actors [Integer, Fedipub::Actor, Array<Fedipub::Actor>, nil] Actor ID, Actor or list of actors to update.
     #   If nothing is passed, all distant actors are processed
     # @example
     #   Update all distant actors
-    #     Fedipub::Maintenance::ActorUpdater.run
+    #     Fedipub::Maintenance::ActorsUpdater.run
     #   With an actor id:
-    #     Fedipub::Maintenance::ActorUpdater.run 1
+    #     Fedipub::Maintenance::ActorsUpdater.run 1
     #   With a federated URL:
-    #     Fedipub::Maintenance::ActorUpdater.run 'https://example.com/actor'
+    #     Fedipub::Maintenance::ActorsUpdater.run 'https://example.com/actor'
     #   With a federated URL:
-    #     Fedipub::Maintenance::ActorUpdater.run ['https://example.com/actors/1', 'https://example.com/actors/1']
+    #     Fedipub::Maintenance::ActorsUpdater.run ['https://example.com/actors/1', 'https://example.com/actors/1']
     #   With actors:
-    #     Fedipub::Maintenance::ActorUpdater.run Fedipub::Actor.last(10)
+    #     Fedipub::Maintenance::ActorsUpdater.run Fedipub::Actor.last(10)
     #   Update all distant actors and puts status for each actor
-    #     Fedipub::Maintenance::ActorUpdater.run {|actor, status| puts "#{actor.federated_url}: #{status}"}
+    #     Fedipub::Maintenance::ActorsUpdater.run {|actor, status| puts "#{actor.federated_url}: #{status}"}
     #
-    # pkg:gem/fedipub#lib/fedipub/maintenance/actors_updater.rb:27
+    # pkg:gem/fedipub#lib/fedipub/maintenance/actors_updater.rb:28
     def run(actors = T.unsafe(nil), &block); end
 
     private
 
     # Make a list of actors to update from the passed attribute
     #
-    # pkg:gem/fedipub#lib/fedipub/maintenance/actors_updater.rb:38
+    # pkg:gem/fedipub#lib/fedipub/maintenance/actors_updater.rb:39
     def actors_list(param); end
 
-    # pkg:gem/fedipub#lib/fedipub/maintenance/actors_updater.rb:57
+    # pkg:gem/fedipub#lib/fedipub/maintenance/actors_updater.rb:58
     sig { params(actor: ::Fedipub::Actor).returns(::Symbol) }
     def update(actor); end
   end
@@ -2022,7 +2026,7 @@ class Fedipub::Utils::Actor
     def tombstone!(actor); end
 
     # pkg:gem/fedipub#lib/fedipub/utils/actor.rb:34
-    sig { params(actor: ::Fedipub::Actor).void }
+    sig { params(actor: ::Fedipub::Actor).returns(T.nilable(T.any(::Fedipub::Activity, T::Boolean))) }
     def untombstone!(actor); end
 
     private
@@ -2036,11 +2040,11 @@ class Fedipub::Utils::Actor
     def tombstone_local_actor(actor); end
 
     # pkg:gem/fedipub#lib/fedipub/utils/actor.rb:85
-    sig { params(actor: ::Fedipub::Actor).void }
+    sig { params(actor: ::Fedipub::Actor).returns(T::Boolean) }
     def untombstone_distant_actor(actor); end
 
     # pkg:gem/fedipub#lib/fedipub/utils/actor.rb:61
-    sig { params(actor: ::Fedipub::Actor).void }
+    sig { params(actor: ::Fedipub::Actor).returns(T.nilable(::Fedipub::Activity)) }
     def untombstone_local_actor(actor); end
   end
 end
@@ -2107,7 +2111,7 @@ class Fedipub::Utils::JsonRequest
 
   # Makes a GET request signed by +from+ (the application actor by default), following redirects
   #
-  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:45
+  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:57
   def get(url:, params: T.unsafe(nil), headers: T.unsafe(nil), from: T.unsafe(nil)); end
 
   # Makes a GET request and returns a +Hash+ from the parsed body
@@ -2120,34 +2124,36 @@ class Fedipub::Utils::JsonRequest
   #
   # @return [Hash, Array] The parsed JSON object
   #
-  # @raise [UnhandledResponseStatus] when response status is not the expected_status
+  # @raise [UnhandledResponseStatus] when response status differs from expected_status; carries the actual status
+  # @raise [Faraday::Error] when the server cannot be reached
+  # @raise [JSON::ParserError] when the response body is not valid JSON
   #
-  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:37
+  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:49
   def get_json(url, params: T.unsafe(nil), headers: T.unsafe(nil), expected_status: T.unsafe(nil), from: T.unsafe(nil)); end
 
   # Makes a POST request, signed by +from+ when given. Redirects are not followed.
   #
-  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:50
+  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:62
   def post(url:, message:, headers: T.unsafe(nil), from: T.unsafe(nil)); end
 
   private
 
-  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:84
+  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:96
   def build_request(method:, url:, params: T.unsafe(nil), headers: T.unsafe(nil), message: T.unsafe(nil)); end
 
-  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:100
+  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:112
   def connection; end
 
   # Follows redirects for GETs only, signing the request again for each new target: signatures cover the target URI.
   # POSTs are not redirected, so an activity is never replayed to a target we did not choose.
   #
-  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:58
+  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:70
   def execute_request(method:, url:, params: T.unsafe(nil), headers: T.unsafe(nil), message: T.unsafe(nil), from: T.unsafe(nil)); end
 
   # Sends with an RFC9421 signature, then retries once with a draft-cavage-12 signature (double-knocking)
   # on a freshly built request if we signed and got a 400 or 401.
   #
-  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:75
+  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:87
   def send_request(method:, url:, params:, headers:, message:, from:); end
 
   class << self
@@ -2166,7 +2172,9 @@ class Fedipub::Utils::JsonRequest
     #
     # @return [Hash, Array] The parsed JSON object
     #
-    # @raise [UnhandledResponseStatus] when response status is not the expected_status
+    # @raise [UnhandledResponseStatus] when response status differs from expected_status; carries the actual status
+    # @raise [Faraday::Error] when the server cannot be reached
+    # @raise [JSON::ParserError] when the response body is not valid JSON
     #
     # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:21
     def get_json(*, **, &); end
@@ -2194,8 +2202,19 @@ Fedipub::Utils::JsonRequest::MAX_REDIRECTS = T.let(T.unsafe(nil), Integer)
 # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:16
 Fedipub::Utils::JsonRequest::REDIRECT_STATUSES = T.let(T.unsafe(nil), Array)
 
-# pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:24
-class Fedipub::Utils::JsonRequest::UnhandledResponseStatus < ::StandardError; end
+# The response did not match the expected status, or a collection resource was missing.
+#
+# pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:25
+class Fedipub::Utils::JsonRequest::UnhandledResponseStatus < ::StandardError
+  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:30
+  def initialize(message = T.unsafe(nil), status: T.unsafe(nil)); end
+
+  # @return [Integer, nil] HTTP status, or nil when no response status was supplied (e.g. Collection)
+  #
+  # pkg:gem/fedipub#lib/fedipub/utils/json_request.rb:28
+  sig { returns(T.nilable(::Integer)) }
+  def status; end
+end
 
 # Methods to manipulate incoming objects
 #
@@ -2791,7 +2810,7 @@ module Fediverse::Signature
   class << self
     # Whether the request carries a body that the signature must cover
     #
-    # pkg:gem/fedipub#lib/fediverse/signature.rb:80
+    # pkg:gem/fedipub#lib/fediverse/signature.rb:81
     def body?(request); end
 
     # Finds (or fetches) the actor owning a key id
@@ -2805,7 +2824,7 @@ module Fediverse::Signature
     # The sender is touched even when nothing changed, so failing requests can't trigger a fetch every time.
     #
     # @return [Boolean] true if the sender was refreshed and verification is worth retrying
-    # @raise [BadSignature] when the refresh fails
+    # @raise [BadSignature] when the refresh fails or the signer answers 410 Gone
     #
     # pkg:gem/fedipub#lib/fediverse/signature.rb:62
     def refresh_stale_sender!(sender); end
@@ -2951,7 +2970,7 @@ class Fediverse::Webfinger
     # @return [Fedipub::Actor]
     # @raise [ActiveRecord::RecordNotFound] when the actor cannot be resolved
     #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:39
+    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:43
     def fetch_actor(username, domain); end
 
     # Fetches an actor given its URL
@@ -2959,9 +2978,10 @@ class Fediverse::Webfinger
     # @param url [String] Actor's federation URL
     #
     # @return [Fedipub::Actor]
-    # @raise [ActiveRecord::RecordNotFound] when the actor cannot be resolved
+    # @raise [GoneError] when the requested actor resource answers HTTP 410
+    # @raise [ActiveRecord::RecordNotFound] when the actor cannot be resolved for another reason
     #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:49
+    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:54
     def fetch_actor_url(url); end
 
     # Determines if a given account string should be a local account (same host as configured one)
@@ -2970,7 +2990,7 @@ class Fediverse::Webfinger
     #
     # @return [Boolean]
     #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:28
+    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:32
     def local_user?(hash); end
 
     # Returns remote follow link template, or complete link if actor_url is provided
@@ -2981,7 +3001,7 @@ class Fediverse::Webfinger
     #
     # @return [String] The URL to use as follow URL
     #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:78
+    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:83
     def remote_follow_url(username, domain, actor_url: T.unsafe(nil)); end
 
     # Extracts username and domain from an account string.
@@ -2991,7 +3011,7 @@ class Fediverse::Webfinger
     #
     # @return [MatchData, nil] Matches with +:username+ and +:domain+ or +nil+
     #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:19
+    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:23
     def split_account(account); end
 
     # Gets the real actor's federation URL from its username and domain
@@ -3001,28 +3021,29 @@ class Fediverse::Webfinger
     #
     # @return [String, nil] Federation URL if found
     #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:59
+    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:64
     def webfinger(username, domain); end
 
     private
 
     # Makes a GET request (signed as the application actor) and returns a +Hash+ from the parsed body
     # @return [Hash]
+    # @raise [GoneError] when the server answers 410 Gone
     # @raise [ActiveRecord::RecordNotFound] when the response is invalid
     #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:147
+    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:153
     def get_json(url, params = T.unsafe(nil)); end
 
     # Extracts the server and port from a string, omitting common ports
     # @return [String] Server and port
     #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:106
+    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:111
     def server_and_port(string); end
 
     # Makes a webfinger request for a given username/domain
     # @return [Hash] Webfinger response's content
     #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:99
+    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:104
     def webfinger_response(username, domain); end
 
     # Builds an unsaved remote +Fedipub::Actor+ from an ActivityPub actor document
@@ -3030,7 +3051,13 @@ class Fediverse::Webfinger
     # @return [Fedipub::Actor]
     # @raise [ActiveRecord::RecordNotFound] when the payload is not a valid actor document
     #
-    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:119
+    # pkg:gem/fedipub#lib/fediverse/webfinger.rb:124
     def webfinger_to_actor(data); end
   end
 end
+
+# Raised when the remote server answers 410 Gone: the requested resource is reported as gone.
+# A RecordNotFound, so callers that don't care about the difference keep working.
+#
+# pkg:gem/fedipub#lib/fediverse/webfinger.rb:12
+class Fediverse::Webfinger::GoneError < ::ActiveRecord::RecordNotFound; end
