@@ -34,4 +34,16 @@ class Madmin::ResourcesControllerTest < ActionDispatch::IntegrationTest
     assert_select "tbody tr", count: 5
     assert_select ".pagination .pages [aria-current=page]", text: "2"
   end
+
+  test "사이트 삭제 후 303 응답으로 목록에 이동한다" do
+    site = sites(:minimal_site)
+
+    assert_difference "Site.count", -1 do
+      delete madmin_site_path(site)
+    end
+
+    assert_response :see_other
+    assert_redirected_to madmin_sites_path
+    assert_nil flash[:alert]
+  end
 end
