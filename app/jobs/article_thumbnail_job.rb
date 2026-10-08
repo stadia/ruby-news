@@ -97,27 +97,15 @@ class ArticleThumbnailJob < ApplicationJob
     end
 
     prompt = build_prompt(summary_key)
-    message = ArticleImageAgent.new.ask(prompt)
+    image = ArticleImageAgent.paint(prompt)
 
-    attachment = extract_image_attachment(message)
-    if attachment.nil?
-      logger.warn "ArticleThumbnailJob failed: no image generated for article #{article.id} (content=#{message.content.inspect.truncate(200)})"
-      return
-    end
-
-    ext = MIME::Types[attachment.mime_type].first&.preferred_extension || "png"
+    ext = MIME::Types[image.mime_type].first&.preferred_extension || "png"
     article.thumbnail.attach(
-      io: StringIO.new(attachment.content),
+      io: StringIO.new(image.to_blob),
       filename: "thumbnail-#{article.id}.#{ext}",
-      content_type: attachment.mime_type
+      content_type: image.mime_type
     )
     logger.info "ArticleThumbnailJob attached ai thumbnail for article #{article.id}"
-  end
-
-  # ruby_llm 2.0부터 생성 이미지는 content가 아니라 Message#attachments에 담긴다.
-  #: (RubyLLM::Message message) -> RubyLLM::Attachment?
-  def extract_image_attachment(message)
-    message.attachments.find(&:image?) || message.attachments.first
   end
 
   #: (Array[String] summary_key) -> String

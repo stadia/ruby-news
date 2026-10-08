@@ -8,22 +8,23 @@ class ArticleThumbnailJobTest < ActiveSupport::TestCase
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
   )
 
-  # ruby_llm 2.0은 생성된 이미지를 content가 아니라 Message#attachments에 담는다.
-  # 첨부는 Gemini 프로토콜이 inlineData를 디코딩할 때와 같은 방식으로 만든다.
-  test "AI 썸네일은 에이전트 응답 메시지의 이미지 첨부를 붙인다" do
+  # OpenRouter 이미지 API는 b64_json을 RubyLLM::Image(data:)로 돌려준다.
+  test "AI 썸네일은 OpenRouter openai/gpt-image-2로 그린 이미지를 붙인다" do
     article = articles(:ruby_article)
     article.update!(summary_key: [ "요점" ])
-    image = RubyLLM::Attachment.new(StringIO.new(ONE_PX_PNG), filename: "image_0.png")
-    response = RubyLLM::Message.new(role: :assistant, content: nil, attachments: [ image ])
-    agent = Object.new
-    agent.define_singleton_method(:ask) { |_prompt| response }
+    image = RubyLLM::Image.new(data: Base64.strict_encode64(ONE_PX_PNG), mime_type: "image/png")
+    called_with = nil
+    paint = ->(prompt, **opts) { called_with = opts.merge(prompt:); image }
 
-    ArticleImageAgent.stub(:new, agent) do
+    RubyLLM.stub(:paint, paint) do
       ArticleThumbnailJob.new.send(:generate_ai_thumbnail, article)
     end
 
     assert_predicate article.thumbnail, :attached?
     assert_equal "image/png", article.thumbnail.content_type
+    assert_equal "openai/gpt-image-2", called_with[:model]
+    assert_equal :openrouter, called_with[:provider]
+    assert_includes called_with[:prompt], "요점"
   end
 
   test "썸네일이 이미 있으면 재생성 없이 변형만 다시 처리한다" do
