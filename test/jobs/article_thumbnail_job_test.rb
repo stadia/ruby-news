@@ -8,23 +8,15 @@ class ArticleThumbnailJobTest < ActiveSupport::TestCase
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
   )
 
-  # OpenRouter 이미지 API는 b64_json을 RubyLLM::Image(data:)로 돌려준다.
-  test "AI 썸네일은 OpenRouter openai/gpt-image-2로 그린 이미지를 붙인다" do
+  test "YouTube가 아닌 기사는 Articles::Thumbnail로 AI 썸네일을 생성한다" do
     article = articles(:ruby_article)
-    article.update!(summary_key: [ "요점" ])
-    image = RubyLLM::Image.new(data: Base64.strict_encode64(ONE_PX_PNG), mime_type: "image/png")
-    called_with = nil
-    paint = ->(prompt, **opts) { called_with = opts.merge(prompt:); image }
+    generated = nil
 
-    RubyLLM.stub(:paint, paint) do
-      ArticleThumbnailJob.new.send(:generate_ai_thumbnail, article)
+    Articles::Thumbnail.stub(:generate, ->(a) { generated = a }) do
+      ArticleThumbnailJob.perform_now(article.id)
     end
 
-    assert_predicate article.thumbnail, :attached?
-    assert_equal "image/png", article.thumbnail.content_type
-    assert_equal "openai/gpt-image-2", called_with[:model]
-    assert_equal :openrouter, called_with[:provider]
-    assert_includes called_with[:prompt], "요점"
+    assert_equal article, generated
   end
 
   test "썸네일이 이미 있으면 재생성 없이 변형만 다시 처리한다" do
@@ -34,7 +26,7 @@ class ArticleThumbnailJobTest < ActiveSupport::TestCase
     job = ArticleThumbnailJob.new
     processed = false
     job.stub(:process_thumbnail_variants, ->(_article) { processed = true }) do
-      job.stub(:generate_ai_thumbnail, ->(_article) { flunk "should not regenerate thumbnail" }) do
+      Articles::Thumbnail.stub(:generate, ->(_article) { flunk "should not regenerate thumbnail" }) do
         job.stub(:attach_youtube_thumbnail, ->(_article) { flunk "should not regenerate thumbnail" }) do
           job.perform(article.id)
         end
