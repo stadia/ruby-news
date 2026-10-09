@@ -8,22 +8,15 @@ class ArticleThumbnailJobTest < ActiveSupport::TestCase
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
   )
 
-  # ruby_llm 2.0은 생성된 이미지를 content가 아니라 Message#attachments에 담는다.
-  # 첨부는 Gemini 프로토콜이 inlineData를 디코딩할 때와 같은 방식으로 만든다.
-  test "AI 썸네일은 에이전트 응답 메시지의 이미지 첨부를 붙인다" do
+  test "YouTube가 아닌 기사는 Articles::Thumbnail로 AI 썸네일을 생성한다" do
     article = articles(:ruby_article)
-    article.update!(summary_key: [ "요점" ])
-    image = RubyLLM::Attachment.new(StringIO.new(ONE_PX_PNG), filename: "image_0.png")
-    response = RubyLLM::Message.new(role: :assistant, content: nil, attachments: [ image ])
-    agent = Object.new
-    agent.define_singleton_method(:ask) { |_prompt| response }
+    generated = nil
 
-    ArticleImageAgent.stub(:new, agent) do
-      ArticleThumbnailJob.new.send(:generate_ai_thumbnail, article)
+    Articles::Thumbnail.stub(:generate, ->(a) { generated = a }) do
+      ArticleThumbnailJob.perform_now(article.id)
     end
 
-    assert_predicate article.thumbnail, :attached?
-    assert_equal "image/png", article.thumbnail.content_type
+    assert_equal article, generated
   end
 
   test "썸네일이 이미 있으면 재생성 없이 변형만 다시 처리한다" do
@@ -33,7 +26,7 @@ class ArticleThumbnailJobTest < ActiveSupport::TestCase
     job = ArticleThumbnailJob.new
     processed = false
     job.stub(:process_thumbnail_variants, ->(_article) { processed = true }) do
-      job.stub(:generate_ai_thumbnail, ->(_article) { flunk "should not regenerate thumbnail" }) do
+      Articles::Thumbnail.stub(:generate, ->(_article) { flunk "should not regenerate thumbnail" }) do
         job.stub(:attach_youtube_thumbnail, ->(_article) { flunk "should not regenerate thumbnail" }) do
           job.perform(article.id)
         end

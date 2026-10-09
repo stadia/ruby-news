@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 # rbs_inline: enabled
 
-# Article의 summary_key를 기반으로 썸네일 이미지를 생성하여 ActiveStorage에 첨부한다
+# Article에 썸네일(YouTube 원본 또는 AI 생성)을 붙이고 변형을 미리 처리한다
 class ArticleThumbnailJob < ApplicationJob
   queue_as :default
 
@@ -31,7 +31,7 @@ class ArticleThumbnailJob < ApplicationJob
     if article.is_youtube?
       attach_youtube_thumbnail(article)
     else
-      generate_ai_thumbnail(article)
+      Articles::Thumbnail.generate(article)
     end
 
     process_thumbnail_variants(article) if article.thumbnail.attached?
@@ -86,48 +86,5 @@ class ArticleThumbnailJob < ApplicationJob
       return response if response.success? && response.body.bytesize > 5_000
     end
     nil
-  end
-
-  #: (Article article) -> void
-  def generate_ai_thumbnail(article)
-    summary_key = article.summary_key
-    if summary_key.blank? || !summary_key.is_a?(Array) || summary_key.empty?
-      logger.info "ArticleThumbnailJob skip: article #{article.id} has no summary_key"
-      return
-    end
-
-    prompt = build_prompt(summary_key)
-    message = ArticleImageAgent.new.ask(prompt)
-
-    attachment = extract_image_attachment(message)
-    if attachment.nil?
-      logger.warn "ArticleThumbnailJob failed: no image generated for article #{article.id} (content=#{message.content.inspect.truncate(200)})"
-      return
-    end
-
-    ext = MIME::Types[attachment.mime_type].first&.preferred_extension || "png"
-    article.thumbnail.attach(
-      io: StringIO.new(attachment.content),
-      filename: "thumbnail-#{article.id}.#{ext}",
-      content_type: attachment.mime_type
-    )
-    logger.info "ArticleThumbnailJob attached ai thumbnail for article #{article.id}"
-  end
-
-  # ruby_llm 2.0부터 생성 이미지는 content가 아니라 Message#attachments에 담긴다.
-  #: (RubyLLM::Message message) -> RubyLLM::Attachment?
-  def extract_image_attachment(message)
-    message.attachments.find(&:image?) || message.attachments.first
-  end
-
-  #: (Array[String] summary_key) -> String
-  def build_prompt(summary_key)
-    points = summary_key.each_with_index.map { |s, i| "#{i + 1}. #{s}" }.join("\n")
-    <<~PROMPT.strip
-      다음은 기술 뉴스 기사의 핵심 요약이다. 이 요약을 인포그래픽 이미지 한 장으로 시각화한다.
-
-      [요약]
-      #{points}
-    PROMPT
   end
 end
