@@ -137,7 +137,7 @@ class ArticleAgentsService < OperationService
       return Failure(:no_summary_key)
     end
 
-    if Article.kept.confirmed.joins(:thumbnail_attachment).where(articles: { created_at: Time.zone.now.beginning_of_day.. }).count <= 5
+    if article.is_youtube? || Article.kept.confirmed.joins(:thumbnail_attachment).where(articles: { created_at: Time.zone.now.beginning_of_day.. }).count <= 5
       ArticleThumbnailJob.perform_later(article.id)
     else
       logger.info "ArticleThumbnailJob skip: thumbnail article count exceeded limit for article #{article.id}"
