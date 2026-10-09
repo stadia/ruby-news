@@ -39,7 +39,7 @@ class Components::Layout::MetaTags < Components::Base
     vc.set_meta_tags canonical: current_url
     page_title = content_for(:title).presence || vc.t("layout.default_title")
     page_desc = assigns["page_description"] || vc.t("layout.default_description")
-    og_image = assigns["og_image"] || image_url("og_main.png")
+    og_image = assigns["og_image"] || image_url("og_main_#{rand(2)}.png")
     og_locale = OG_LOCALES.fetch(I18n.locale, "ko_KR")
 
     raw vc.display_meta_tags(
