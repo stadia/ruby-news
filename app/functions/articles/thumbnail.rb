@@ -10,6 +10,8 @@ module Articles
     extend FunctionLogger
 
     MODEL = "openai/gpt-image-2"
+    # MODEL = "google/gemini-3.1-flash-lite-image"
+    # MODEL = "google/gemini-3.1-flash-image"
     PROVIDER = :openrouter
 
     INSTRUCTIONS = <<~PROMPT
