@@ -113,6 +113,94 @@ class PostTest < ActiveSupport::TestCase
     end
   end
 
+  # 부모 댓글을 지우면 답글도 콜백을 거쳐 지워져야 카운터·부스트가 어긋나지 않는다(#1057).
+  test "부모 댓글 삭제 시 답글도 콜백과 카운터 갱신을 거쳐 삭제된다" do
+    article = articles(:ruby_article)
+    posts_count_before = article.posts_count
+    parent = Post.create!(body: "부모 댓글", user: @user, article:)
+    child = Post.create!(body: "다른 회원의 답글", user: users(:admin), article:, parent:)
+    actor = Fedipub::Actor.create!(
+      federated_url: "https://remote.example/users/booster-#{SecureRandom.hex(4)}",
+      username: "booster", name: "Booster", server: "remote.example",
+      inbox_url: "https://remote.example/inbox", outbox_url: "https://remote.example/outbox",
+      followers_url: "https://remote.example/followers", followings_url: "https://remote.example/following",
+      profile_url: "https://remote.example/@booster", actor_type: "Person", local: false
+    )
+    boost = Boost.create!(actor:, boostable: child)
+
+    parent.reload.destroy
+
+    assert_not Post.exists?(child.id)
+    assert_not Boost.exists?(boost.id)
+    assert_equal posts_count_before, article.reload.posts_count
+    [ parent, child ].each do |post|
+      assert_equal 1, Fedipub::Activity.where(entity: post, action: "Delete").count
+    end
+  end
+
+  test "다단계 댓글 삭제는 형제와 무관한 트리를 보존하고 카운터를 복원한다" do
+    posts_count_before = @article.posts_count
+    original_tree = Post.order(:id).pluck(:id, :parent_id, :lft, :rgt)
+    left = Post.maximum(:rgt) + 1
+    root = Post.create!(body: "루트 댓글", user: @user, article: @article)
+    parent = Post.create!(body: "삭제할 부모", user: @user, article: @article, parent: root)
+    child = Post.create!(body: "첫 답글", user: users(:admin), article: @article, parent:)
+    second_child = Post.create!(body: "둘째 답글", user: users(:jane), article: @article, parent:)
+    grandchild = Post.create!(body: "손자 답글", user: @user, article: @article, parent: child)
+    sibling = Post.create!(body: "남길 형제", user: @user, article: @article, parent: root)
+    sibling_child = Post.create!(body: "형제의 답글", user: users(:jane), article: @article, parent: sibling)
+    unrelated = Post.create!(body: "무관한 댓글", user: @user, article: @article)
+    deleted_posts = [ parent, child, second_child, grandchild ]
+
+    assert_difference -> { @article.reload.posts_count }, -4 do
+      parent.reload.destroy!
+    end
+
+    deleted_posts.each do |post|
+      assert_not Post.exists?(post.id)
+      assert_equal 1, Fedipub::Activity.where(entity: post, action: "Delete").count
+    end
+    assert_predicate Post, :valid?
+    assert_equal original_tree, Post.where(id: original_tree.map(&:first)).order(:id).pluck(:id, :parent_id, :lft, :rgt)
+    assert_equal [ left, left + 5 ], [ root.reload.lft, root.rgt ]
+    assert_equal [ root.id, left + 1, left + 4 ], [ sibling.reload.parent_id, sibling.lft, sibling.rgt ]
+    assert_equal [ sibling.id, left + 2, left + 3 ], [ sibling_child.reload.parent_id, sibling_child.lft, sibling_child.rgt ]
+    assert_equal [ nil, left + 6, left + 7 ], [ unrelated.reload.parent_id, unrelated.lft, unrelated.rgt ]
+    assert_equal posts_count_before + 4, @article.reload.posts_count
+  end
+
+  test "원격 답글이 섞인 부모 삭제는 원격 Delete를 생성하지 않는다" do
+    posts_count_before = @article.posts_count
+    actor = Fedipub::Actor.create!(
+      federated_url: "https://remote.example/users/replier", username: "replier", name: "Replier", server: "remote.example",
+      inbox_url: "https://remote.example/inbox", outbox_url: "https://remote.example/outbox",
+      followers_url: "https://remote.example/followers", followings_url: "https://remote.example/following",
+      profile_url: "https://remote.example/@replier", actor_type: "Person", local: false
+    )
+    parent = Post.create!(body: "로컬 부모", user: @user, article: @article)
+    local_child = Post.create!(body: "로컬 답글", user: users(:jane), article: @article, parent:)
+    remote_child = Post.create!(
+      body: "원격 답글", fedipub_actor: actor, article: @article, parent:,
+      federated_url: "https://remote.example/comments/child"
+    )
+    remote_grandchild = Post.create!(
+      body: "원격 손자", fedipub_actor: actor, article: @article, parent: remote_child,
+      federated_url: "https://remote.example/comments/grandchild"
+    )
+    remote_ids = [ remote_child.id, remote_grandchild.id ]
+
+    assert_no_difference -> { Fedipub::Activity.where(entity_type: "Post", entity_id: remote_ids, action: "Delete").count } do
+      parent.reload.destroy!
+    end
+
+    assert_not Post.exists?(id: [ parent.id, local_child.id, *remote_ids ])
+    [ parent, local_child ].each do |post|
+      assert_equal 1, Fedipub::Activity.where(entity: post, action: "Delete").count
+    end
+    assert_equal posts_count_before, @article.reload.posts_count
+    assert_predicate Post, :valid?
+  end
+
   # ========== Article Comment Tests ==========
 
   test "comment?는 post_type이 comment이면 true를 반환한다" do
