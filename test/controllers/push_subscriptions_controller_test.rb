@@ -38,6 +38,18 @@ class PushSubscriptionsControllerTest < ActionDispatch::IntegrationTest
     assert_response :ok
   end
 
+  test "POST create rejects endpoint outside trusted push services" do
+    sign_in_as(users(:john))
+
+    assert_no_difference("PushSubscription.count") do
+      post push_subscription_path, params: {
+        push_subscription: { endpoint: "https://evil.example/push", p256dh: "BKey", auth: "BAuth" }
+      }
+    end
+
+    assert_response :unprocessable_entity
+  end
+
   test "POST create redirects to login for unauthenticated user" do
     post push_subscription_path, params: {
       push_subscription: {

@@ -64,6 +64,12 @@ class PushNotificationService < OperationService
 
   #: (subscription: PushSubscription, payload: String) -> void
   def send_single(subscription:, payload:)
+    # 허용 목록이 좁아지기 전에 저장된 구독은 검증을 거치지 않았으므로 발송 직전에 다시 확인한다.
+    unless subscription.endpoint.match?(PushSubscription::TRUSTED_PUSH_SERVICES)
+      logger.warn "PushNotificationService: subscription #{subscription.id} endpoint not trusted, destroying"
+      return subscription.destroy!
+    end
+
     WebPush.payload_send(
       message: payload,
       endpoint: subscription.endpoint,

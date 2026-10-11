@@ -49,6 +49,19 @@ class PushNotificationServiceTest < ActiveSupport::TestCase
     end
   end
 
+  # 허용 목록이 좁아지기 전에 저장된 구독은 발송하지 않고 삭제한다.
+  test "허용 목록 밖 endpoint는 발송하지 않고 구독을 삭제한다" do
+    @subscription.update_columns(endpoint: "https://evil.example/push")
+
+    Configs::WebPush.stub(:configured?, true) do
+      WebPush.stub(:payload_send, ->(**_kwargs) { flunk "허용 목록 밖으로 발송하면 안 된다" }) do
+        @service.notify_user(user: @user, title: "title", body: "body", path: "/articles/test")
+      end
+    end
+
+    assert_not PushSubscription.exists?(@subscription.id)
+  end
+
   test "410 응답이면 구독을 삭제한다" do
     response = Struct.new(:code, :body).new("410", "expired")
     error = WebPush::ResponseError.new(response, "example.com")
