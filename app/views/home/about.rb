@@ -17,8 +17,7 @@ class Views::Home::About < Views::Base
         end
       end
 
-      section(class: "space-y-4") do
-        render RubyUI::Heading.new(level: 2, class: "font-semibold text-accent-text mb-3") { "서비스 소개" }
+      render Components::Home::DocSection.new(title: "서비스 소개") do
         p(class: "text-content-secondary leading-relaxed") do
           plain "Ruby-News는 전 세계 Ruby 및 Ruby on Rails 커뮤니티에서 발행되는 기술 아티클, 릴리즈 노트, 보안 권고, 컨퍼런스 자료를 매일 수집하여 한국어로 번역·요약합니다. 한국어권 Ruby 개발자가 언어 장벽 없이 최신 생태계 동향을 파악할 수 있도록 만들어졌습니다."
         end
@@ -30,8 +29,7 @@ class Views::Home::About < Views::Base
         end
       end
 
-      section(class: "space-y-4") do
-        render RubyUI::Heading.new(level: 2, class: "font-semibold text-accent-text mb-3") { "콘텐츠 제작 방식" }
+      render Components::Home::DocSection.new(title: "콘텐츠 제작 방식") do
         p(class: "text-content-secondary leading-relaxed") do
           plain "모든 기사는 "
           strong(class: "text-content") { "AI 보조 번역" }
@@ -42,15 +40,13 @@ class Views::Home::About < Views::Base
         end
       end
 
-      section(class: "space-y-4") do
-        render RubyUI::Heading.new(level: 2, class: "font-semibold text-accent-text mb-3") { "큐레이션 기준" }
+      render Components::Home::DocSection.new(title: "큐레이션 기준") do
         p(class: "text-content-secondary leading-relaxed") do
           plain "Ruby·Rails 생태계에 직접적으로 관련된 콘텐츠를 중심으로 수집합니다. ruby-lang.org, rubyonrails.org, RubyGems, thoughtbot, Evil Martians, HackerNews, YouTube 기술 채널 등 신뢰할 수 있는 출처를 우선합니다."
         end
       end
 
-      section(class: "space-y-4") do
-        render RubyUI::Heading.new(level: 2, class: "font-semibold text-accent-text mb-3") { "연락처" }
+      render Components::Home::DocSection.new(title: "연락처") do
         ul(class: "text-content-secondary space-y-2") do
           li do
             plain "Mastodon: "
