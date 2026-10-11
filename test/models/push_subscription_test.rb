@@ -50,4 +50,28 @@ class PushSubscriptionTest < ActiveSupport::TestCase
     assert_not duplicate.valid?
     assert_includes duplicate.errors[:endpoint], "이미 존재하는 값입니다"
   end
+
+  test "Apple 호스트처럼 보이지만 실제 호스트가 다른 endpoint는 유효하지 않다" do
+    [
+      "https://192.168.1.150:8443?x.push.apple.com/a",
+      "https://evil.example#.push.apple.com/a",
+      "https://evil.example@web.push.apple.com/a"
+    ].each do |endpoint|
+      subscription = PushSubscription.new(user: @user, endpoint:, p256dh: "key", auth: "auth")
+
+      assert_not subscription.valid?, endpoint
+    end
+  end
+
+  test "정상 푸시 서비스 endpoint는 유효하다" do
+    [
+      "https://fcm.googleapis.com/fcm/send/abc",
+      "https://updates.push.services.mozilla.com/wpush/v2/abc",
+      "https://web.push.apple.com/QAbc"
+    ].each do |endpoint|
+      subscription = PushSubscription.new(user: @user, endpoint:, p256dh: "key", auth: "auth")
+
+      assert_predicate subscription, :valid?, endpoint
+    end
+  end
 end
