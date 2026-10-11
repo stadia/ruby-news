@@ -347,6 +347,42 @@ jobs:
             tmp/profile-*.log
           retention-days: 7
 
+  # 복잡도 × 변경 빈도 참고 리포트(docs/quality/rubycritic.md). 머지를 막는 게이트가
+  # 아니라 추세를 보는 용도라 profile처럼 main push에서만 돈다.
+  #
+  # `continue-on-error`를 두지 않는다: 분석이 깨지면 main CI가 빨개져 묻히지 않는다.
+  # 앱 번들이 아니라 tools/rubycritic 번들만 설치하므로 DB·시스템 패키지가 필요 없다.
+  rubycritic:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    env:
+      BUNDLE_GEMFILE: tools/rubycritic/Gemfile
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          # churn은 git log로 센다. 얕은 클론이면 모든 파일의 churn이 1이 된다.
+          fetch-depth: 0
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Run RubyCritic
+        run: bin/rubycritic >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: rubycritic
+          path: tmp/rubycritic/
+          retention-days: 30
+
   # system-test:
   #   runs-on: ubuntu-latest
 
