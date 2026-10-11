@@ -86,4 +86,30 @@ class DiscardedArticleCleanupJobTest < ActiveSupport::TestCase
     assert_not ActiveStorage::Blob.exists?(filename: "thumb.png")
     assert_not ActiveStorage::Attachment.exists?(record_type: "Article", record_id: article.id)
   end
+
+  # 폐기 기사에도 좋아요가 허용되므로, 정리 도중 커밋된 좋아요가 카운터를 어긋나게 해선 안 된다.
+  # 반응 행을 처음 건드리는 쿼리 직후에 좋아요를 끼워 넣어, 개수 조회와 삭제 사이의 경쟁을 재현한다.
+  test "정리 도중 끼어든 좋아요가 있어도 actor 카운터는 실제 행 수와 맞는다" do
+    article = articles(:deleted_article)
+    article.update_columns(created_at: 7.months.ago, deleted_at: 7.months.ago)
+    actor = users(:john).fedipub_actor
+    Like.create!(actor:, likeable: article)
+
+    injected = false
+    callback = lambda do |*, payload|
+      next if injected || !payload[:sql].match?(/\A(SELECT COUNT|DELETE)\b.*"likes"/m)
+
+      injected = true
+      Like.create!(actor: users(:jane).fedipub_actor, likeable: article)
+    end
+
+    ActiveSupport::Notifications.subscribed(callback, "sql.active_record") do
+      DiscardedArticleCleanupJob.perform_now
+    end
+
+    assert injected, "반응 행을 건드리는 쿼리가 실행돼야 한다"
+    [ actor, users(:jane).fedipub_actor ].each do |a|
+      assert_equal Like.where(actor: a).count, a.reload.likees_count, "actor #{a.id}"
+    end
+  end
 end
