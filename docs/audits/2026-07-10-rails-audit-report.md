@@ -3,7 +3,9 @@
 
 ![thoughtbot](https://thoughtbot.com/thoughtbot-logo-for-readmes.svg)
 
-# Rails Application Audit Report
+# Rails Application Audit Report (2026-07-10)
+
+> 이 문서는 2026-07-10 시점의 감사 기록입니다. 테스트 결과, 커버리지와 지적 사항은 현재 저장소 상태를 나타내지 않습니다.
 
 **Generated**: 2026-07-10
 **Application**: RubyNews (al_news)
