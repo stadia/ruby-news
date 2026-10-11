@@ -5,10 +5,16 @@ export default class extends Controller {
     this.setTheme()
   }
 
-  setTheme({ disableTransitions = false } = {}) {
+  setTheme({ disableTransitions = false, storedTheme } = {}) {
     if (disableTransitions) this.disableTransitionsForThemeChange()
 
-    const storedTheme = localStorage.theme
+    if (storedTheme === undefined) {
+      try {
+        storedTheme = localStorage.theme
+      } catch {
+        storedTheme = null
+      }
+    }
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
     const dark = storedTheme === 'dark' || (storedTheme !== 'light' && prefersDark)
     document.documentElement.classList.toggle('dark', dark)
@@ -33,14 +39,14 @@ export default class extends Controller {
 
   setLightTheme() {
     // Whenever the user explicitly chooses light mode
-    localStorage.theme = 'light'
-    this.setTheme({ disableTransitions: true })
+    try { localStorage.theme = 'light' } catch { /* 저장 실패 시에도 현재 페이지에 적용한다. */ }
+    this.setTheme({ disableTransitions: true, storedTheme: 'light' })
   }
 
   setDarkTheme() {
     // Whenever the user explicitly chooses dark mode
-    localStorage.theme = 'dark'
-    this.setTheme({ disableTransitions: true })
+    try { localStorage.theme = 'dark' } catch { /* 저장 실패 시에도 현재 페이지에 적용한다. */ }
+    this.setTheme({ disableTransitions: true, storedTheme: 'dark' })
   }
 
   disableTransitionsForThemeChange() {
