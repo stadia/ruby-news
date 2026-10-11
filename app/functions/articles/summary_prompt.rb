@@ -8,6 +8,7 @@ module Articles
     extend FunctionLogger
 
     class << self
+      # 호출부에서 ensure_body로 요약 가능한 본문을 준비한 뒤 호출한다.
       #: (Article article) -> String
       def build(article)
         article.is_youtube? ? youtube(article) : html(article)

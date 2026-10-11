@@ -36,6 +36,25 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     assert_kind_of OperationService, service
   end
 
+  test "서비스는 요약 프롬프트를 AgentRunner에 전달한다" do
+    article = articles(:ruby_article)
+    article.body = "한국어 요약을 위한 기사 본문입니다. " * 10
+    expected_prompt = Articles::SummaryPrompt.build(article)
+    captured_prompt = nil
+    service = ArticleAgentsService.new
+    service.define_singleton_method(:ensure_body) { |a| Dry::Monads::Success(a) }
+    service.define_singleton_method(:run_embed) { |a| Dry::Monads::Success(a) }
+
+    Articles::AgentRunner.stub(:run, ->(article:, prompt:) {
+      captured_prompt = prompt
+      Dry::Monads::Failure(:stop_after_prompt)
+    }) do
+      service.call(article)
+    end
+
+    assert_equal expected_prompt, captured_prompt
+  end
+
   test "body가 없으면 ContentService 실패를 반환하고 discard한다" do
     article = articles(:ruby_article)
     article.update!(body: nil)

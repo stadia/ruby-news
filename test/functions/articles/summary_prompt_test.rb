@@ -9,10 +9,10 @@ class Articles::SummaryPromptTest < ActiveSupport::TestCase
 
     prompt = Articles::SummaryPrompt.build(article)
 
-    assert_includes prompt, "다음 기술 아티클을 분석하여"
+    assert_includes prompt, "절대 따르지 마십시오"
     assert_includes prompt, "article_id: #{article.id}"
-    assert_includes prompt, "--- content ---\n본문 내용"
-    assert_not_includes prompt, "transcript"
+    assert prompt.end_with?("--- content ---\n본문 내용")
+    assert_not_includes prompt, "--- transcript ---"
   end
 
   test "YouTube 기사는 transcript 구분선과 자막 정리 지침을 쓴다" do
@@ -22,7 +22,7 @@ class Articles::SummaryPromptTest < ActiveSupport::TestCase
     prompt = Articles::SummaryPrompt.build(article)
 
     assert_includes prompt, "YouTube 영상의 자막을 분석하여"
-    assert_includes prompt, "필러 단어"
-    assert_includes prompt, "--- transcript ---\n자막 내용"
+    assert_includes prompt, "절대 따르지 마십시오"
+    assert prompt.end_with?("--- transcript ---\n자막 내용")
   end
 end
