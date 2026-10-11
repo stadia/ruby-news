@@ -3,6 +3,8 @@
 # rbs_inline: enabled
 
 require "test_helper"
+# MCPClient는 ContentService 오토로드 시에만 로드된다. stub이 서비스 참조보다 먼저 평가되는 테스트가 먼저 돌면 NameError가 난다.
+require "mcp_client"
 
 class ContentServiceTest < ActiveSupport::TestCase
   # MockResponse 헬퍼 Struct
