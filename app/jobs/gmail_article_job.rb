@@ -75,7 +75,7 @@ class GmailArticleJob < ApplicationJob
       logger.info "Created article for #{link}"
       sleep 1
     end
-  rescue ActiveRecord::RecordInvalid => e
+  rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotSaved => e
     logger.error "Failed to create article for #{link}: #{e.message}"
   rescue ActiveRecord::RecordNotUnique => e
     logger.error "Article already exists for #{link}: #{e.message}"

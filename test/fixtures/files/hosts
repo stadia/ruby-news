@@ -1,0 +1,4 @@
+# 테스트용 DNS. SafeHttp가 실제 DNS를 조회하지 않도록 test_helper가 기본 resolver를 이 파일로 바꾼다.
+# 여기 없는 호스트는 풀리지 않아 SafeHttp가 차단한다.
+93.184.215.14 example.com www.example.com cdn.example.com blog.example.com
+93.184.215.14 youtube.com www.youtube.com youtu.be github.com raw.githubusercontent.com

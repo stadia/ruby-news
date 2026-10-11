@@ -45,4 +45,19 @@ class GmailArticleJobTest < ActiveSupport::TestCase
 
     assert_operator site.reload.last_checked_at, :>, 1.minute.ago
   end
+
+  test "등록이 거부되는 링크가 있어도 나머지 처리를 계속한다" do
+    site = sites(:newsletter)
+    site.update!(email: "bot@example.com", last_checked_at: 2.days.ago)
+    client = Gmail.allocate
+    users(:john).update_columns(username: "bot") # create_article은 bot 사용자로 기사를 만든다
+    client.define_singleton_method(:fetch_email_links) { |*_args, **_kwargs| [ "http://10.0.0.5/internal-link" ] }
+    site.define_singleton_method(:init_client) { client }
+
+    Site.stub(:find, site) do
+      assert_nothing_raised { GmailArticleJob.perform_now([ site.id ]) }
+    end
+
+    assert_operator site.reload.last_checked_at, :>, 1.minute.ago
+  end
 end

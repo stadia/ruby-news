@@ -24,7 +24,7 @@ module Articles
     class << self
       #: (String url) -> Faraday::Response?
       def fetch_url_content(url)
-        Faraday.get(url)
+        SafeHttp.get(url)
       rescue Faraday::Error => e
         logger.error "Error fetching URL #{url}: #{e.message}"
         nil

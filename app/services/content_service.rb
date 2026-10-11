@@ -50,6 +50,9 @@ class ContentService < OperationService
 
     # Readability를 사용하여 주요 콘텐츠 HTML 추출. Readability::Document는 전체 HTML 문자열을 인자로 받습니다.
     github_url?(url) ? Success(Inkmark.to_html(html_content, options: { preset: :recommended })) : Success(Readability::Document.new(html_content).content)
+  rescue SafeHttp::BlockedUrlError => e
+    logger.warn e.message
+    Failure(:blocked_url)
   end
 
   #: (String url) -> Dry::Monads::Result
@@ -119,11 +122,17 @@ class ContentService < OperationService
 
   #: (String url, ?Integer? count) -> String?
   def faraday_fetch_html(url, count = 0)
+    fetch_following_redirects(url, count).first.body
+  end
+
+  # 리다이렉트를 hop마다 SafeHttp로 검사하며 따라가 마지막 응답과 그 URL을 돌려준다.
+  #: (String url, ?Integer? count) -> [Faraday::Response, String]
+  def fetch_following_redirects(url, count = 0)
     count ||= 0
-    response = Faraday.get(url)
+    response = SafeHttp.get(url)
     logger.debug "#{response.status} #{url}"
-    return response.body unless response.status.between?(300, 399) && response.headers["location"]
-    return response.body if count > 3
+    return [ response, url ] unless response.status.between?(300, 399) && response.headers["location"]
+    return [ response, url ] if count > 3
 
     logger.debug response.headers["location"]
     # 3xx 응답인 경우 리다이렉트된 URL을 사용
@@ -135,12 +144,18 @@ class ContentService < OperationService
     end
     logger.debug "Redirecting to: #{url}"
 
-    faraday_fetch_html(url, count + 1)
+    fetch_following_redirects(url, count + 1)
   end
 
 
   #: (String url) -> String?
   def mcp_fetch_html(url)
+    # Scrapling은 리다이렉트를 검사 없이 따라가므로, 앱에서 먼저 검사하며 따라간 최종 URL만 넘긴다.
+    # shortcut: Scrapling이 다른 응답(UA별 리다이렉트, DNS 리바인딩)을 받으면 못 막는다. Scrapling 파드 egress 차단으로 보완한다.
+    response, url = fetch_following_redirects(url)
+    # 리다이렉트 한도에 걸린 3xx는 Location을 검사하지 않았으므로 넘기지 않는다.
+    return nil if response.status.between?(300, 399)
+
     client = MCPClient.connect(ENV.fetch("SCRAPLING_URL") { "http://localhost::8000/mcp" })
     result = client.call_tool("fetch", { url: })&.[]("structuredContent")
     logger.debug result
