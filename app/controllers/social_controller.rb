@@ -41,11 +41,12 @@ class SocialController < ApplicationController
       # set_oauth_client에서 설정 존재가 보장된 같은 객체를 재사용하므로 재조회하지 않는다.
       current_config = @oauth_config.value || {}
 
+      # 저장된 설정은 문자열 키다. 심볼 키로 병합하면 재인증 시 같은 키가 둘이 되어 저장이 실패한다.
       @oauth_config.value = current_config.merge(
-        access_token: token.token,
-        refresh_token: token.refresh_token,
-        expires_at: token.expires_at,
-        token_created_at: Time.current.to_i
+        "access_token" => token.token,
+        "refresh_token" => token.refresh_token,
+        "expires_at" => token.expires_at,
+        "token_created_at" => Time.current.to_i
       )
       @oauth_config.save!
 

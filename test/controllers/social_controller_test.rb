@@ -59,6 +59,34 @@ class SocialControllerTest < ActionDispatch::IntegrationTest
     pref&.destroy
   end
 
+  # 이미 토큰이 저장된 상태에서 재인증하면 문자열 키에 심볼 키가 섞여 JSON 중복 키 오류가 났다(#1058).
+  test "GET provider_callback replaces an existing token on re-authorization" do
+    pref = Preference.create!(name: "xcom_oauth", value: {
+      "client_id" => "cid", "client_secret" => "secret", "site" => "https://api.x.com/2/",
+      "access_token" => "old_access", "refresh_token" => "old_refresh"
+    })
+
+    token = Struct.new(:token, :refresh_token, :expires_at).new("new_access", "new_refresh", 2.hours.from_now.to_i)
+    auth_code = Object.new
+    auth_code.define_singleton_method(:authorize_url) { |**_kwargs| "https://x.com/i/oauth2/authorize?client_id=cid&state=state123" }
+    auth_code.define_singleton_method(:get_token) { |*_args, **_kwargs| token }
+    fake_client = Struct.new(:auth_code).new(auth_code)
+
+    OauthClient.stub(:build, fake_client) do
+      get "/social/xcom/authorize"
+      get "/social/xcom/callback", params: { code: "auth_code", state: "state123" }
+
+      assert_redirected_to madmin_social_index_path
+    end
+
+    pref.reload
+
+    assert_equal "new_access", pref.value["access_token"]
+    assert_equal "new_refresh", pref.value["refresh_token"]
+  ensure
+    pref&.destroy
+  end
+
   # 사이트 소셜 게시 토큰은 관리자만 연결할 수 있다.
   test "non-admin cannot authorize or overwrite site oauth token" do
     pref = Preference.create!(name: "xcom_oauth", value: {
