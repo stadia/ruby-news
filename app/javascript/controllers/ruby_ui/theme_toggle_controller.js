@@ -1,14 +1,23 @@
 import { Controller } from "@hotwired/stimulus"
 
+// 저장하지 못한 선택은 전체 새로고침 전까지 Turbo 이동 사이에 유지한다.
+let memoryTheme = null
+
 export default class extends Controller {
   initialize() {
     this.setTheme()
   }
 
-  setTheme({ disableTransitions = false } = {}) {
+  setTheme({ disableTransitions = false, storedTheme } = {}) {
     if (disableTransitions) this.disableTransitionsForThemeChange()
 
-    const storedTheme = localStorage.theme
+    if (storedTheme === undefined) {
+      try {
+        storedTheme = memoryTheme ?? localStorage.theme
+      } catch {
+        storedTheme = memoryTheme
+      }
+    }
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
     const dark = storedTheme === 'dark' || (storedTheme !== 'light' && prefersDark)
     document.documentElement.classList.toggle('dark', dark)
@@ -33,14 +42,24 @@ export default class extends Controller {
 
   setLightTheme() {
     // Whenever the user explicitly chooses light mode
-    localStorage.theme = 'light'
-    this.setTheme({ disableTransitions: true })
+    try {
+      localStorage.theme = 'light'
+      memoryTheme = null
+    } catch {
+      memoryTheme = 'light'
+    }
+    this.setTheme({ disableTransitions: true, storedTheme: 'light' })
   }
 
   setDarkTheme() {
     // Whenever the user explicitly chooses dark mode
-    localStorage.theme = 'dark'
-    this.setTheme({ disableTransitions: true })
+    try {
+      localStorage.theme = 'dark'
+      memoryTheme = null
+    } catch {
+      memoryTheme = 'dark'
+    }
+    this.setTheme({ disableTransitions: true, storedTheme: 'dark' })
   }
 
   disableTransitionsForThemeChange() {

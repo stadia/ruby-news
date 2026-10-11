@@ -49,6 +49,105 @@ class DesignThemeTest < ApplicationSystemTestCase
     browser&.execute_cdp("Emulation.setEmulatedMedia", features: [])
   end
 
+  test "저장소 읽기가 차단돼도 초기 스크립트와 컨트롤러는 OS 테마를 적용한다" do
+    visit root_path
+    browser = page.driver.browser
+    script = browser.execute_cdp("Page.addScriptToEvaluateOnNewDocument", source: <<~JS)
+      Object.defineProperty(window, 'localStorage', {
+        get() { throw new DOMException('Blocked', 'SecurityError'); }
+      });
+    JS
+    browser.execute_cdp("Emulation.setEmulatedMedia", features: [ { name: "prefers-color-scheme", value: "dark" } ])
+    browser.execute_cdp("Network.enable")
+
+    [ true, false ].each do |block_modules|
+      browser.execute_cdp("Network.setBlockedURLs", urls: block_modules ? [ "*.js*", "*googletagmanager*" ] : [])
+      page.refresh
+      unless block_modules
+        page.execute_script(<<~JS)
+          const element = document.querySelector('[data-controller~="ruby-ui--theme-toggle"]');
+          window.Stimulus.getControllerForElementAndIdentifier(element, 'ruby-ui--theme-toggle').setTheme();
+        JS
+      end
+
+      assert_selector "html.dark.theme-dark"
+      assert_no_selector "html.light, html.theme-light"
+      assert_equal [ [ "light", "(prefers-color-scheme: light)" ], [ "dark", "(prefers-color-scheme: dark)" ] ], theme_media
+      assert_equal "undefined", page.evaluate_script("typeof window.Stimulus") if block_modules
+    end
+  ensure
+    browser&.execute_cdp("Page.removeScriptToEvaluateOnNewDocument", identifier: script["identifier"]) if script
+    browser&.execute_cdp("Network.setBlockedURLs", urls: [])
+    browser&.execute_cdp("Emulation.setEmulatedMedia", features: [])
+  end
+
+  test "저장소 쓰기가 차단돼도 선택한 테마와 주소창 색을 적용한다" do
+    visit root_path
+    page.execute_script(<<~JS)
+      localStorage.theme = 'light';
+      const storage = localStorage;
+      Object.defineProperty(window, 'localStorage', {
+        value: {
+          get theme() { return storage.theme; },
+          set theme(value) { throw new DOMException('Blocked', 'SecurityError'); }
+        }
+      });
+      const element = document.querySelector('[data-controller~="ruby-ui--theme-toggle"]');
+      window.Stimulus.getControllerForElementAndIdentifier(element, 'ruby-ui--theme-toggle').setTheme();
+    JS
+
+    find('footer button[aria-label="다크 모드로 전환"]').click
+
+    assert_selector "html.dark.theme-dark"
+    assert_no_selector "html.light, html.theme-light"
+    assert_equal [ [ "light", "not all" ], [ "dark", "all" ] ], theme_media
+    assert_equal "light", page.evaluate_script("localStorage.theme"), "다크를 선택해도 쓰기 실패로 저장값은 바뀌지 않는다"
+
+    find('footer button[aria-label="라이트 모드로 전환"]').click
+
+    assert_selector "html.light.theme-light"
+    assert_no_selector "html.dark, html.theme-dark"
+    assert_equal [ [ "light", "all" ], [ "dark", "not all" ] ], theme_media
+  end
+
+  test "저장소 접근이 차단돼도 Turbo 이동 후 선택한 테마를 유지한다" do
+    browser = nil
+    [ true, false ].each do |block_read|
+      visit root_path
+      browser = page.driver.browser
+      browser.execute_cdp("Emulation.setEmulatedMedia", features: [ { name: "prefers-color-scheme", value: "light" } ])
+      page.execute_script("localStorage.theme = 'light'")
+      page.refresh
+      page.execute_script(<<~JS)
+        const storage = localStorage;
+        Object.defineProperty(window, 'localStorage', {
+          get() {
+            if (#{block_read}) throw new DOMException('Blocked', 'SecurityError');
+            return {
+              get theme() { return storage.theme; },
+              set theme(value) { throw new DOMException('Blocked', 'SecurityError'); }
+            };
+          }
+        });
+        window.themeNavigationMarker = 'same-document';
+      JS
+
+      find('footer button[aria-label="다크 모드로 전환"]').click
+
+      assert_selector "html.dark.theme-dark"
+
+      find("footer a[href='#{privacy_policy_path}']").click
+
+      assert_current_path privacy_policy_path
+      assert_equal "same-document", page.evaluate_script("window.themeNavigationMarker")
+      assert_selector "html.dark.theme-dark"
+      assert_no_selector "html.light, html.theme-light"
+      assert_equal [ [ "light", "not all" ], [ "dark", "all" ] ], theme_media
+    end
+  ensure
+    browser&.execute_cdp("Emulation.setEmulatedMedia", features: [])
+  end
+
   private
 
   def theme_media

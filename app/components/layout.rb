@@ -52,7 +52,8 @@ class Components::Layout < Components::Base
       raw(<<~JS.html_safe)
         (function(){
           var d=document.documentElement;
-          var storedTheme=localStorage.theme;
+          var storedTheme;
+          try { storedTheme=localStorage.theme; } catch(e) { storedTheme=null; }
           var prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
           var dark=storedTheme==='dark'||(storedTheme!=='light'&&prefersDark);
           d.classList.toggle('dark',dark);
