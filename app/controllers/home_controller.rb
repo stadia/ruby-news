@@ -40,11 +40,13 @@ class HomeController < ApplicationController
     @boosted_article_ids = boosted_article_ids_for(@articles, @featured_articles)
     @news_media_organization = self.class.publisher_schema(Hosts.locale_for_host(request.host))
     @recent_comments = recent_comments
+    @recent_blog_posts = Post.recent_published_blogs
     @sidebar_tags = sidebar_tags
     render Views::Home::Index.new(
       articles: @articles,
       featured_articles: @featured_articles,
       recent_comments: @recent_comments,
+      recent_blog_posts: @recent_blog_posts,
       sidebar_tags: @sidebar_tags,
       liked_article_ids: @liked_article_ids,
       boosted_article_ids: @boosted_article_ids

@@ -368,6 +368,8 @@ ja:
       enable: オンにする
       later: あとで
       title: 通知設定
+  recent_blog_posts_sidebar:
+    heading: 最新ブログ記事
   recent_comments_sidebar:
     heading: 最近のコメント
     view_article: 記事を見る

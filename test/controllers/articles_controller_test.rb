@@ -24,6 +24,24 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
     assert_respond_to calls.first[:pagy], :call
   end
 
+  test "GET index lists recent blog posts above tags" do
+    get articles_path
+
+    assert_response :success
+    assert_select "aside.recent-blog-posts-sidebar + aside.tags-sidebar"
+    assert_select "aside.recent-blog-posts-sidebar a[href=?]",
+                  user_profile_blog_post_path(username: users(:john).username, slug: posts(:blog_published)), text: /발행된 긴 글/
+  end
+
+  test "GET others lists recent blog posts above tags" do
+    get others_path
+
+    assert_response :success
+    assert_select "aside.recent-blog-posts-sidebar + aside.tags-sidebar"
+    assert_select "aside.recent-blog-posts-sidebar a[href=?]",
+                  user_profile_blog_post_path(username: users(:john).username, slug: posts(:blog_published)), text: /발행된 긴 글/
+  end
+
   test "GET index defaults to Ruby-News search results" do
     get articles_path
 
