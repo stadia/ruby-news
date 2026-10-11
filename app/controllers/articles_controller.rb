@@ -16,8 +16,11 @@ class ArticlesController < ApplicationController
   skip_before_action :authenticate_user!, only: %i[ index show others tag ]
 
   before_action :set_article, only: %i[ show ]
-  # 기사 등록은 요약·임베딩 LLM 비용이 든다.
+  # 기사 등록은 요약·임베딩 LLM 비용이 든다. 회원별 한도에 더해, 계정을 여러 개 만들어
+  # 우회해도 시간당 비용이 묶이도록 전체 상한을 둔다.
+  GLOBAL_CREATE_LIMIT = 30
   rate_limit to: 5, within: 1.hour, by: :rate_limit_key, with: :handle_rate_limit, only: :create
+  rate_limit to: GLOBAL_CREATE_LIMIT, within: 1.hour, by: -> { "all" }, with: :handle_rate_limit, name: "global", only: :create
 
   include Pagy::Method
 

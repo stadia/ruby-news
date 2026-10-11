@@ -458,6 +458,34 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
     assert_equal I18n.t("posts.rate_limit_exceeded"), flash[:alert]
   end
 
+  # 계정을 여러 개 만들어 회원별 한도를 우회해도 시간당 전체 등록 수는 넘지 못한다(#1072 리뷰).
+  test "POST create is capped globally across users" do
+    sign_in_as(users(:john))
+    over_global = ->(key, *, **) { key.include?(":global:") ? ArticlesController::GLOBAL_CREATE_LIMIT + 1 : 1 }
+
+    ArticlesController.cache_store.stub(:increment, over_global) do
+      assert_no_difference("Article.count") do
+        post articles_path, params: { article: { url: "https://example.com/global-limited" } }
+      end
+    end
+
+    assert_redirected_to root_path
+    assert_equal I18n.t("posts.rate_limit_exceeded"), flash[:alert]
+  end
+
+  test "POST create rate limit does not apply to admins" do
+    response = Struct.new(:body, :status, :headers).new("<html><title>Admin article</title></html>", 200, {})
+    sign_in_as(users(:admin))
+
+    ArticlesController.cache_store.stub(:increment, 100) do
+      SafeHttp.stub(:fetch, ->(*) { response }) do
+        assert_difference("Article.count", 1) do
+          post articles_path, params: { article: { url: "https://example.com/admin-submitted" } }
+        end
+      end
+    end
+  end
+
   test "POST create with a duplicate url redirects to the existing article" do
     # url·origin_url 모두 uniqueness 검증이므로 중복 POST는 저장 실패 →
     # errors.details.fetch(:origin_url/:url, []).any?(:taken) 분기로 빠져
