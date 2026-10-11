@@ -3,9 +3,14 @@
 # rbs_inline: enabled
 
 # 사용자가 준 URL을 서버가 대신 요청할 때 쓴다. 내부망 주소와 http(s) 외 스킴을 막고 타임아웃을 건다.
-# 리다이렉트는 호출부가 hop마다 다시 get을 부르므로 매 단계 검사된다.
+# 리다이렉트는 get_following_redirects가 hop마다 get을 다시 불러 매 단계 검사한다.
 module SafeHttp
   class BlockedUrlError < StandardError; end
+
+  MAX_REDIRECTS = 4
+
+  # 리다이렉트를 따라간 마지막 응답과 그 URL.
+  Fetched = Data.define(:response, :url)
 
   # IPAddr#private?/loopback?/link_local? 밖이지만 전역 라우팅 대상이 아닌 특수 용도 대역(IANA special-purpose)
   INTERNAL_RANGES = %w[
@@ -21,6 +26,22 @@ module SafeHttp
     #: (String url) -> Faraday::Response
     def get(url)
       fetch(url, check!(url))
+    end
+
+    # 3xx를 따라가 마지막 응답과 그 URL을 돌려준다. 상대 경로는 현재 URL 기준으로 풀고,
+    # 상한에 걸리면 마지막 3xx 응답을 그대로 돌려준다(그 Location은 검사하지 않았다).
+    # 파싱할 수 없는 Location(한글·공백 등)은 다른 차단과 같이 BlockedUrlError로 다룬다.
+    #: (String url) -> Fetched
+    def get_following_redirects(url)
+      response = get(url)
+      MAX_REDIRECTS.times do
+        location = response.headers["location"]
+        break unless response.status.between?(300, 399) && location
+
+        url = redirect_target(url, location)
+        response = get(url)
+      end
+      Fetched.new(response:, url:)
     end
 
     # 검사한 IP로 직접 연결해 DNS 리바인딩을 막는다. Host 헤더와 TLS SNI는 URL의 호스트를 그대로 쓴다.
@@ -60,6 +81,13 @@ module SafeHttp
       addresses.min_by { it.include?(":") ? 1 : 0 }
     rescue URI::InvalidURIError, IPAddr::InvalidAddressError, Resolv::ResolvError, SystemCallError
       nil
+    end
+
+    #: (String base, String location) -> String
+    def redirect_target(base, location)
+      URI.join(base, location).to_s #: String
+    rescue URI::InvalidURIError
+      raise BlockedUrlError, "blocked redirect Location: #{location}"
     end
 
     #: (IPAddr ip) -> bool

@@ -106,4 +106,70 @@ class SafeHttpTest < ActiveSupport::TestCase
     assert_equal HttpTimeouts::OPEN, options.open_timeout
     assert_equal HttpTimeouts::REQUEST, options.timeout
   end
+
+  Response = Struct.new(:status, :headers, :body)
+
+  test "get_following_redirects는 상대·절대 경로를 현재 URL 기준으로 따라가 마지막 응답과 URL을 돌려준다" do
+    responses = [
+      Response.new(301, { "location" => "/step-1" }, ""),
+      Response.new(302, { "location" => "https://cdn.example/final" }, ""),
+      Response.new(200, {}, "done")
+    ]
+    requested = []
+
+    SafeHttp.stub(:resolve, [ PUBLIC_IP ]) do
+      SafeHttp.stub(:fetch, ->(url, _ip) { requested << url; responses.shift }) do
+        result = SafeHttp.get_following_redirects("https://blog.example/a/original")
+
+        assert_equal "done", result.response.body
+        assert_equal "https://cdn.example/final", result.url
+      end
+    end
+
+    assert_equal %w[https://blog.example/a/original https://blog.example/step-1 https://cdn.example/final], requested
+  end
+
+  test "get_following_redirects는 상한을 넘으면 마지막 3xx 응답에서 멈춘다" do
+    loop_response = Response.new(302, { "location" => "/again" }, "stop")
+    count = 0
+
+    SafeHttp.stub(:resolve, [ PUBLIC_IP ]) do
+      SafeHttp.stub(:fetch, ->(*) { count += 1; loop_response }) do
+        assert_equal 302, SafeHttp.get_following_redirects("https://blog.example/loop").response.status
+      end
+    end
+
+    assert_equal SafeHttp::MAX_REDIRECTS + 1, count
+  end
+
+  # URI.join은 Location 전체를 파싱하므로 한글·공백이 든 값에서 InvalidURIError가 난다.
+  # 예외 대신 다른 차단과 같은 BlockedUrlError로 다뤄야 호출부의 blocked_url 처리가 동작한다.
+  test "get_following_redirects는 파싱할 수 없는 Location을 BlockedUrlError로 처리한다" do
+    [ "https://blog.example/한글/글", "/한글/글", "https://blog.example/a b" ].each do |location|
+      SafeHttp.stub(:resolve, [ PUBLIC_IP ]) do
+        SafeHttp.stub(:fetch, ->(*) { Response.new(302, { "location" => location }, "") }) do
+          assert_raises(SafeHttp::BlockedUrlError, location) { SafeHttp.get_following_redirects("https://blog.example/a") }
+        end
+      end
+    end
+  end
+
+  test "get_following_redirects는 Location이 없는 3xx 응답을 그대로 돌려준다" do
+    SafeHttp.stub(:resolve, [ PUBLIC_IP ]) do
+      SafeHttp.stub(:fetch, ->(*) { Response.new(304, {}, "") }) do
+        result = SafeHttp.get_following_redirects("https://blog.example/a")
+
+        assert_equal 304, result.response.status
+        assert_equal "https://blog.example/a", result.url
+      end
+    end
+  end
+
+  test "get_following_redirects는 내부망으로 가는 리다이렉트를 막는다" do
+    SafeHttp.stub(:resolve, ->(host) { host == "blog.example" ? [ PUBLIC_IP ] : [ "10.0.0.5" ] }) do
+      SafeHttp.stub(:fetch, ->(*) { Response.new(302, { "location" => "http://internal.example/admin" }, "") }) do
+        assert_raises(SafeHttp::BlockedUrlError) { SafeHttp.get_following_redirects("https://blog.example/a") }
+      end
+    end
+  end
 end

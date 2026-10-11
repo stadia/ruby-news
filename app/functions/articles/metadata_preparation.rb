@@ -19,40 +19,14 @@ module Articles
 
     YOUTUBE_QUERY_KEYS = %w[t feature si].freeze
 
-    MAX_REDIRECTS = 3
-
     class << self
-      #: (String url) -> Faraday::Response?
+      # 리다이렉트를 따라간 마지막 응답과 그 URL. 네트워크 오류면 nil.
+      #: (String url) -> SafeHttp::Fetched?
       def fetch_url_content(url)
-        SafeHttp.get(url)
+        SafeHttp.get_following_redirects(url)
       rescue Faraday::Error => e
         logger.error "Error fetching URL #{url}: #{e.message}"
         nil
-      end
-
-      #: (Article article, Faraday::Response? response, ?Integer count) -> Faraday::Response?
-      def follow_redirection(article, response, count = 0)
-        return response if response.nil?
-        return response unless response.status.between?(300, 399) && response.headers["location"]
-        return response if count > MAX_REDIRECTS
-
-        redirect_url = response.headers["location"]
-        # article.url은 nilable 컬럼이라 상대 URL은 기준 URL이 있을 때만 해석한다.
-        base_url = article.url
-        current_url = if redirect_url.start_with?("http")
-          redirect_url
-        else
-          if base_url.nil? || base_url.empty?
-            logger.error "Cannot resolve relative redirect #{redirect_url.inspect} without an article URL"
-            return nil
-          end
-
-          URI.join(base_url, redirect_url).to_s
-        end
-        article.url = current_url
-
-        next_response = fetch_url_content(current_url)
-        follow_redirection(article, next_response, count + 1)
       end
 
       #: (String url) -> ActiveSupport::TimeWithZone?

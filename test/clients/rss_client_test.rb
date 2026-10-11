@@ -153,4 +153,23 @@ class RssClientTest < ActiveSupport::TestCase
       assert_kind_of RSS::Rss, result
     end
   end
+
+  # 피드 요청도 SafeHttp를 거쳐 hop마다 검사하고 상대 경로 리다이렉트를 따라간다(#1062).
+  test "feed는 SafeHttp로 리다이렉트를 따라가 피드를 파싱한다" do
+    xml = <<~XML
+      <?xml version="1.0"?>
+      <rss version="2.0"><channel><title>Moved</title><link>https://blog.example</link><description>d</description></channel></rss>
+    XML
+    responses = [ Struct.new(:status, :headers, :body).new(301, { "location" => "/feed.xml" }, ""),
+                  Struct.new(:status, :headers, :body).new(200, {}, xml) ]
+    requested = []
+
+    SafeHttp.stub(:resolve, [ "93.184.215.14" ]) do
+      SafeHttp.stub(:fetch, ->(url, _ip) { requested << url; responses.shift }) do
+        assert_equal "Moved", RssClient.feed("https://blog.example/rss").channel.title
+      end
+    end
+
+    assert_equal %w[https://blog.example/rss https://blog.example/feed.xml], requested
+  end
 end
