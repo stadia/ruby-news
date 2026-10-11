@@ -113,6 +113,28 @@ class PostTest < ActiveSupport::TestCase
     end
   end
 
+  # 부모 댓글을 지우면 답글도 콜백을 거쳐 지워져야 카운터·부스트가 어긋나지 않는다(#1057).
+  test "부모 댓글 삭제 시 답글도 콜백과 카운터 갱신을 거쳐 삭제된다" do
+    article = articles(:ruby_article)
+    posts_count_before = article.posts_count
+    parent = Post.create!(body: "부모 댓글", user: @user, article:)
+    child = Post.create!(body: "다른 회원의 답글", user: users(:admin), article:, parent:)
+    actor = Fedipub::Actor.create!(
+      federated_url: "https://remote.example/users/booster-#{SecureRandom.hex(4)}",
+      username: "booster", name: "Booster", server: "remote.example",
+      inbox_url: "https://remote.example/inbox", outbox_url: "https://remote.example/outbox",
+      followers_url: "https://remote.example/followers", followings_url: "https://remote.example/following",
+      profile_url: "https://remote.example/@booster", actor_type: "Person", local: false
+    )
+    boost = Boost.create!(actor:, boostable: child)
+
+    parent.reload.destroy
+
+    assert_not Post.exists?(child.id)
+    assert_not Boost.exists?(boost.id)
+    assert_equal posts_count_before, article.reload.posts_count
+  end
+
   # ========== Article Comment Tests ==========
 
   test "comment?는 post_type이 comment이면 true를 반환한다" do

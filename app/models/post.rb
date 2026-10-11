@@ -28,7 +28,8 @@ class Post < ApplicationRecord
   self.discard_column = :deleted_at
 
   # ── Framework Macros ─────────────────────────────────────────────────
-  acts_as_nested_set
+  # 기본값(:delete_all)은 답글을 콜백 없이 지워 posts_count·부스트·연합 Delete가 어긋난다(#1057).
+  acts_as_nested_set dependent: :destroy
   acts_as_taggable_on :tags
 
   # ── Enums ────────────────────────────────────────────────────────────
