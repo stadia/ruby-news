@@ -25,6 +25,7 @@ class DiscardedArticleCleanupJob < ApplicationJob
       # `update_all`/`delete_all` are typed `untyped` by the activerecord RBS,
       # so `count += rows` resolves against every `Integer#+` overload and
       # widens the counters to BigDecimal. Both actually return a row count.
+      cleanup_dependents(article_ids)
       nulled_posts = Post.where(article_id: article_ids).update_all(article_id: nil) #: Integer
       deleted_notifications = NotificationDelivery.where(article_id: article_ids).delete_all #: Integer
       deleted_articles = Article.where(id: article_ids).delete_all #: Integer
@@ -46,6 +47,25 @@ class DiscardedArticleCleanupJob < ApplicationJob
   end
 
   private
+
+  # 기사를 delete_all로 지우면 콜백이 돌지 않으므로, 다형 연관(FK 없음)과 첨부를 먼저 정리한다.
+  #: (Array[Integer] article_ids) -> void
+  def cleanup_dependents(article_ids)
+    # destroy_all이라야 tags.taggings_count가 줄어든다.
+    ActsAsTaggableOn::Tagging.where(taggable_type: "Article", taggable_id: article_ids).destroy_all
+    delete_reactions(Like.where(likeable_type: "Article", likeable_id: article_ids), :likees_count)
+    delete_reactions(Boost.where(boostable_type: "Article", boostable_id: article_ids), :boostees_count)
+    ActiveStorage::Attachment.where(record_type: "Article", record_id: article_ids).find_each(&:purge_later)
+  end
+
+  # 지워질 기사에 대한 Undo 연합 발송은 필요 없으므로 delete_all로 지우고 actor 카운터만 맞춘다.
+  #: (ActiveRecord::Relation scope, Symbol counter) -> void
+  def delete_reactions(scope, counter)
+    scope.group(:actor_id).count.each do |actor_id, count|
+      Fedipub::Actor.update_counters(actor_id, counter => -count)
+    end
+    scope.delete_all
+  end
 
   #: () -> void
   def vacuum_articles
