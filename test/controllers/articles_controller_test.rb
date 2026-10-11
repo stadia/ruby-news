@@ -473,11 +473,12 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
     assert_equal I18n.t("posts.rate_limit_exceeded"), flash[:alert]
   end
 
-  test "POST create rate limit does not apply to admins" do
+  # 관리자 등록이 전역 카운터를 채우면 일반 회원이 막히므로 카운터 자체를 건드리지 않아야 한다.
+  test "POST create by admins skips the rate limit counters" do
     response = Struct.new(:body, :status, :headers).new("<html><title>Admin article</title></html>", 200, {})
     sign_in_as(users(:admin))
 
-    ArticlesController.cache_store.stub(:increment, 100) do
+    ArticlesController.cache_store.stub(:increment, ->(*, **) { flunk "관리자 요청은 한도 카운터를 올리지 않아야 한다" }) do
       SafeHttp.stub(:fetch, ->(*) { response }) do
         assert_difference("Article.count", 1) do
           post articles_path, params: { article: { url: "https://example.com/admin-submitted" } }

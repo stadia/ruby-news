@@ -2,8 +2,9 @@
 # frozen_string_literal: true
 # rbs_inline: enabled
 
-# Rails 내장 `rate_limit`의 `by:`·`with:` 처리기. 한도는 각 컨트롤러가 회원 단위로 선언한다.
-# 예: rate_limit to: 20, within: 1.hour, by: :rate_limit_key, with: :handle_rate_limit, only: :create
+# Rails 내장 `rate_limit`의 `by:`·`with:`·`unless:` 처리기. 한도는 각 컨트롤러가 회원 단위로 선언한다.
+# 예: rate_limit to: 20, within: 1.hour, by: :rate_limit_key, with: :render_rate_limit_error,
+#                unless: :rate_limit_exempt?, only: :create
 module RateLimiting
   extend ActiveSupport::Concern
 
@@ -15,9 +16,10 @@ module RateLimiting
     current_user.id
   end
 
-  #: () -> void
-  def handle_rate_limit
-    render_rate_limit_error unless current_user&.admin?
+  # rate_limit은 with: 호출 전에 카운터를 올리므로, 관리자는 필터 자체를 건너뛰어 공용(전역) 카운터를 채우지 않게 한다.
+  #: () -> bool
+  def rate_limit_exempt?
+    current_user&.admin? || false
   end
 
   #: () -> void

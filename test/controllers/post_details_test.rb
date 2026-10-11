@@ -371,7 +371,7 @@ class PostDetailsTest < ActionDispatch::IntegrationTest
   test "admins are exempt from the posting rate limit" do
     sign_in users(:admin)
 
-    exhaust_rate_limit do
+    PostsController.cache_store.stub(:increment, ->(*, **) { flunk "관리자 요청은 한도 카운터를 올리지 않아야 한다" }) do
       assert_difference("Post.count", 1) { post posts_url, params: { post: { body: "관리자 글" } } }
     end
   end
