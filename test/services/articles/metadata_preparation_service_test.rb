@@ -216,45 +216,18 @@ module Articles
       assert_equal [ "https://example.com/redirect-me" ], requested
     end
 
-    test "follow_redirection은 nil과 non redirect 응답을 그대로 반환한다" do
-      article = Article.new(url: "https://example.com/original")
-      ok = Response.new("ok", 200, {})
+    # 리다이렉트 규칙 자체는 SafeHttp.get_following_redirects 테스트가 고정한다. 여기서는 최종 URL 반영만 본다.
+    test "리다이렉트를 따라간 최종 URL을 기사 URL로 쓴다" do
+      article = Article.new(url: "https://example.com/original-post", title: "Existing Title")
+      responses = [
+        Response.new("", 301, { "location" => "/moved/post-2026" }),
+        Response.new("<html></html>", 200, {})
+      ]
 
-      assert_nil MetadataPreparation.follow_redirection(article, nil)
-      assert_equal ok, MetadataPreparation.follow_redirection(article, ok)
-    end
-
-    test "follow_redirection은 기준 URL 없이 상대 경로를 해석하지 않는다" do
-      article = Article.new(url: nil)
-      redirect = Response.new("", 302, { "location" => "/next" })
-
-      MetadataPreparation.stub(:fetch_url_content, ->(*) { flunk "기준 URL이 없으면 fetch하지 않아야 한다" }) do
-        assert_nil MetadataPreparation.follow_redirection(article, redirect)
+      SafeHttp.stub(:fetch, ->(*) { responses.shift }) do
+        assert_predicate MetadataPreparationService.new.call(article), :success?
       end
-    end
-
-    test "follow_redirection은 상대 경로와 절대 경로를 따라간다" do
-      article = Article.new(url: "https://example.com/original")
-      first = Response.new("", 302, { "location" => "/step-1" })
-      second = Response.new("", 302, { "location" => "https://cdn.example.com/final" })
-      final = Response.new("done", 200, {})
-      responses = [ second, final ]
-
-      MetadataPreparation.stub(:fetch_url_content, ->(_url) { responses.shift }) do
-        result = MetadataPreparation.follow_redirection(article, first)
-
-        assert_equal final, result
-        assert_equal "https://cdn.example.com/final", article.url
-      end
-    end
-
-    test "follow_redirection은 최대 리다이렉트 수를 넘기면 중단한다" do
-      article = Article.new(url: "https://example.com/original")
-      response = Response.new("", 302, { "location" => "https://example.com/next" })
-
-      MetadataPreparation.stub(:fetch_url_content, ->(_url) { flunk "should not fetch beyond max redirects" }) do
-        assert_equal response, MetadataPreparation.follow_redirection(article, response, MetadataPreparation::MAX_REDIRECTS + 1)
-      end
+      assert_equal "https://example.com/moved/post-2026", article.url
     end
 
     test "normalized_url은 유튜브와 일반 URL에서 추적 파라미터를 제거한다" do

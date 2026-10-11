@@ -32,12 +32,10 @@ module Articles
 
     #: (Article article) -> Dry::Monads::Result
     def resolve_response(article)
-      response = MetadataPreparation.fetch_url_content(article.url.to_s)
+      response, final_url = MetadataPreparation.fetch_url_content(article.url.to_s)
       return Failure(:fetch_failed) if response.nil?
 
-      response = MetadataPreparation.follow_redirection(article, response)
-      return Failure(:fetch_failed) if response.nil?
-
+      article.url = final_url
       Success(response)
     rescue SafeHttp::BlockedUrlError => e
       logger.warn e.message

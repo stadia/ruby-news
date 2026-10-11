@@ -421,15 +421,6 @@ class ContentServiceTest < ActiveSupport::TestCase
     end
   end
 
-  test "faraday_fetch_html은 리다이렉트 제한을 넘기면 마지막 body를 반환한다" do
-    service = ContentService.new
-    response = MockResponse.new(status: 302, body: "stop", headers: { "location" => "https://example.com/next" })
-
-    SafeHttp.stub(:fetch, ->(*) { response }) do
-      assert_equal "stop", service.send(:faraday_fetch_html, "https://example.com/original", 4)
-    end
-  end
-
   test "mcp_fetch_html은 상태 코드가 200이 아니면 nil을 반환한다" do
     service = ContentService.new
     client = Object.new

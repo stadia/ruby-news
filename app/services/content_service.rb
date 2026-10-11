@@ -120,39 +120,16 @@ class ContentService < OperationService
     nil
   end
 
-  #: (String url, ?Integer? count) -> String?
-  def faraday_fetch_html(url, count = 0)
-    fetch_following_redirects(url, count).first.body
+  #: (String url) -> String?
+  def faraday_fetch_html(url)
+    SafeHttp.get_following_redirects(url).first.body
   end
-
-  # 리다이렉트를 hop마다 SafeHttp로 검사하며 따라가 마지막 응답과 그 URL을 돌려준다.
-  #: (String url, ?Integer? count) -> [Faraday::Response, String]
-  def fetch_following_redirects(url, count = 0)
-    count ||= 0
-    response = SafeHttp.get(url)
-    logger.debug "#{response.status} #{url}"
-    return [ response, url ] unless response.status.between?(300, 399) && response.headers["location"]
-    return [ response, url ] if count > 3
-
-    logger.debug response.headers["location"]
-    # 3xx 응답인 경우 리다이렉트된 URL을 사용
-    redirect_url = response.headers["location"]
-    url = if redirect_url.start_with?("http")
-            redirect_url
-    else
-            URI.join(url, redirect_url).to_s
-    end
-    logger.debug "Redirecting to: #{url}"
-
-    fetch_following_redirects(url, count + 1)
-  end
-
 
   #: (String url) -> String?
   def mcp_fetch_html(url)
     # Scrapling은 리다이렉트를 검사 없이 따라가므로, 앱에서 먼저 검사하며 따라간 최종 URL만 넘긴다.
     # shortcut: Scrapling이 다른 응답(UA별 리다이렉트, DNS 리바인딩)을 받으면 못 막는다. Scrapling 파드 egress 차단으로 보완한다.
-    response, url = fetch_following_redirects(url)
+    response, url = SafeHttp.get_following_redirects(url)
     # 리다이렉트 한도에 걸린 3xx는 Location을 검사하지 않았으므로 넘기지 않는다.
     return nil if response.status.between?(300, 399)
 

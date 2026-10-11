@@ -24,12 +24,7 @@ module RssClient
   class << self
     #: (String url) -> (RSS::Rss | RSS::RDF | RSS::Atom::Feed)?
     def feed(url)
-      response = Faraday.get(url) { |req| apply_timeouts(req) }
-      if response.status.between?(300, 399) && response.headers["location"]
-        # Location이 상대 경로(/feed.xml 등)일 수 있으므로 원 요청 URL 기준으로 절대화한다.
-        redirect_url = URI.join(url, response.headers["location"]).to_s
-        response = Faraday.get(redirect_url) { |req| apply_timeouts(req) }
-      end
+      response, = SafeHttp.get_following_redirects(url)
       raise Faraday::ForbiddenError, response.body if response.status == 403
       raise Faraday::UnauthorizedError, response.body if response.status == 401
       raise Faraday::TooManyRequestsError, response.body if response.status == 429
@@ -63,14 +58,6 @@ module RssClient
       end
 
       doc.to_xml
-    end
-
-    private
-
-    #: (untyped req) -> void
-    def apply_timeouts(req)
-      req.options.open_timeout = HttpTimeouts::OPEN
-      req.options.timeout = HttpTimeouts::REQUEST
     end
   end
 end
