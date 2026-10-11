@@ -64,13 +64,16 @@ class DiscardedArticleCleanupJob < ApplicationJob
 
   # 지워질 기사에 대한 Undo 연합 발송은 필요 없으므로 delete_all로 지우고 actor 카운터만 맞춘다.
   # 카운터 감소와 삭제를 한 트랜잭션으로 묶어, 도중 실패 후 재실행이 같은 행을 다시 빼지 않게 한다.
+  # 폐기 기사에도 좋아요가 허용되므로 미리 센 개수가 아니라 실제로 지운 행(RETURNING)만큼 뺀다.
   #: (ActiveRecord::Relation scope, Symbol counter) -> Integer
   def delete_reactions(scope, counter)
     ActiveRecord::Base.transaction do
-      scope.group(:actor_id).count.each do |actor_id, count|
-        Fedipub::Actor.update_counters(actor_id, counter => -count)
-      end
-      scope.delete_all
+      klass = scope.klass
+      deleted = klass.connection.select_values(
+        "DELETE FROM #{klass.quoted_table_name} WHERE id IN (#{scope.select(:id).to_sql}) RETURNING actor_id"
+      )
+      deleted.tally.each { |actor_id, count| Fedipub::Actor.update_counters(actor_id, counter => -count) }
+      deleted.size
     end
   end
 
