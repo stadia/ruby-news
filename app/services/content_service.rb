@@ -122,11 +122,17 @@ class ContentService < OperationService
 
   #: (String url, ?Integer? count) -> String?
   def faraday_fetch_html(url, count = 0)
+    fetch_following_redirects(url, count).first.body
+  end
+
+  # 리다이렉트를 hop마다 SafeHttp로 검사하며 따라가 마지막 응답과 그 URL을 돌려준다.
+  #: (String url, ?Integer? count) -> [Faraday::Response, String]
+  def fetch_following_redirects(url, count = 0)
     count ||= 0
     response = SafeHttp.get(url)
     logger.debug "#{response.status} #{url}"
-    return response.body unless response.status.between?(300, 399) && response.headers["location"]
-    return response.body if count > 3
+    return [ response, url ] unless response.status.between?(300, 399) && response.headers["location"]
+    return [ response, url ] if count > 3
 
     logger.debug response.headers["location"]
     # 3xx 응답인 경우 리다이렉트된 URL을 사용
@@ -138,14 +144,15 @@ class ContentService < OperationService
     end
     logger.debug "Redirecting to: #{url}"
 
-    faraday_fetch_html(url, count + 1)
+    fetch_following_redirects(url, count + 1)
   end
 
 
   #: (String url) -> String?
   def mcp_fetch_html(url)
-    # Scrapling이 따라가는 리다이렉트는 검사하지 못하므로 첫 URL만 확인한다.
-    SafeHttp.check!(url)
+    # Scrapling은 리다이렉트를 검사 없이 따라가므로, 앱에서 먼저 검사하며 따라간 최종 URL만 넘긴다.
+    # shortcut: Scrapling이 다른 응답(UA별 리다이렉트, DNS 리바인딩)을 받으면 못 막는다. Scrapling 파드 egress 차단으로 보완한다.
+    _response, url = fetch_following_redirects(url)
     client = MCPClient.connect(ENV.fetch("SCRAPLING_URL") { "http://localhost::8000/mcp" })
     result = client.call_tool("fetch", { url: })&.[]("structuredContent")
     logger.debug result

@@ -23,7 +23,7 @@ module Articles
       article = Article.new(url: "https://example.com/post?tag=ruby&utm_source=x&tag=rails", title: "Existing Title")
       response = Response.new("<html></html>", 200, {})
 
-      Faraday.stub(:get, ->(*) { response }) do
+      SafeHttp.stub(:fetch, ->(*) { response }) do
         result = MetadataPreparationService.new.call(article)
 
         assert_predicate result, :success?
@@ -37,7 +37,7 @@ module Articles
       response = Response.new("", 200, {})
       video = Video.new(1.day.ago, "Video title")
 
-      Faraday.stub(:get, ->(*) { response }) do
+      SafeHttp.stub(:fetch, ->(*) { response }) do
         stub_constructor(Yt::Video, ->(*, **) { video }) do
           result = MetadataPreparationService.new.call(article)
 
@@ -55,7 +55,7 @@ module Articles
       youtube_article = Article.new(url: "https://www.youtube.com", origin_url: "https://www.youtube.com")
       video = Video.new(1.day.ago, "YouTube title")
 
-      Faraday.stub(:get, ->(*) { response }) do
+      SafeHttp.stub(:fetch, ->(*) { response }) do
         stub_constructor(Yt::Video, ->(*, **) { video }) do
           service = MetadataPreparationService.new
           service.call(article)
@@ -71,7 +71,7 @@ module Articles
     test "fetch 실패 시 failure를 반환해도 URL 정규화는 먼저 적용한다" do
       article = Article.new(url: "https://example.com/error-test?utm_source=x&utm_medium=y&ref=z")
 
-      Faraday.stub(:get, ->(*) { raise Faraday::ConnectionFailed.new("Connection failed") }) do
+      SafeHttp.stub(:fetch, ->(*) { raise Faraday::ConnectionFailed.new("Connection failed") }) do
         result = MetadataPreparationService.new.call(article)
 
         assert_predicate result, :failure?
@@ -88,7 +88,7 @@ module Articles
       )
       response = Response.new("", 200, {})
 
-      Faraday.stub(:get, ->(*) { response }) do
+      SafeHttp.stub(:fetch, ->(*) { response }) do
         stub_constructor(Yt::Video, ->(*, **) { raise Yt::Error.new("boom") }) do
           assert_nothing_raised do
             result = MetadataPreparationService.new.call(article)
@@ -109,7 +109,7 @@ module Articles
       )
       response = Response.new("<html><head><title>Title</title></head><body>Body</body></html>", 200, {})
 
-      Faraday.stub(:get, ->(*) { response }) do
+      SafeHttp.stub(:fetch, ->(*) { response }) do
         result = MetadataPreparationService.new.call(article)
 
         assert_predicate result, :success?
@@ -123,7 +123,7 @@ module Articles
       response = Response.new("<html><head><title>Title</title></head><body>Body</body></html>", 200, {})
 
       travel_to Time.zone.parse("2026-03-27 12:00:00") do
-        Faraday.stub(:get, ->(*) { response }) do
+        SafeHttp.stub(:fetch, ->(*) { response }) do
           result = MetadataPreparationService.new.call(article)
 
           assert_predicate result, :success?
@@ -140,7 +140,7 @@ module Articles
         {}
       )
 
-      Faraday.stub(:get, ->(*) { response }) do
+      SafeHttp.stub(:fetch, ->(*) { response }) do
         result = MetadataPreparationService.new.call(article)
 
         assert_predicate result, :success?
@@ -169,7 +169,7 @@ module Articles
         {}
       )
 
-      Faraday.stub(:get, ->(*) { response }) do
+      SafeHttp.stub(:fetch, ->(*) { response }) do
         result = MetadataPreparationService.new.call(article)
 
         assert_predicate result, :success?
@@ -185,7 +185,7 @@ module Articles
         {}
       )
 
-      Faraday.stub(:get, ->(*) { response }) do
+      SafeHttp.stub(:fetch, ->(*) { response }) do
         result = MetadataPreparationService.new.call(article)
 
         assert_predicate result, :success?
@@ -196,7 +196,7 @@ module Articles
     test "내부망 주소는 요청하지 않고 blocked_url로 실패한다" do
       article = Article.new(url: "http://192.168.1.150/admin/page")
 
-      Faraday.stub(:get, ->(*) { flunk "내부 주소는 요청하지 않아야 한다" }) do
+      SafeHttp.stub(:fetch, ->(*) { flunk "내부 주소는 요청하지 않아야 한다" }) do
         result = MetadataPreparationService.new.call(article)
 
         assert_equal :blocked_url, result.failure
@@ -208,7 +208,7 @@ module Articles
       requested = []
       redirect = Response.new("", 302, { "location" => "http://10.0.0.5/secret" })
 
-      Faraday.stub(:get, ->(url, *) { requested << url && redirect }) do
+      SafeHttp.stub(:fetch, ->(url, *) { requested << url && redirect }) do
         result = MetadataPreparationService.new.call(article)
 
         assert_equal :blocked_url, result.failure

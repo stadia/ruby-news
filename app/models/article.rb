@@ -186,8 +186,10 @@ class Article < ApplicationRecord
   #: () -> void
   def generate_metadata
     result = metadata_service.call(self)
-    logger.debug { "Article metadata preparation failed for #{url}: #{result.failure}" } if result.failure?
-    return unless result.failure? && result.failure == :blocked_url
+    return unless result.failure?
+
+    logger.debug { "Article metadata preparation failed for #{url}: #{result.failure}" }
+    return unless result.failure == :blocked_url
 
     errors.add(:url, :invalid)
     throw :abort

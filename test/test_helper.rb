@@ -32,8 +32,9 @@ require "test-prof"
 # 등록해 둔다.
 Minitest.load "test_prof"
 
-# SafeHttp의 주소 검사가 실제 DNS를 조회하지 않도록 고정 hosts 파일만 쓴다. 없는 호스트는 차단된다.
-Resolv::DefaultResolver.replace_resolvers([ Resolv::Hosts.new(File.expand_path("fixtures/files/hosts", __dir__)) ])
+# SafeHttp의 주소 검사가 실제 DNS를 조회하지 않도록 고정 hosts 파일만 쓴다.
+# 여기 없는 호스트는 풀리지 않아 :blocked_url로 실패하니, 새 테스트 호스트는 fixtures/files/hosts에 추가한다.
+SafeHttp.resolver = Resolv.new([ Resolv::Hosts.new(File.expand_path("fixtures/files/hosts", __dir__)) ])
 
 Warning[:deprecated] = true
 module ActiveSupport

@@ -1089,7 +1089,7 @@ class ArticleTest < ActiveSupport::TestCase
       {}
     )
 
-    Faraday.stub(:get, ->(*) { response }) do
+    SafeHttp.stub(:fetch, ->(*) { response }) do
       yield(response) if block_given?
     end
   end

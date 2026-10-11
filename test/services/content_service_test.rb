@@ -77,12 +77,51 @@ class ContentServiceTest < ActiveSupport::TestCase
     requested = []
     redirect = MockResponse.new(status: 302, headers: { "location" => "http://127.0.0.1:3000/admin" })
 
-    Faraday.stub(:get, ->(url, *) { requested << url && redirect }) do
+    SafeHttp.stub(:fetch, ->(url, *) { requested << url && redirect }) do
       result = ContentService.new.call(article)
 
       assert_equal :blocked_url, result.failure
     end
     assert_equal [ "https://example.com/redirect-me" ], requested
+  end
+
+  test "execute_html은 SCRAPLING 경로에서 내부망으로 리다이렉트되면 넘기지 않는다" do
+    article = Article.new(url: "https://example.com/redirect-me")
+    redirect = MockResponse.new(status: 302, headers: { "location" => "http://10.0.0.5/secret" })
+
+    ENV["SCRAPLING_URL"] = "http://scrapling.test/mcp"
+    SafeHttp.stub(:fetch, ->(*) { redirect }) do
+      MCPClient.stub(:connect, ->(*) { flunk "내부 주소는 넘기지 않아야 한다" }) do
+        assert_equal :blocked_url, ContentService.new.call(article).failure
+      end
+    end
+  ensure
+    ENV.delete("SCRAPLING_URL")
+  end
+
+  test "execute_html은 SCRAPLING에 리다이렉트를 따라간 최종 URL을 넘긴다" do
+    article = Article.new(url: "https://example.com/redirect-me")
+    responses = [
+      MockResponse.new(status: 301, headers: { "location" => "https://www.example.com/final" }),
+      MockResponse.new(status: 200, body: "<html></html>")
+    ]
+    fetched = nil
+    client = Object.new
+    client.define_singleton_method(:call_tool) do |_name, args|
+      fetched = args[:url]
+      { "structuredContent" => { "status" => 200, "content" => [ "<html><body><article><p>Final</p></article></body></html>" ] } }
+    end
+
+    ENV["SCRAPLING_URL"] = "http://scrapling.test/mcp"
+    SafeHttp.stub(:fetch, ->(*) { responses.shift }) do
+      MCPClient.stub(:connect, client) do
+        assert_predicate ContentService.new.call(article), :success?
+      end
+    end
+
+    assert_equal "https://www.example.com/final", fetched
+  ensure
+    ENV.delete("SCRAPLING_URL")
   end
 
   test "execute_html은 SCRAPLING 경로에도 내부망 주소를 넘기지 않는다" do
@@ -361,7 +400,7 @@ class ContentServiceTest < ActiveSupport::TestCase
       MockResponse.new(status: 200, body: "<html>done</html>", headers: {})
     ]
 
-    Faraday.stub(:get, ->(*) { responses.shift }) do
+    SafeHttp.stub(:fetch, ->(*) { responses.shift }) do
       assert_equal "<html>done</html>", service.send(:faraday_fetch_html, "https://example.com/original")
     end
   end
@@ -370,7 +409,7 @@ class ContentServiceTest < ActiveSupport::TestCase
     service = ContentService.new
     response = MockResponse.new(status: 302, body: "stop", headers: { "location" => "https://example.com/next" })
 
-    Faraday.stub(:get, ->(*) { response }) do
+    SafeHttp.stub(:fetch, ->(*) { response }) do
       assert_equal "stop", service.send(:faraday_fetch_html, "https://example.com/original", 4)
     end
   end
@@ -380,8 +419,10 @@ class ContentServiceTest < ActiveSupport::TestCase
     client = Object.new
     client.define_singleton_method(:call_tool) { |*, **| { "structuredContent" => { "status" => 500, "content" => [] } } }
 
-    MCPClient.stub(:connect, client) do
-      assert_nil service.send(:mcp_fetch_html, "https://example.com")
+    SafeHttp.stub(:fetch, ->(*) { MockResponse.new(status: 200) }) do
+      MCPClient.stub(:connect, client) do
+        assert_nil service.send(:mcp_fetch_html, "https://example.com")
+      end
     end
   end
 
@@ -390,8 +431,10 @@ class ContentServiceTest < ActiveSupport::TestCase
     client = Object.new
     client.define_singleton_method(:call_tool) { |*, **| { "structuredContent" => { "status" => 200, "content" => [ "<html>ok</html>" ] } } }
 
-    MCPClient.stub(:connect, client) do
-      assert_equal "<html>ok</html>", service.send(:mcp_fetch_html, "https://example.com")
+    SafeHttp.stub(:fetch, ->(*) { MockResponse.new(status: 200) }) do
+      MCPClient.stub(:connect, client) do
+        assert_equal "<html>ok</html>", service.send(:mcp_fetch_html, "https://example.com")
+      end
     end
   end
 

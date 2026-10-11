@@ -411,7 +411,7 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
   test "POST create rejects internal network url without fetching it" do
     sign_in_as(users(:john))
 
-    Faraday.stub(:get, ->(*) { flunk "내부 주소는 요청하지 않아야 한다" }) do
+    SafeHttp.stub(:fetch, ->(*) { flunk "내부 주소는 요청하지 않아야 한다" }) do
       assert_no_difference("Article.count") do
         post articles_path, params: { article: { url: "http://169.254.169.254/latest/meta-data" } }
       end
@@ -426,7 +426,7 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
     response = Struct.new(:body, :status, :headers).new("<html><title>Submitted article</title></html>", 200, {})
     sign_in_as(user)
 
-    Faraday.stub(:get, ->(*) { response }) do
+    SafeHttp.stub(:fetch, ->(*) { response }) do
       assert_difference("Article.count", 1) do
         assert_difference("Like.count", 1) do
           post articles_path, params: { article: { url: "https://example.com/submitted-by-user" } }

@@ -7,48 +7,76 @@
 module SafeHttp
   class BlockedUrlError < StandardError; end
 
-  # IPAddr#private?/loopback?/link_local? 밖이지만 외부로 나가지 않는 대역
-  INTERNAL_RANGES = %w[0.0.0.0/8 100.64.0.0/10 224.0.0.0/3 ::/128 ff00::/8].map { IPAddr.new(it) }.freeze
+  # IPAddr#private?/loopback?/link_local? 밖이지만 전역 라우팅 대상이 아닌 특수 용도 대역(IANA special-purpose)
+  INTERNAL_RANGES = %w[
+    0.0.0.0/8 100.64.0.0/10 192.0.0.0/24 192.0.2.0/24 198.18.0.0/15 198.51.100.0/24 203.0.113.0/24 224.0.0.0/3
+    ::/128 64:ff9b::/96 2001:db8::/32 2002::/16 ff00::/8
+  ].map { IPAddr.new(it) }.freeze
 
   class << self
+    # 테스트가 고정 hosts resolver로 바꿔 실제 DNS를 쓰지 않게 한다.
+    attr_writer :resolver
+
     #: (String url) -> Faraday::Response
     def get(url)
-      check!(url)
-      Faraday.get(url) do |req|
-        req.options.open_timeout = HttpTimeouts::OPEN
-        req.options.timeout = HttpTimeouts::REQUEST
-      end
+      fetch(url, check!(url))
     end
 
-    #: (String url) -> void
+    # 검사한 IP로 직접 연결해 DNS 리바인딩을 막는다. Host 헤더와 TLS SNI는 URL의 호스트를 그대로 쓴다.
+    #: (String url, String ip) -> Faraday::Response
+    def fetch(url, ip)
+      connection(ip).get(url)
+    end
+
+    # 통과하면 연결할 IP를 돌려준다.
+    #: (String url) -> String
     def check!(url)
-      raise BlockedUrlError, "blocked URL: #{url}" unless public_url?(url)
+      public_address(url) || raise(BlockedUrlError, "blocked URL: #{url}")
     end
 
     #: (String url) -> bool
     def public_url?(url)
-      uri = URI.parse(url)
-      host = uri.hostname
-      return false unless %w[http https].include?(uri.scheme) && host.present?
-
-      addresses = resolve(host)
-      addresses.any? && addresses.none? { internal?(IPAddr.new(it)) }
-    rescue URI::InvalidURIError, IPAddr::InvalidAddressError
-      false
+      !public_address(url).nil?
     end
 
-    # shortcut: 검사한 IP로 직접 연결하지 않아 DNS 리바인딩은 막지 못한다. 필요해지면 검사한 IP로 연결하도록 바꾼다.
     #: (String host) -> Array[String]
     def resolve(host)
-      Resolv.getaddresses(host)
+      resolver.getaddresses(host)
     end
 
     private
+
+    # 풀리지 않거나 하나라도 내부 주소로 풀리면 nil. IPv6 경로가 없는 환경을 고려해 IPv4를 먼저 고른다.
+    #: (String url) -> String?
+    def public_address(url)
+      uri = URI.parse(url)
+      host = uri.hostname
+      return unless %w[http https].include?(uri.scheme) && host.present?
+
+      addresses = resolve(host)
+      return if addresses.empty? || addresses.any? { internal?(IPAddr.new(it)) }
+
+      addresses.min_by { it.include?(":") ? 1 : 0 }
+    rescue URI::InvalidURIError, IPAddr::InvalidAddressError, Resolv::ResolvError, SystemCallError
+      nil
+    end
 
     #: (IPAddr ip) -> bool
     def internal?(ip)
       ip = ip.native
       ip.private? || ip.loopback? || ip.link_local? || INTERNAL_RANGES.any? { it.include?(ip) }
+    end
+
+    #: (String ip) -> Faraday::Connection
+    def connection(ip)
+      Faraday.new(request: { open_timeout: HttpTimeouts::OPEN, timeout: HttpTimeouts::REQUEST }) do |f|
+        f.adapter(:net_http) { |http| http.ipaddr = ip }
+      end
+    end
+
+    #: () -> Resolv
+    def resolver
+      @resolver ||= Resolv.new([ Resolv::Hosts.new, Resolv::DNS.new.tap { it.timeouts = HttpTimeouts::OPEN } ])
     end
   end
 end
