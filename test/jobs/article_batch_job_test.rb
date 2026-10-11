@@ -81,4 +81,13 @@ class ArticleBatchJobTest < ActiveSupport::TestCase
   test "한도 창은 실행 주기(5분)보다 짧다" do
     assert_operator ArticleBatchJob.new.send(:rate_limit_window), :<, 5.minutes
   end
+
+  # 한도 창(4분)보다 오래 걸린 실행과 다음 실행이 겹치면 같은 기사를 다시 집는다.
+  # 동시 실행은 한도 창이 아니라 Solid Queue 동시성 제어로 막는다.
+  test "실행 중인 배치가 있으면 새 실행은 버린다" do
+    assert_predicate ArticleBatchJob.new, :concurrency_limited?
+    assert_equal 1, ArticleBatchJob.concurrency_limit
+    assert_equal :discard, ArticleBatchJob.concurrency_on_conflict
+    assert_operator ArticleBatchJob.concurrency_duration, :>, 5.minutes
+  end
 end

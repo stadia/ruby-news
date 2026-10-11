@@ -7,6 +7,10 @@ class ArticleBatchJob < ApplicationJob
 
   queue_as :default
 
+  # 한 건 처리가 한도 창(4분)을 넘기면 다음 cron 실행이 같은 기사를 다시 집으므로,
+  # 실행 중이면 새 실행은 버린다. duration은 워커가 죽었을 때 잠금이 풀리는 상한이다.
+  limits_concurrency key: "article_batch", duration: 30.minutes, on_conflict: :discard
+
   # 당일 처리하지 못한 기사(자정 직전 수집분, 일시 실패분)도 다시 집도록 며칠을 돌아본다.
   LOOKBACK = 3.days
 
@@ -27,6 +31,7 @@ class ArticleBatchJob < ApplicationJob
         logger.error("Error processing article #{article.id}: #{e.message}")
       ensure
         # 실패한 기사가 다음 실행에서 다시 맨 앞에 잡히지 않도록 뒤로 보낸다.
+        # 서비스는 실패를 예외 대신 Failure로도 돌려주므로 rescue가 아니라 ensure에 둔다.
         # touch는 after_commit(RSS 캐시·IndexNow)을 돌리므로 컬럼만 갱신한다.
         article.update_column(:updated_at, Time.current)
       end
