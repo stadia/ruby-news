@@ -101,13 +101,51 @@ class DesignThemeTest < ApplicationSystemTestCase
     assert_selector "html.dark.theme-dark"
     assert_no_selector "html.light, html.theme-light"
     assert_equal [ [ "light", "not all" ], [ "dark", "all" ] ], theme_media
+    assert_equal "light", page.evaluate_script("localStorage.theme"), "다크를 선택해도 쓰기 실패로 저장값은 바뀌지 않는다"
 
     find('footer button[aria-label="라이트 모드로 전환"]').click
 
     assert_selector "html.light.theme-light"
     assert_no_selector "html.dark, html.theme-dark"
     assert_equal [ [ "light", "all" ], [ "dark", "not all" ] ], theme_media
-    assert_equal "light", page.evaluate_script("localStorage.theme")
+  end
+
+  test "저장소 접근이 차단돼도 Turbo 이동 후 선택한 테마를 유지한다" do
+    browser = nil
+    [ true, false ].each do |block_read|
+      visit root_path
+      browser = page.driver.browser
+      browser.execute_cdp("Emulation.setEmulatedMedia", features: [ { name: "prefers-color-scheme", value: "light" } ])
+      page.execute_script("localStorage.theme = 'light'")
+      page.refresh
+      page.execute_script(<<~JS)
+        const storage = localStorage;
+        Object.defineProperty(window, 'localStorage', {
+          get() {
+            if (#{block_read}) throw new DOMException('Blocked', 'SecurityError');
+            return {
+              get theme() { return storage.theme; },
+              set theme(value) { throw new DOMException('Blocked', 'SecurityError'); }
+            };
+          }
+        });
+        window.themeNavigationMarker = 'same-document';
+      JS
+
+      find('footer button[aria-label="다크 모드로 전환"]').click
+
+      assert_selector "html.dark.theme-dark"
+
+      find("footer a[href='#{privacy_policy_path}']").click
+
+      assert_current_path privacy_policy_path
+      assert_equal "same-document", page.evaluate_script("window.themeNavigationMarker")
+      assert_selector "html.dark.theme-dark"
+      assert_no_selector "html.light, html.theme-light"
+      assert_equal [ [ "light", "not all" ], [ "dark", "all" ] ], theme_media
+    end
+  ensure
+    browser&.execute_cdp("Emulation.setEmulatedMedia", features: [])
   end
 
   private

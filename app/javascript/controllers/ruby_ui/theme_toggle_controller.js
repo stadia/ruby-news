@@ -1,5 +1,8 @@
 import { Controller } from "@hotwired/stimulus"
 
+// 저장하지 못한 선택은 전체 새로고침 전까지 Turbo 이동 사이에 유지한다.
+let memoryTheme = null
+
 export default class extends Controller {
   initialize() {
     this.setTheme()
@@ -10,9 +13,9 @@ export default class extends Controller {
 
     if (storedTheme === undefined) {
       try {
-        storedTheme = localStorage.theme
+        storedTheme = memoryTheme ?? localStorage.theme
       } catch {
-        storedTheme = null
+        storedTheme = memoryTheme
       }
     }
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -39,13 +42,23 @@ export default class extends Controller {
 
   setLightTheme() {
     // Whenever the user explicitly chooses light mode
-    try { localStorage.theme = 'light' } catch { /* 저장 실패 시에도 현재 페이지에 적용한다. */ }
+    try {
+      localStorage.theme = 'light'
+      memoryTheme = null
+    } catch {
+      memoryTheme = 'light'
+    }
     this.setTheme({ disableTransitions: true, storedTheme: 'light' })
   }
 
   setDarkTheme() {
     // Whenever the user explicitly chooses dark mode
-    try { localStorage.theme = 'dark' } catch { /* 저장 실패 시에도 현재 페이지에 적용한다. */ }
+    try {
+      localStorage.theme = 'dark'
+      memoryTheme = null
+    } catch {
+      memoryTheme = 'dark'
+    }
     this.setTheme({ disableTransitions: true, storedTheme: 'dark' })
   }
 
