@@ -222,10 +222,8 @@ class PostDetailsTest < ActionDispatch::IntegrationTest
 
   test "rate limited detail reply retains body and parent" do
     sign_in @reader
-    cache = ActiveSupport::Cache::MemoryStore.new
-    cache.write("rate_limit:127.0.0.1:posts", 20)
 
-    Rails.stub(:cache, cache) do
+    exhaust_rate_limit do
       assert_no_difference("Post.count") { submit_reply(root: @short, parent: @short, body: "보존할 댓글") }
     end
     assert_response :too_many_requests
@@ -237,10 +235,8 @@ class PostDetailsTest < ActionDispatch::IntegrationTest
   test "rate limited child reply keeps the inline composer" do
     sign_in @reader
     parent = posts(:reply_post)
-    cache = ActiveSupport::Cache::MemoryStore.new
-    cache.write("rate_limit:127.0.0.1:posts", 20)
 
-    Rails.stub(:cache, cache) do
+    exhaust_rate_limit do
       assert_no_difference("Post.count") { submit_reply(root: @short, parent: parent, body: "보존할 답글") }
     end
     assert_response :too_many_requests
@@ -329,10 +325,8 @@ class PostDetailsTest < ActionDispatch::IntegrationTest
 
   test "rate limit cannot render an unrelated thread" do
     sign_in @reader
-    cache = ActiveSupport::Cache::MemoryStore.new
-    cache.write("rate_limit:127.0.0.1:posts", 20)
 
-    Rails.stub(:cache, cache) do
+    exhaust_rate_limit do
       assert_no_difference("Post.count") { submit_reply(root: @blog, parent: @short, body: "댓글") }
     end
     assert_response :not_found
@@ -340,10 +334,8 @@ class PostDetailsTest < ActionDispatch::IntegrationTest
 
   test "rate limited feed HTML redirects with localized feedback" do
     sign_in @reader
-    cache = ActiveSupport::Cache::MemoryStore.new
-    cache.write("rate_limit:127.0.0.1:posts", 20)
 
-    Rails.stub(:cache, cache) do
+    exhaust_rate_limit do
       assert_no_difference("Post.count") { post posts_url, params: { post: { body: "댓글" } } }
     end
     assert_redirected_to root_url
@@ -352,16 +344,36 @@ class PostDetailsTest < ActionDispatch::IntegrationTest
 
   test "rate limited turbo feed keeps its error response" do
     sign_in @reader
-    cache = ActiveSupport::Cache::MemoryStore.new
-    cache.write("rate_limit:127.0.0.1:posts", 20)
 
-    Rails.stub(:cache, cache) do
+    exhaust_rate_limit do
       assert_no_difference("Post.count") do
         post posts_url, params: { post: { body: "댓글" } }, as: :turbo_stream
       end
     end
     assert_response :too_many_requests
     assert_equal "Rate limit exceeded", JSON.parse(response.body)["error"]
+  end
+
+  # 한도는 IP가 아니라 회원 단위로 센다(#1059). Cloudflare 엣지 IP를 공유하는 다른 회원은 막히지 않는다.
+  test "rate limit is counted per user" do
+    sign_in @reader
+
+    exhaust_rate_limit(only_user: users(:john)) do
+      assert_difference("Post.count", 1) { post posts_url, params: { post: { body: "다른 회원 한도와 무관" } } }
+    end
+
+    exhaust_rate_limit(only_user: @reader) do
+      assert_no_difference("Post.count") { post posts_url, params: { post: { body: "내 한도 초과" } } }
+    end
+    assert_equal I18n.t("posts.rate_limit_exceeded"), flash[:alert]
+  end
+
+  test "admins are exempt from the posting rate limit" do
+    sign_in users(:admin)
+
+    PostsController.cache_store.stub(:increment, ->(*, **) { flunk "관리자 요청은 한도 카운터를 올리지 않아야 한다" }) do
+      assert_difference("Post.count", 1) { post posts_url, params: { post: { body: "관리자 글" } } }
+    end
   end
 
   test "missing parent cannot turn a child into a return root" do
@@ -375,6 +387,12 @@ class PostDetailsTest < ActionDispatch::IntegrationTest
   end
 
   private
+
+  # test env의 캐시는 null_store라 카운터가 쌓이지 않는다. 한도 초과를 increment 결과로 재현한다.
+  def exhaust_rate_limit(only_user: nil, &)
+    increment = ->(key, *, **) { only_user.nil? || key.end_with?(":#{only_user.id}") ? 21 : 1 }
+    PostsController.cache_store.stub(:increment, increment, &)
+  end
 
   def blog_url(blog)
     user_profile_blog_post_url(username: blog.user.username, slug: blog)
