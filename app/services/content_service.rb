@@ -152,7 +152,10 @@ class ContentService < OperationService
   def mcp_fetch_html(url)
     # Scrapling은 리다이렉트를 검사 없이 따라가므로, 앱에서 먼저 검사하며 따라간 최종 URL만 넘긴다.
     # shortcut: Scrapling이 다른 응답(UA별 리다이렉트, DNS 리바인딩)을 받으면 못 막는다. Scrapling 파드 egress 차단으로 보완한다.
-    _response, url = fetch_following_redirects(url)
+    response, url = fetch_following_redirects(url)
+    # 리다이렉트 한도에 걸린 3xx는 Location을 검사하지 않았으므로 넘기지 않는다.
+    return nil if response.status.between?(300, 399)
+
     client = MCPClient.connect(ENV.fetch("SCRAPLING_URL") { "http://localhost::8000/mcp" })
     result = client.call_tool("fetch", { url: })&.[]("structuredContent")
     logger.debug result

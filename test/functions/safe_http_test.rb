@@ -20,6 +20,10 @@ class SafeHttpTest < ActiveSupport::TestCase
       http://[64:ff9b::7f00:1]/a
       http://[2002:7f00:1::1]/a
       http://[2001:db8::1]/a
+      http://[64:ff9b:1::a00:5]/a
+      http://[100::1]/a
+      http://[2001::1]/a
+      http://192.88.99.1/a
       ftp://example.com/a
       file:///etc/passwd
       not\ a\ url

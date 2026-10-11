@@ -124,6 +124,20 @@ class ContentServiceTest < ActiveSupport::TestCase
     ENV.delete("SCRAPLING_URL")
   end
 
+  test "execute_html은 SCRAPLING 경로에서 리다이렉트 한도에 걸리면 넘기지 않는다" do
+    article = Article.new(url: "https://example.com/redirect-me")
+    redirect = MockResponse.new(status: 302, headers: { "location" => "https://example.com/again" })
+
+    ENV["SCRAPLING_URL"] = "http://scrapling.test/mcp"
+    SafeHttp.stub(:fetch, ->(*) { redirect }) do
+      MCPClient.stub(:connect, ->(*) { flunk "리다이렉트 응답 URL은 넘기지 않아야 한다" }) do
+        assert_predicate ContentService.new.call(article), :failure?
+      end
+    end
+  ensure
+    ENV.delete("SCRAPLING_URL")
+  end
+
   test "execute_html은 SCRAPLING 경로에도 내부망 주소를 넘기지 않는다" do
     article = Article.new(url: "http://10.0.0.5/secret")
 
