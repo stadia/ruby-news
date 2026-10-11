@@ -5,10 +5,11 @@ class Views::Home::Index < Views::Base
   include Phlex::Rails::Helpers::ContentFor
   include Phlex::Rails::Helpers::LinkTo
 
-  def initialize(articles:, recent_comments:, sidebar_tags:, liked_article_ids: [], boosted_article_ids: [], featured_articles: [])
+  def initialize(articles:, recent_comments:, sidebar_tags:, recent_blog_posts: [], liked_article_ids: [], boosted_article_ids: [], featured_articles: [])
     @articles = articles
     @featured_articles = featured_articles
     @recent_comments = recent_comments
+    @recent_blog_posts = recent_blog_posts
     @sidebar_tags = sidebar_tags
     @liked_article_ids = liked_article_ids
     @boosted_article_ids = boosted_article_ids
@@ -62,6 +63,7 @@ class Views::Home::Index < Views::Base
 
       div(class: "w-full lg:w-72 shrink-0 order-last lg:order-0") do
         div(class: "space-y-6") do
+          render Components::RecentBlogPostsSidebar.new(posts: @recent_blog_posts)
           render Components::RecentCommentsSidebar.new(recent_comments: @recent_comments)
           div(class: "hidden lg:block") do
             render Components::TagsSidebar.new(tags: @sidebar_tags)

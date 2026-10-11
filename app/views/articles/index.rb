@@ -4,10 +4,11 @@
 class Views::Articles::Index < Views::Base
   include Phlex::Rails::Helpers::ContentFor
 
-  def initialize(pagy: nil, articles: [], sidebar_tags: [], search: nil, source: :ruby_news, liked_article_ids: [], boosted_article_ids: [], suggestions: [])
+  def initialize(pagy: nil, articles: [], sidebar_tags: [], recent_blog_posts: [], search: nil, source: :ruby_news, liked_article_ids: [], boosted_article_ids: [], suggestions: [])
     @pagy = pagy
     @articles = articles
     @sidebar_tags = sidebar_tags
+    @recent_blog_posts = recent_blog_posts
     @search = search
     @source = source
     @liked_article_ids = liked_article_ids
@@ -69,7 +70,8 @@ class Views::Articles::Index < Views::Base
         end
       end
 
-      div(class: "w-full lg:w-72 shrink-0 order-last lg:order-0 hidden lg:block") do
+      div(class: "w-full lg:w-72 shrink-0 order-last lg:order-0 hidden lg:block space-y-6") do
+        render Components::RecentBlogPostsSidebar.new(posts: @recent_blog_posts)
         render Components::TagsSidebar.new(tags: @sidebar_tags)
       end
     end

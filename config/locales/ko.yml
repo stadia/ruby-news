@@ -368,6 +368,8 @@ ko:
       enable: 설정
       later: 나중에 하기
       title: 알림 설정
+  recent_blog_posts_sidebar:
+    heading: 최신 블로그 글
   recent_comments_sidebar:
     heading: 최근 댓글
     view_article: 원문 보기

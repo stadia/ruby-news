@@ -368,6 +368,8 @@ en:
       enable: Enable
       later: Maybe later
       title: Notification Settings
+  recent_blog_posts_sidebar:
+    heading: Latest blog posts
   recent_comments_sidebar:
     heading: Recent Comments
     view_article: View article

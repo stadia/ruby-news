@@ -18,6 +18,21 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href='https://github.com/stadia/ruby-news']", text: /GitHub/
   end
 
+  test "GET root lists recent published blog posts above recent comments" do
+    get root_path
+
+    assert_response :success
+    assert_select "aside.recent-blog-posts-sidebar + aside.recent-comments-sidebar"
+    assert_select "aside.recent-blog-posts-sidebar a[href=?]",
+                  user_profile_blog_post_path(username: users(:john).username, slug: posts(:blog_published)),
+                  text: /발행된 긴 글/
+    assert_select "aside.recent-blog-posts-sidebar", text: /lf-draft-fixture/, count: 0
+    # 댓글 사이드바와 같은 이름(Post#author_name)을 쓴다.
+    assert_select "aside.recent-blog-posts-sidebar a[href=?] span",
+                  user_profile_blog_path(username: users(:john).username),
+                  text: posts(:blog_published).author_name
+  end
+
   test "GET root emits WebSite schema with a SearchAction" do
     # set_web_site_schema(application_controller.rb:35)는 루트 경로에서만 @web_site를
     # 세팅하고, StructuredData는 @web_site가 없으면 조용히 아무것도 그리지 않는다.

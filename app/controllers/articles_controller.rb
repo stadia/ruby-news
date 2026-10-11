@@ -39,6 +39,7 @@ class ArticlesController < ApplicationController
       pagy: search_result.pagy,
       articles: search_result.articles,
       sidebar_tags: sidebar_tags,
+      recent_blog_posts: Post.recent_published_blogs,
       search: search,
       source: source,
       liked_article_ids: liked_article_ids(search_result.articles),
@@ -55,6 +56,7 @@ class ArticlesController < ApplicationController
       pagy: @pagy,
       articles: @articles,
       sidebar_tags: sidebar_tags,
+      recent_blog_posts: Post.recent_published_blogs,
       search: params[:search],
       liked_article_ids: liked_article_ids(@articles),
       boosted_article_ids: boosted_article_ids(@articles)

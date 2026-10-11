@@ -24,6 +24,18 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
     assert_respond_to calls.first[:pagy], :call
   end
 
+  test "GET index and others list recent blog posts above tags" do
+    blog_path = user_profile_blog_post_path(username: users(:john).username, slug: posts(:blog_published))
+
+    [ articles_path, others_path ].each do |path|
+      get path
+
+      assert_response :success
+      assert_select "aside.recent-blog-posts-sidebar + aside.tags-sidebar"
+      assert_select "aside.recent-blog-posts-sidebar a[href=?]", blog_path, text: /발행된 긴 글/
+    end
+  end
+
   test "GET index defaults to Ruby-News search results" do
     get articles_path
 
