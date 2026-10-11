@@ -58,4 +58,23 @@ class SocialControllerTest < ActionDispatch::IntegrationTest
   ensure
     pref&.destroy
   end
+
+  # 사이트 소셜 게시 토큰은 관리자만 연결할 수 있다.
+  test "non-admin cannot authorize or overwrite site oauth token" do
+    pref = Preference.create!(name: "xcom_oauth", value: {
+      "client_id" => "cid", "client_secret" => "secret", "site" => "https://api.x.com/2/", "access_token" => "site_token"
+    })
+    sign_in_as(users(:john))
+
+    get "/social/xcom/authorize"
+
+    assert_response :not_found
+
+    get "/social/xcom/callback", params: { code: "auth_code", state: "state123" }
+
+    assert_response :not_found
+    assert_equal "site_token", pref.reload.value["access_token"]
+  ensure
+    pref&.destroy
+  end
 end
