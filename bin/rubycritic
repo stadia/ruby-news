@@ -1,0 +1,33 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+# rbs_inline: disabled
+
+# RubyCritic 리포트를 같은 범위·같은 옵션으로 만들고 요약 마크다운을 stdout에 찍는다.
+#
+#   bin/rubycritic                                  # 최근 6개월 churn
+#   RUBYCRITIC_CHURN_AFTER=2026-04-11 bin/rubycritic  # 기준선 재현
+#
+# 리포트: tmp/rubycritic/overview.html, tmp/rubycritic/report.json
+# 분석은 앱 번들이 아니라 tools/rubycritic 번들로 돌고 Rails를 부팅하지 않는다.
+# 기준선과 churn 산정 방법은 docs/quality/rubycritic.md.
+
+require "date"
+require "json"
+require_relative "../lib/quality/rubycritic_report"
+
+ROOT = File.expand_path("..", __dir__)
+PATHS = %w[app/models app/controllers app/services app/functions app/clients].freeze
+OUTPUT = "tmp/rubycritic"
+
+churn_after = ENV.fetch("RUBYCRITIC_CHURN_AFTER") { (Date.today << 6).iso8601 }
+env = { "BUNDLE_GEMFILE" => File.join(ROOT, "tools/rubycritic/Gemfile") }
+command = [ "bundle", "exec", "rubycritic", "--no-browser", "-f", "html", "-f", "json",
+            "--churn-after", churn_after, "-p", OUTPUT, *PATHS ]
+
+Dir.chdir(ROOT) do
+  # 분석 실패가 묻히지 않도록 rubycritic의 종료 코드를 그대로 돌려준다.
+  abort "rubycritic failed: #{command.join(" ")}" unless system(env, *command, out: $stderr)
+
+  report = JSON.parse(File.read(File.join(OUTPUT, "report.json")))
+  puts Quality::RubycriticReport.to_markdown(report, churn_after:)
+end
