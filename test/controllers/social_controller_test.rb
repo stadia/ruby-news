@@ -66,7 +66,8 @@ class SocialControllerTest < ActionDispatch::IntegrationTest
       "access_token" => "old_access", "refresh_token" => "old_refresh"
     })
 
-    token = Struct.new(:token, :refresh_token, :expires_at).new("new_access", "new_refresh", 2.hours.from_now.to_i)
+    expires_at = 2.hours.from_now.to_i
+    token = Struct.new(:token, :refresh_token, :expires_at).new("new_access", "new_refresh", expires_at)
     auth_code = Object.new
     auth_code.define_singleton_method(:authorize_url) { |**_kwargs| "https://x.com/i/oauth2/authorize?client_id=cid&state=state123" }
     auth_code.define_singleton_method(:get_token) { |*_args, **_kwargs| token }
@@ -83,6 +84,9 @@ class SocialControllerTest < ActionDispatch::IntegrationTest
 
     assert_equal "new_access", pref.value["access_token"]
     assert_equal "new_refresh", pref.value["refresh_token"]
+    # 만료 시각이 갱신되지 않으면 TwitterService가 새 토큰을 만료로 오판한다.
+    assert_equal expires_at, pref.value["expires_at"]
+    assert_in_delta Time.current.to_i, pref.value["token_created_at"], 5
   ensure
     pref&.destroy
   end
