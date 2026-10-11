@@ -52,19 +52,38 @@ class DiscardedArticleCleanupJob < ApplicationJob
   #: (Array[Integer] article_ids) -> void
   def cleanup_dependents(article_ids)
     # destroy_all이라야 tags.taggings_count가 줄어든다.
-    ActsAsTaggableOn::Tagging.where(taggable_type: "Article", taggable_id: article_ids).destroy_all
-    delete_reactions(Like.where(likeable_type: "Article", likeable_id: article_ids), :likees_count)
-    delete_reactions(Boost.where(boostable_type: "Article", boostable_id: article_ids), :boostees_count)
-    ActiveStorage::Attachment.where(record_type: "Article", record_id: article_ids).find_each(&:purge_later)
+    taggings = ActsAsTaggableOn::Tagging.where(taggable_type: "Article", taggable_id: article_ids).destroy_all.size
+    likes = delete_reactions(Like.where(likeable_type: "Article", likeable_id: article_ids), :likees_count)
+    boosts = delete_reactions(Boost.where(boostable_type: "Article", boostable_id: article_ids), :boostees_count)
+    attachments = purge_attachments(article_ids)
+
+    logger.info(
+      "DiscardedArticleCleanupJob dependents cleaned: taggings=#{taggings}, likes=#{likes}, boosts=#{boosts}, attachments=#{attachments}"
+    )
   end
 
   # 지워질 기사에 대한 Undo 연합 발송은 필요 없으므로 delete_all로 지우고 actor 카운터만 맞춘다.
-  #: (ActiveRecord::Relation scope, Symbol counter) -> void
+  # 카운터 감소와 삭제를 한 트랜잭션으로 묶어, 도중 실패 후 재실행이 같은 행을 다시 빼지 않게 한다.
+  #: (ActiveRecord::Relation scope, Symbol counter) -> Integer
   def delete_reactions(scope, counter)
-    scope.group(:actor_id).count.each do |actor_id, count|
-      Fedipub::Actor.update_counters(actor_id, counter => -count)
+    ActiveRecord::Base.transaction do
+      scope.group(:actor_id).count.each do |actor_id, count|
+        Fedipub::Actor.update_counters(actor_id, counter => -count)
+      end
+      scope.delete_all
     end
-    scope.delete_all
+  end
+
+  # Attachment#purge_later는 record.touch를 해 곧 지울 기사에 UPDATE와 콜백을 일으키므로, 행만 지우고 blob을 넘긴다.
+  #: (Array[Integer] article_ids) -> Integer
+  def purge_attachments(article_ids)
+    count = 0
+    ActiveStorage::Attachment.where(record_type: "Article", record_id: article_ids).includes(:blob).find_each do |attachment|
+      attachment.delete
+      attachment.blob&.purge_later
+      count += 1
+    end
+    count
   end
 
   #: () -> void

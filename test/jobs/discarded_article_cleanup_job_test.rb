@@ -69,6 +69,9 @@ class DiscardedArticleCleanupJobTest < ActiveSupport::TestCase
     Like.create!(actor:, likeable: article)
     Boost.create!(actor:, boostable: article)
     Like.create!(actor:, likeable: other)
+    local_actor = users(:john).fedipub_actor
+    local_likees_before = local_actor.reload.likees_count
+    Like.create!(actor: local_actor, likeable: article)
 
     perform_enqueued_jobs { DiscardedArticleCleanupJob.perform_now }
 
@@ -78,6 +81,9 @@ class DiscardedArticleCleanupJobTest < ActiveSupport::TestCase
     assert_not Boost.exists?(boostable_type: "Article", boostable_id: article.id)
     assert_equal 1, actor.reload.likees_count
     assert_equal 0, actor.boostees_count
+    # 로컬 actor의 좋아요도 Undo 연합 없이 지우고 카운터만 되돌린다.
+    assert_equal local_likees_before, local_actor.reload.likees_count
+    assert_not ActiveStorage::Blob.exists?(filename: "thumb.png")
     assert_not ActiveStorage::Attachment.exists?(record_type: "Article", record_id: article.id)
   end
 end
