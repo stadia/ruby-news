@@ -58,13 +58,16 @@ class Views::Madmin::Social::Index < Views::Base
   end
 
   def timestamp_row(label, value)
+    formatted = format_timestamp(value)
+    row(label) { formatted } if formatted
+  end
+
+  # 저장된 값이 숫자가 아니거나 표현할 수 없는 시각이면 행을 생략한다. rescue는 변환에만 건다.
+  def format_timestamp(value)
     return unless value.is_a?(Numeric) && value.finite?
 
     time = Time.zone.at(value)
-    return unless time.year.between?(1, 9999)
-
-    formatted = l(time, format: :short)
-    row(label) { formatted }
+    l(time, format: :short) if time.year.between?(1, 9999)
   rescue ArgumentError, RangeError
     nil
   end

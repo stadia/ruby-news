@@ -1,19 +1,5 @@
 ---
 ko:
-  madmin:
-    social:
-      title: 소셜 미디어 연동
-      description: 외부 소셜 미디어 플랫폼과의 OAuth 인증을 관리합니다.
-      reauthenticate: 재인증
-      connect: "%{name} 연동하기"
-      status: 상태
-      connected: 연결됨
-      disconnected: 연결 안됨
-      permissions: 권한
-      permissions_description: 읽기/쓰기 및 사용자 정보 접근
-      access_token: Access Token
-      expires_at: 만료 시간
-      token_created_at: 생성 시간
   activerecord:
     attributes:
       article:
@@ -241,6 +227,20 @@ ko:
     go_to_login: 로그인 하러 가기
     message: 댓글을 작성하거나 대화에 참여하려면 로그인이 필요합니다.
     title: 로그인이 필요합니다
+  madmin:
+    social:
+      title: 소셜 미디어 연동
+      description: 외부 소셜 미디어 플랫폼과의 OAuth 인증을 관리합니다.
+      reauthenticate: 재인증
+      connect: "%{name} 연동하기"
+      status: 상태
+      connected: 연결됨
+      disconnected: 연결 안됨
+      permissions: 권한
+      permissions_description: 읽기/쓰기 및 사용자 정보 접근
+      access_token: Access Token
+      expires_at: 만료 시간
+      token_created_at: 생성 시간
   mailers:
     layout:
       brand_subtitle: 루비 AI 뉴스
