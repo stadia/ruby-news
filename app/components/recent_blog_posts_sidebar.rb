@@ -7,7 +7,7 @@ class Components::RecentBlogPostsSidebar < Components::Base
   include PhlexIcons
 
   def initialize(posts:)
-    @posts = posts
+    @posts = posts.to_a
   end
 
   def view_template
@@ -30,12 +30,14 @@ class Components::RecentBlogPostsSidebar < Components::Base
   def post_card(post)
     render RubyUI::Card.new(class: "bg-surface p-3 border-border-strong hover:border-border-muted transition-colors rounded-lg") do
       link_to(user_profile_blog_path(username: post.user.username), class: "group flex items-center gap-2 mb-2 w-fit max-w-full") do
-        render Components::UserAvatar.new(
-          user: post.user,
-          name: post.author_name,
-          size: "h-7 w-7",
-          fallback_class: "bg-surface text-accent-text ring-1 ring-inset ring-border-muted font-bold"
-        )
+        div(aria_hidden: true) do
+          render Components::UserAvatar.new(
+            user: post.user,
+            name: post.author_name,
+            size: "h-7 w-7",
+            fallback_class: "bg-surface text-accent-text ring-1 ring-inset ring-border-muted font-bold"
+          )
+        end
         span(class: "text-sm font-medium text-content-secondary group-hover:text-link-hover truncate transition-colors") { post.author_name }
       end
 

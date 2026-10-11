@@ -47,7 +47,7 @@ class Post < ApplicationRecord
   scope :published_blog, -> { blog.published }
   # 사이드바용 최신 블로그 글. 퍼머링크가 username을 쓰므로 로컬 작성자 글만 담는다.
   scope :recent_published_blogs, ->(limit = 5) {
-    published_blog.kept.eager_load(:user).preload(user: { avatar_attachment: :blob }).order(published_at: :desc, id: :desc).limit(limit)
+    published_blog.kept.joins(:user).eager_load(:user).preload(user: { avatar_attachment: :blob }).order(published_at: :desc, id: :desc).limit(limit)
   }
 
   # ── Validations ──────────────────────────────────────────────────────

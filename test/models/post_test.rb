@@ -272,6 +272,34 @@ class PostTest < ActiveSupport::TestCase
     assert_not_includes Post.published_blog, @root_post
   end
 
+  test "recent_published_blogs excludes posts without a local author" do
+    posts(:blog_published).update_columns(user_id: nil)
+
+    assert_empty Post.recent_published_blogs
+  end
+
+  test "recent_published_blogs excludes drafts deleted blogs short posts and comments" do
+    posts(:blog_draft).update_columns(status: Post.statuses[:published], deleted_at: Time.current)
+
+    assert_equal [ posts(:blog_published).id ], Post.recent_published_blogs.ids
+
+    posts(:blog_draft).update_columns(status: Post.statuses[:draft], deleted_at: nil)
+
+    assert_equal [ posts(:blog_published).id ], Post.recent_published_blogs.ids
+  end
+
+  test "recent_published_blogs returns the latest five with id breaking publication ties" do
+    now = Time.current
+    candidates = [ :root_post, :reply_post, :remote_post, :comment_post, :blog_draft, :blog_published, :short_with_article ].map { posts(it) }
+    candidates.each_with_index do |post, index|
+      post.update_columns(user_id: @user.id, post_type: Post.post_types[:blog], status: Post.statuses[:published], published_at: now - (index / 2).hours)
+    end
+    expected = candidates.sort_by { [ it.published_at, it.id ] }.reverse
+
+    assert_equal expected.first(5).map(&:id), Post.recent_published_blogs.ids
+    assert_equal expected.first(2).map(&:id), Post.recent_published_blogs(2).ids
+  end
+
   test "blog_summary는 HTML을 제거하고 앞부분을 반환한다" do
     post = Post.new(body: "<p>Ruby <strong>Rails</strong> 장문입니다.</p>", user: @user, post_type: :blog)
 

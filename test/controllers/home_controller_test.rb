@@ -26,11 +26,35 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select "aside.recent-blog-posts-sidebar a[href=?]",
                   user_profile_blog_post_path(username: users(:john).username, slug: posts(:blog_published)),
                   text: /발행된 긴 글/
-    assert_select "aside.recent-blog-posts-sidebar", text: /lf-draft-fixture/, count: 0
+    assert_select "aside.recent-blog-posts-sidebar a[href=?]",
+                  user_profile_blog_post_path(username: users(:john).username, slug: posts(:blog_draft)), count: 0
     # 댓글 사이드바와 같은 이름(Post#author_name)을 쓴다.
     assert_select "aside.recent-blog-posts-sidebar a[href=?] span",
                   user_profile_blog_path(username: users(:john).username),
-                  text: posts(:blog_published).author_name
+                  text: "존 도"
+  end
+
+  test "GET root hides the blog sidebar when no eligible blogs remain" do
+    posts(:blog_published).update_columns(user_id: nil)
+
+    get root_path
+
+    assert_response :success
+    assert_select "aside.recent-blog-posts-sidebar", count: 0
+  end
+
+  test "GET root loads recent blogs once and preloads multiple authors" do
+    [ [ :root_post, :jane ], [ :reply_post, :admin ] ].each do |post_name, user_name|
+      posts(post_name).update_columns(user_id: users(user_name).id, post_type: Post.post_types[:blog], title: "추가 블로그", published_at: Time.current)
+    end
+    queries = capture_queries { get root_path }
+
+    assert_response :success
+    assert_select "aside.recent-blog-posts-sidebar .group", count: 3
+    assert_equal 1, queries.grep(/FROM "posts".*"posts"\."status" =/).size
+    assert_operator queries.grep(/FROM "users" WHERE "users"\."id" =/).size, :<=, 1
+    assert_empty queries.grep(/FROM "active_storage_blobs" WHERE "active_storage_blobs"\."id" =/)
+    assert_empty queries.grep(/FROM "active_storage_attachments" WHERE "active_storage_attachments"\."record_id" =/)
   end
 
   test "GET root emits WebSite schema with a SearchAction" do
