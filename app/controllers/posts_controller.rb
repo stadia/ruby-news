@@ -13,7 +13,7 @@ class PostsController < ApplicationController
   include WebOnlyFormats
   before_action :set_article, only: [ :create, :destroy ], if: :article_scoped_request?
   before_action :set_post, only: [ :destroy ]
-  before_action :check_rate_limit, only: [ :create ]
+  rate_limit to: 20, within: 1.hour, by: :rate_limit_key, with: :handle_rate_limit, only: :create
 
   def show
     post = Post.where.not(post_type: :blog).includes(POST_SHOW_INCLUDES).find_by!(slug: params[:id])

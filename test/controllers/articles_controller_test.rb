@@ -442,6 +442,22 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, article.reload.likers_count
   end
 
+  # 기사 등록은 LLM 비용이 드므로 회원당 시간당 5회로 제한한다(#1059).
+  test "POST create is rate limited per user" do
+    sign_in_as(users(:john))
+
+    ArticlesController.cache_store.stub(:increment, 6) do
+      SafeHttp.stub(:fetch, ->(*) { flunk "한도 초과 요청은 처리하지 않아야 한다" }) do
+        assert_no_difference("Article.count") do
+          post articles_path, params: { article: { url: "https://example.com/rate-limited" } }
+        end
+      end
+    end
+
+    assert_redirected_to root_path
+    assert_equal I18n.t("posts.rate_limit_exceeded"), flash[:alert]
+  end
+
   test "POST create with a duplicate url redirects to the existing article" do
     # url·origin_url 모두 uniqueness 검증이므로 중복 POST는 저장 실패 →
     # errors.details.fetch(:origin_url/:url, []).any?(:taken) 분기로 빠져
