@@ -72,6 +72,31 @@ class ContentServiceTest < ActiveSupport::TestCase
     end
   end
 
+  test "execute_html은 내부망으로 리다이렉트되면 따라가지 않고 Failure를 반환한다" do
+    article = Article.new(url: "https://example.com/redirect-me")
+    requested = []
+    redirect = MockResponse.new(status: 302, headers: { "location" => "http://127.0.0.1:3000/admin" })
+
+    Faraday.stub(:get, ->(url, *) { requested << url && redirect }) do
+      result = ContentService.new.call(article)
+
+      assert_equal :blocked_url, result.failure
+    end
+    assert_equal [ "https://example.com/redirect-me" ], requested
+  end
+
+  test "execute_html은 SCRAPLING 경로에도 내부망 주소를 넘기지 않는다" do
+    article = Article.new(url: "http://10.0.0.5/secret")
+
+    ENV["SCRAPLING_URL"] = "http://scrapling.test/mcp"
+
+    MCPClient.stub(:connect, ->(*) { flunk "내부 주소는 넘기지 않아야 한다" }) do
+      assert_equal :blocked_url, ContentService.new.call(article).failure
+    end
+  ensure
+    ENV.delete("SCRAPLING_URL")
+  end
+
   # YouTube 콘텐츠 테스트
   test "execute_youtube는 YouTube transcript를 성공적으로 가져온다" do
     article = articles(:youtube_ruby_talk)
@@ -345,7 +370,7 @@ class ContentServiceTest < ActiveSupport::TestCase
     service = ContentService.new
     response = MockResponse.new(status: 302, body: "stop", headers: { "location" => "https://example.com/next" })
 
-    Faraday.stub(:get, response) do
+    Faraday.stub(:get, ->(*) { response }) do
       assert_equal "stop", service.send(:faraday_fetch_html, "https://example.com/original", 4)
     end
   end

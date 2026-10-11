@@ -39,6 +39,9 @@ module Articles
       return Failure(:fetch_failed) if response.nil?
 
       Success(response)
+    rescue SafeHttp::BlockedUrlError => e
+      logger.warn e.message
+      Failure(:blocked_url)
     end
 
     #: (Article article) -> Dry::Monads::Result

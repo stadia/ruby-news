@@ -193,6 +193,29 @@ module Articles
       end
     end
 
+    test "내부망 주소는 요청하지 않고 blocked_url로 실패한다" do
+      article = Article.new(url: "http://192.168.1.150/admin/page")
+
+      Faraday.stub(:get, ->(*) { flunk "내부 주소는 요청하지 않아야 한다" }) do
+        result = MetadataPreparationService.new.call(article)
+
+        assert_equal :blocked_url, result.failure
+      end
+    end
+
+    test "내부망 주소로 리다이렉트되면 따라가지 않고 blocked_url로 실패한다" do
+      article = Article.new(url: "https://example.com/redirect-me")
+      requested = []
+      redirect = Response.new("", 302, { "location" => "http://10.0.0.5/secret" })
+
+      Faraday.stub(:get, ->(url, *) { requested << url && redirect }) do
+        result = MetadataPreparationService.new.call(article)
+
+        assert_equal :blocked_url, result.failure
+      end
+      assert_equal [ "https://example.com/redirect-me" ], requested
+    end
+
     test "follow_redirection은 nil과 non redirect 응답을 그대로 반환한다" do
       article = Article.new(url: "https://example.com/original")
       ok = Response.new("ok", 200, {})

@@ -50,6 +50,9 @@ class ContentService < OperationService
 
     # Readability를 사용하여 주요 콘텐츠 HTML 추출. Readability::Document는 전체 HTML 문자열을 인자로 받습니다.
     github_url?(url) ? Success(Inkmark.to_html(html_content, options: { preset: :recommended })) : Success(Readability::Document.new(html_content).content)
+  rescue SafeHttp::BlockedUrlError => e
+    logger.warn e.message
+    Failure(:blocked_url)
   end
 
   #: (String url) -> Dry::Monads::Result
@@ -120,7 +123,7 @@ class ContentService < OperationService
   #: (String url, ?Integer? count) -> String?
   def faraday_fetch_html(url, count = 0)
     count ||= 0
-    response = Faraday.get(url)
+    response = SafeHttp.get(url)
     logger.debug "#{response.status} #{url}"
     return response.body unless response.status.between?(300, 399) && response.headers["location"]
     return response.body if count > 3
@@ -141,6 +144,8 @@ class ContentService < OperationService
 
   #: (String url) -> String?
   def mcp_fetch_html(url)
+    # Scrapling이 따라가는 리다이렉트는 검사하지 못하므로 첫 URL만 확인한다.
+    SafeHttp.check!(url)
     client = MCPClient.connect(ENV.fetch("SCRAPLING_URL") { "http://localhost::8000/mcp" })
     result = client.call_tool("fetch", { url: })&.[]("structuredContent")
     logger.debug result

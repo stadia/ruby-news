@@ -408,6 +408,19 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
     assert_select "#error_explanation li", text: /URL/
   end
 
+  test "POST create rejects internal network url without fetching it" do
+    sign_in_as(users(:john))
+
+    Faraday.stub(:get, ->(*) { flunk "내부 주소는 요청하지 않아야 한다" }) do
+      assert_no_difference("Article.count") do
+        post articles_path, params: { article: { url: "http://169.254.169.254/latest/meta-data" } }
+      end
+    end
+
+    assert_response :unprocessable_entity
+    assert_select "#error_explanation li", text: /URL/
+  end
+
   test "POST create automatically likes the article as the submitting user" do
     user = users(:john)
     response = Struct.new(:body, :status, :headers).new("<html><title>Submitted article</title></html>", 200, {})
