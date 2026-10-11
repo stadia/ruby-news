@@ -7,7 +7,7 @@ module Madmin
     # Social 메뉴 메인 페이지
     #: () -> void
     def index
-      @social_list = Preference.where("name like ?", "%_oauth")
+      render Views::Madmin::Social::Index.new(social_list: Preference.where("name like ?", "%_oauth"))
     end
   end
 end
