@@ -230,6 +230,15 @@ module Articles
       assert_equal "https://example.com/moved/post-2026", article.url
     end
 
+    test "한글이 든 절대 Location은 예외 없이 blocked_url로 실패한다" do
+      article = Article.new(url: "https://example.com/original-post", title: "Existing Title")
+      redirect = Response.new("", 301, { "location" => "https://example.com/한글/글" })
+
+      SafeHttp.stub(:fetch, ->(*) { redirect }) do
+        assert_equal :blocked_url, MetadataPreparationService.new.call(article).failure
+      end
+    end
+
     test "normalized_url은 유튜브와 일반 URL에서 추적 파라미터를 제거한다" do
       parsed = URI.parse("https://example.com/post?tag=ruby&utm_source=x&ref=y")
       youtube = URI.parse("https://youtube.com/watch?v=test123&t=30s&feature=share&si=abc")

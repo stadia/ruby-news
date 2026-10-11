@@ -1,4 +1,5 @@
 # typed: strong
+# rbs_inline: enabled
 
 # `Data.define` 값 객체의 멤버 타입 선언.
 #
@@ -9,6 +10,16 @@
 # 소스 쪽 `Data.define`에는 심볼만 넘긴다. 인자 줄에 `#: String`을 다는 rbs-inline
 # 표기를 쓰면 Sorbet이 그 주석을 멤버 선언이 아니라 심볼 리터럴에 대한 타입 단언으로
 # 읽어 `srb tc`가 깨진다. 배경과 대가는 AGENTS.md 참고.
+
+module SafeHttp
+  class Fetched
+    sig { returns(Faraday::Response) }
+    def response; end
+
+    sig { returns(String) }
+    def url; end
+  end
+end
 
 module SitemapBuilder
   class Entry

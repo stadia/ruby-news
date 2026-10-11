@@ -21,7 +21,7 @@ module Articles
 
     class << self
       # 리다이렉트를 따라간 마지막 응답과 그 URL. 네트워크 오류면 nil.
-      #: (String url) -> [Faraday::Response, String]?
+      #: (String url) -> SafeHttp::Fetched?
       def fetch_url_content(url)
         SafeHttp.get_following_redirects(url)
       rescue Faraday::Error => e

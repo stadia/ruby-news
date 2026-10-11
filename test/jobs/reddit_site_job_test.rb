@@ -186,7 +186,7 @@ class RedditSiteJobTest < ActiveSupport::TestCase
   def with_stubbed_metadata_fetch(body = "<html><head><title>Fetched Title</title></head><body>Body</body></html>")
     response = MockMetadataResponse.new(body, 200, {})
 
-    Articles::MetadataPreparation.stub(:fetch_url_content, ->(url) { [ response, url ] }) do
+    Articles::MetadataPreparation.stub(:fetch_url_content, ->(url) { SafeHttp::Fetched.new(response:, url:) }) do
       yield
     end
   end

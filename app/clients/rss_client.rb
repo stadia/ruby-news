@@ -24,7 +24,7 @@ module RssClient
   class << self
     #: (String url) -> (RSS::Rss | RSS::RDF | RSS::Atom::Feed)?
     def feed(url)
-      response, = SafeHttp.get_following_redirects(url)
+      response = SafeHttp.get_following_redirects(url).response
       raise Faraday::ForbiddenError, response.body if response.status == 403
       raise Faraday::UnauthorizedError, response.body if response.status == 401
       raise Faraday::TooManyRequestsError, response.body if response.status == 429

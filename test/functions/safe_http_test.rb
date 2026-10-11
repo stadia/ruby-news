@@ -119,10 +119,10 @@ class SafeHttpTest < ActiveSupport::TestCase
 
     SafeHttp.stub(:resolve, [ PUBLIC_IP ]) do
       SafeHttp.stub(:fetch, ->(url, _ip) { requested << url; responses.shift }) do
-        response, url = SafeHttp.get_following_redirects("https://blog.example/a/original")
+        result = SafeHttp.get_following_redirects("https://blog.example/a/original")
 
-        assert_equal "done", response.body
-        assert_equal "https://cdn.example/final", url
+        assert_equal "done", result.response.body
+        assert_equal "https://cdn.example/final", result.url
       end
     end
 
@@ -135,13 +135,34 @@ class SafeHttpTest < ActiveSupport::TestCase
 
     SafeHttp.stub(:resolve, [ PUBLIC_IP ]) do
       SafeHttp.stub(:fetch, ->(*) { count += 1; loop_response }) do
-        response, = SafeHttp.get_following_redirects("https://blog.example/loop")
-
-        assert_equal 302, response.status
+        assert_equal 302, SafeHttp.get_following_redirects("https://blog.example/loop").response.status
       end
     end
 
     assert_equal SafeHttp::MAX_REDIRECTS + 1, count
+  end
+
+  # URI.join은 Location 전체를 파싱하므로 한글·공백이 든 값에서 InvalidURIError가 난다.
+  # 예외 대신 다른 차단과 같은 BlockedUrlError로 다뤄야 호출부의 blocked_url 처리가 동작한다.
+  test "get_following_redirects는 파싱할 수 없는 Location을 BlockedUrlError로 처리한다" do
+    [ "https://blog.example/한글/글", "/한글/글", "https://blog.example/a b" ].each do |location|
+      SafeHttp.stub(:resolve, [ PUBLIC_IP ]) do
+        SafeHttp.stub(:fetch, ->(*) { Response.new(302, { "location" => location }, "") }) do
+          assert_raises(SafeHttp::BlockedUrlError, location) { SafeHttp.get_following_redirects("https://blog.example/a") }
+        end
+      end
+    end
+  end
+
+  test "get_following_redirects는 Location이 없는 3xx 응답을 그대로 돌려준다" do
+    SafeHttp.stub(:resolve, [ PUBLIC_IP ]) do
+      SafeHttp.stub(:fetch, ->(*) { Response.new(304, {}, "") }) do
+        result = SafeHttp.get_following_redirects("https://blog.example/a")
+
+        assert_equal 304, result.response.status
+        assert_equal "https://blog.example/a", result.url
+      end
+    end
   end
 
   test "get_following_redirects는 내부망으로 가는 리다이렉트를 막는다" do

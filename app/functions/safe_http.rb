@@ -9,6 +9,9 @@ module SafeHttp
 
   MAX_REDIRECTS = 4
 
+  # 리다이렉트를 따라간 마지막 응답과 그 URL.
+  Fetched = Data.define(:response, :url)
+
   # IPAddr#private?/loopback?/link_local? 밖이지만 전역 라우팅 대상이 아닌 특수 용도 대역(IANA special-purpose)
   INTERNAL_RANGES = %w[
     0.0.0.0/8 100.64.0.0/10 192.0.0.0/24 192.0.2.0/24 192.88.99.0/24 198.18.0.0/15 198.51.100.0/24 203.0.113.0/24
@@ -27,17 +30,18 @@ module SafeHttp
 
     # 3xx를 따라가 마지막 응답과 그 URL을 돌려준다. 상대 경로는 현재 URL 기준으로 풀고,
     # 상한에 걸리면 마지막 3xx 응답을 그대로 돌려준다(그 Location은 검사하지 않았다).
-    #: (String url) -> [Faraday::Response, String]
+    # 파싱할 수 없는 Location(한글·공백 등)은 다른 차단과 같이 BlockedUrlError로 다룬다.
+    #: (String url) -> Fetched
     def get_following_redirects(url)
       response = get(url)
       MAX_REDIRECTS.times do
         location = response.headers["location"]
         break unless response.status.between?(300, 399) && location
 
-        url = URI.join(url, location).to_s #: String
+        url = redirect_target(url, location)
         response = get(url)
       end
-      [ response, url ]
+      Fetched.new(response:, url:)
     end
 
     # 검사한 IP로 직접 연결해 DNS 리바인딩을 막는다. Host 헤더와 TLS SNI는 URL의 호스트를 그대로 쓴다.
@@ -77,6 +81,13 @@ module SafeHttp
       addresses.min_by { it.include?(":") ? 1 : 0 }
     rescue URI::InvalidURIError, IPAddr::InvalidAddressError, Resolv::ResolvError, SystemCallError
       nil
+    end
+
+    #: (String base, String location) -> String
+    def redirect_target(base, location)
+      URI.join(base, location).to_s #: String
+    rescue URI::InvalidURIError
+      raise BlockedUrlError, "blocked redirect Location: #{location}"
     end
 
     #: (IPAddr ip) -> bool
