@@ -39,15 +39,13 @@ class SocialController < ApplicationController
 
       # Access token을 기존 oauth preference에 저장한다.
       # set_oauth_client에서 설정 존재가 보장된 같은 객체를 재사용하므로 재조회하지 않는다.
-      current_config = @oauth_config.value || {}
-
-      @oauth_config.value = current_config.merge(
+      # Preference의 동적 setter가 키를 문자열로 정규화한다(TwitterService 토큰 갱신과 같은 경로).
+      @oauth_config.update!(
         access_token: token.token,
         refresh_token: token.refresh_token,
         expires_at: token.expires_at,
         token_created_at: Time.current.to_i
       )
-      @oauth_config.save!
 
       session.delete("#{provider}_code_verifier")
       session.delete("#{provider}_state")
