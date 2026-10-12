@@ -34,7 +34,8 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     assert messages.any? { |message| fragments.all? { message.include?(it) } }, "#{fragments} 로그가 없다: #{messages}"
   end
 
-  # OperationService#logger는 Rails.logger를 그대로 돌려준다.
+  # 서비스의 logger(OperationService#logger)가 Rails.logger이므로 해당 레벨 메서드를
+  # 스텁해 메시지를 모은다. 다른 레벨은 스텁하지 않아 레벨이 바뀌면 단언이 실패한다.
   def capture_logs(level)
     messages = []
     Rails.logger.stub(level, ->(message = nil, *_rest, &block) { messages << (message || block&.call).to_s }) { yield }
@@ -336,8 +337,9 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
   end
 
   # 모델이 JSON이 아닌 텍스트를 돌려주면 parsed가 JSON::ParserError를 낸다.
-  # 이때 article을 건드리지 않고 실패로 끝나야 한다. (코드 펜스로 감싼 JSON은
-  # Articles::AgentResponse.structured가 풀어 주므로 여기 해당하지 않는다.)
+  # 이때 article을 건드리지 않고 :humanize_invalid_response로 끝나며, 사유가 warn 로그에
+  # 남아야 한다. (코드 펜스로 감싼 JSON은 Articles::AgentResponse.structured가 풀어
+  # 주므로 여기 해당하지 않는다.)
   test "run_humanize는 응답이 JSON이 아니면 article을 갱신하지 않고 실패를 반환한다" do
     article = articles(:ruby_article)
     article.update!(summary_body: "원본 요약")
