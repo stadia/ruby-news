@@ -12,7 +12,9 @@ class ArticleAgentsService < OperationService
     step ensure_body(article)
     step run_embed(article)
     step Articles::AgentRunner.run(article:, prompt: Articles::SummaryPrompt.build(article))
-    run_humanize(article) # 실패해도 원문 요약은 유효하므로 이후 단계를 계속 진행한다(사유는 run_humanize가 로그로 남긴다)
+    # 윤문은 품질을 높이는 보조 단계다. 실패해도 원문 요약은 유효하므로 이후 단계를 계속
+    # 진행하고, 건너뛴 사유는 run_humanize가 로그로 남긴다.
+    run_humanize(article)
     run_thumbnail(article) # 썸네일은 부가 산출물이라 실패해도 일본어 번역까지 진행한다
     japanese_result = run_japanese(article)
     discard_unrelated(article) # 정리는 모든 산출물 생성이 끝난 뒤 마지막에 한다
@@ -42,33 +44,45 @@ class ArticleAgentsService < OperationService
     AUTO_DISCARD_CLIENTS.include?(article.site&.client)
   end
 
+  # 본문을 얻지 못했거나 요약할 만큼 길지 않으면 수집 대상이 아니므로 폐기한다. 폐기는
+  # 공개 사이트와 연합에 Delete를 전파하므로 그 두 경우로만 한정하고, 저장 실패나
+  # 일시적 예외는 기사를 남긴 채 Failure로 끝낸다. title_ko가 없는 기사는
+  # ArticleBatchJob이 다시 집는다.
   #: (Article article) -> Dry::Monads::Result
   def ensure_body(article)
     body = article.body
     return Success(article) if body.present? && body.size > 30
 
     body_result = ContentService.new.call(article)
-    if body_result.failure?
-      article.discard!
-      return body_result
-    end
+    return discard_with(article, body_result.failure) if body_result.failure?
 
     fetched_body = body_result.value!
     # 본문을 가져왔더라도 요약할 내용이 없을 만큼 짧으면 폐기한다.
-    # Success에 .failure를 부르면 nil이 되어 실패 사유가 사라지므로 사유를 직접 지정한다.
-    if fetched_body.size < 31
-      article.discard!
-      return Failure(:short_body)
-    end
+    return discard_with(article, :short_body) if fetched_body.size < 31
 
-    article.update!(body: fetched_body)
-    Success(article)
+    save_body(article, fetched_body)
   rescue StandardError => e
     logger.error "Failed to ensure body for article #{article.id}: #{e.class}: #{e.message}"
-    # discard!는 검증 없이 레코드 전체를 저장하므로, 저장에 실패한 변경을 먼저 되돌린다.
+    Failure(:ensure_body_failed)
+  end
+
+  # 실패를 예외로 올려 저장하지 못한 본문을 모른 채 요약·임베딩으로 넘어가지 않게 한다.
+  # 되돌리지 않으면 메모리에 남은 변경을 이후 단계의 save가 함께 저장할 수 있다.
+  #: (Article article, String body) -> Dry::Monads::Result
+  def save_body(article, body)
+    article.update!(body:)
+    Success(article)
+  rescue StandardError => e
     article.restore_attributes
+    logger.error "Failed to save body for article #{article.id}: #{e.class}: #{e.message}"
+    Failure(:body_save_failed)
+  end
+
+  #: (Article article, Symbol reason) -> Dry::Monads::Result
+  def discard_with(article, reason)
+    logger.warn "Discarding article #{article.id} (#{article.url}): #{reason}"
     article.discard!
-    Failure(e.message)
+    Failure(reason)
   end
 
   #: (Article article) -> Dry::Monads::Result
@@ -99,16 +113,29 @@ class ArticleAgentsService < OperationService
     skip_reason = extraction.skip_reason
     return skip_humanize(article, skip_reason, content) if skip_reason
 
-    logger.info "Humanize metrics for article #{article.id}: #{content['metrics']}"
-    article.update!(extraction.attributes)
-    Success(article)
+    result = save_humanized(article, extraction.attributes)
+    logger.info "Humanize metrics for article #{article.id}: #{content['metrics']}" if result.success?
+    result
   rescue StandardError => e
     logger.error "Failed to humanize article #{article.id}: #{e.class}: #{e.message}"
     Failure(:humanize_failed)
   end
 
-  # call은 윤문 실패를 무시하고 진행하므로, 윤문을 건너뛴 기사를 사유와 함께 여기서 남긴다.
+  # 저장하지 못한 윤문 값이 메모리에 남으면 이후 단계(번역·정리)의 save가 검증 없이 함께
+  # 저장할 수 있으므로, 윤문이 건드린 필드만 되돌린다.
+  #: (Article article, Hash[Symbol, untyped] attributes) -> Dry::Monads::Result
+  def save_humanized(article, attributes)
+    article.update!(attributes)
+    Success(article)
+  rescue StandardError => e
+    article.restore_attributes(attributes.keys)
+    logger.error "Failed to save humanized article #{article.id}: #{e.class}: #{e.message}"
+    Failure(:humanize_failed)
+  end
+
+  # call은 윤문 실패를 무시하고 진행하므로, 윤문을 건너뛴 사유를 이 메서드가 로그로 남긴다.
   # 과윤문 롤백은 모델의 정상 판단이라 info, 응답이 계약을 어긴 경우는 warn이다.
+  # 응답 클래스를 함께 남겨 JSON이 아닌 응답(String)과 형식이 틀린 Hash를 구분한다.
   #: (Article article, Symbol reason, untyped content) -> Dry::Monads::Result
   def skip_humanize(article, reason, content)
     message = "Humanize skipped for article #{article.id}: #{reason} (response #{content.class})"

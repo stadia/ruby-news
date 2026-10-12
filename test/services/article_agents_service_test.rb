@@ -85,6 +85,20 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     assert_predicate article.reload, :discarded?
   end
 
+  # 폐기는 공개 사이트와 연합에 Delete를 전파하므로 사유가 로그에 남아야 한다.
+  test "본문을 얻지 못해 discard할 때 사유를 로그로 남긴다" do
+    article = articles(:ruby_article)
+    article.update!(body: nil)
+    content_service = Object.new
+    content_service.define_singleton_method(:call) { |_article = nil| Dry::Monads::Failure(:no_content) }
+
+    warnings = capture_logs(:warn) do
+      ContentService.stub(:new, -> { content_service }) { ArticleAgentsService.new.call(article) }
+    end
+
+    assert_logged warnings, "Discarding article #{article.id}", "no_content"
+  end
+
   test "ContentService가 성공해도 본문이 31자 미만이면 :short_body 실패를 반환하고 discard한다" do
     article = articles(:ruby_article)
     article.update!(body: nil)
@@ -102,11 +116,12 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     assert_predicate article.reload, :discarded?
   end
 
-  # 가져온 본문을 저장하지 못했는데 메모리상 body만 채운 채 진행하면 요약·임베딩이
-  # DB에 없는 본문으로 만들어진다.
-  test "가져온 본문을 저장하지 못하면 실패를 반환하고 discard한다" do
+  # 본문 확보 단계의 일시적·검증 실패는 기사를 지울 사유가 아니다. 폐기하면 Delete가
+  # 연합에 전파되지만, 남겨 두면 ArticleBatchJob이 title_ko가 없는 기사를 다시 집는다.
+  test "가져온 본문을 저장하지 못하면 discard하지 않고 :body_save_failed를 반환한다" do
     article = articles(:ruby_article)
     article.update!(body: nil)
+    original_url = article.url
     article.url = articles(:similar_article).url # uniqueness 검증 실패를 만든다
 
     content_service = Object.new
@@ -119,9 +134,42 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
       end
     end
 
-    assert_predicate result, :failure?
-    assert_predicate article.reload, :discarded?
+    assert_equal :body_save_failed, result.failure
+    assert_not_predicate article.reload, :discarded?
+    assert_nil article.body
+    assert_equal original_url, article.url
     assert_logged errors, "article #{article.id}", "ActiveRecord::RecordInvalid"
+  end
+
+  # 저장하지 못한 변경이 메모리에 남으면 이후 단계의 update가 검증 없이 함께 저장할 수 있다.
+  test "본문 저장에 실패하면 메모리상 article을 원래 값으로 되돌린다" do
+    article = articles(:ruby_article)
+    article.update!(body: nil)
+    article.url = articles(:similar_article).url
+
+    content_service = Object.new
+    content_service.define_singleton_method(:call) { |_article = nil| Dry::Monads::Success("가져온 기사 본문입니다. " * 5) }
+
+    ContentService.stub(:new, -> { content_service }) { ArticleAgentsService.new.call(article) }
+
+    assert_not_predicate article, :changed?
+    assert_nil article.body
+  end
+
+  test "본문 확보 중 예외가 나면 discard하지 않고 :ensure_body_failed를 반환한다" do
+    article = articles(:ruby_article)
+    article.update!(body: nil)
+    content_service = Object.new
+    content_service.define_singleton_method(:call) { |_article = nil| raise Faraday::TimeoutError, "timed out" }
+
+    result = nil #: Dry::Monads::Result?
+    errors = capture_logs(:error) do
+      ContentService.stub(:new, -> { content_service }) { result = ArticleAgentsService.new.call(article) }
+    end
+
+    assert_equal :ensure_body_failed, result.failure
+    assert_not_predicate article.reload, :discarded?
+    assert_logged errors, "article #{article.id}", "Faraday::TimeoutError"
   end
 
   test "run_humanize는 HumanMonolithAgent의 구조화된 응답으로 summary_* 필드를 갱신한다" do
@@ -267,9 +315,9 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     article.update!(summary_body: "원본 요약")
 
     aborted_response = llm_message({
-      "summary_key" => [],
+      "summary_key" => [ "다른 요점" ],
       "summary_detail" => {},
-      "summary_body" => "원본 요약",
+      "summary_body" => "롤백 전에 모델이 쓴 다른 본문",
       "over_polish_aborted" => true
     })
 
@@ -343,6 +391,80 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
 
     assert_equal :humanize_failed, result.failure
     assert_logged errors, "article #{article.id}", "Faraday::TimeoutError"
+  end
+
+  test "run_humanize는 저장에 실패하면 메모리상 윤문 필드를 원래 값으로 되돌린다" do
+    article = articles(:ruby_article)
+    article.update!(summary_key: [ "기존 요점" ], summary_body: "원본 요약")
+    article.url = articles(:similar_article).url # update!가 검증에서 실패하도록 한다
+
+    chat = build_humanize_chat(llm_message({ "summary_key" => [ "새 요점" ], "summary_body" => "다듬은 요약" }))
+
+    result = nil
+    errors = capture_logs(:error) do
+      HumanMonolithAgent.stub(:chat, chat) do
+        result = ArticleAgentsService.new.send(:run_humanize, article)
+      end
+    end
+
+    assert_equal :humanize_failed, result.failure
+    assert_equal "원본 요약", article.summary_body # reload 없이 메모리 값을 본다
+    assert_equal [ "기존 요점" ], article.summary_key
+    assert_logged errors, "article #{article.id}", "ActiveRecord::RecordInvalid"
+  end
+
+  test "run_humanize는 비정상 상세 응답으로 기존 상세를 지우지 않는다" do
+    article = articles(:ruby_article)
+    article.update!(summary_detail: { "introduction" => "기존 도입", "conclusion" => "기존 결론" }, summary_body: "원본 요약")
+
+    chat = build_humanize_chat(llm_message({
+      "summary_detail" => { "introduction" => "", "conclusion" => "" }, "summary_body" => "다듬은 요약"
+    }))
+
+    HumanMonolithAgent.stub(:chat, chat) { ArticleAgentsService.new.send(:run_humanize, article) }
+
+    assert_equal({ "introduction" => "기존 도입", "conclusion" => "기존 결론" }, article.reload.summary_detail)
+    assert_equal "다듬은 요약", article.summary_body
+  end
+
+  # 윤문은 품질을 높이는 보조 단계라 어떤 사유로 건너뛰어도 이후 단계와 기존 요약이 유지돼야 한다.
+  {
+    "과윤문 롤백" => -> { { "over_polish_aborted" => true, "summary_body" => "다른 본문" }.to_json },
+    "JSON이 아닌 응답" => -> { "summary_body: 윤문본" },
+    "비어 있는 본문" => -> { { "summary_body" => " " }.to_json }
+  }.each do |name, content|
+    test "윤문이 #{name}로 건너뛰어도 일본어 번역까지 진행하고 기존 요약을 유지한다" do
+      article = articles(:ruby_article)
+      article.update!(body: "본문 문장입니다. " * 10, summary_key: [ "요점" ], title_ko: "테스트 제목", summary_body: "요약 본문")
+
+      agent_response = llm_message({ "is_related" => true })
+      agent = Object.new
+      agent.define_singleton_method(:ask) { |_| agent_response }
+      humanize_chat = build_humanize_chat(raw_message(content.call))
+
+      japanese_called = false
+      japanese_service = ArticleJapaneseService.new
+      japanese_service.define_singleton_method(:japanese_translation) do |_article|
+        japanese_called = true
+        { title_ja: "テスト", summary_body_ja: "要約" }
+      end
+      embed_result = Struct.new(:vectors).new(Array.new(3072, 0.0))
+
+      result = nil #: Dry::Monads::Result?
+      RubyLLM.stub(:embed, ->(*, **) { embed_result }) do
+        ArticleAgent.stub(:new, agent) do
+          HumanMonolithAgent.stub(:chat, humanize_chat) do
+            ArticleJapaneseService.stub(:new, -> { japanese_service }) do
+              result = ArticleAgentsService.new.call(article)
+            end
+          end
+        end
+      end
+
+      assert_predicate result, :success?
+      assert japanese_called, "윤문을 건너뛴 뒤 일본어 번역이 호출되지 않았다"
+      assert_equal "요약 본문", article.reload.summary_body
+    end
   end
 
   # 번역 대상이 아닌 기사는 파이프라인 실패가 아니다. 판정은 ArticleJapaneseService가 한다.

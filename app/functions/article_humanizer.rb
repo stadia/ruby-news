@@ -40,10 +40,10 @@ module ArticleHumanizer
       summary_body = stripped_string(content["summary_body"])
       return skipped(:humanize_blank_body) unless summary_body
 
-      # 빈 요점·상세는 키를 빼서 update!가 기존 값을 지우지 않게 한다.
+      # 비었거나 타입이 틀린 요점·상세는 키를 빼서 update!가 기존 값을 지우지 않게 한다.
       attributes = {
         summary_key: string_list(content["summary_key"]),
-        summary_detail: Articles::AgentResponse.hash_of_strings(content["summary_detail"]).presence,
+        summary_detail: string_map(content["summary_detail"]),
         summary_body:
       }.compact
       Extraction.new(attributes:, skip_reason: nil)
@@ -56,18 +56,35 @@ module ArticleHumanizer
       Extraction.new(attributes: {}, skip_reason: reason)
     end
 
-    # 문자열이 아니면 nil이다. `.to_s`로 받으면 배열 등의 inspect 문자열이 저장된다.
+    # 문자열이 아니거나 공백뿐이면 nil이다. `.to_s`로 받으면 배열 등의 inspect 문자열이 저장된다.
     #: (untyped value) -> String?
     def stripped_string(value)
       value.strip.presence if value.is_a?(String)
     end
 
-    # 모든 요소가 문자열인 배열만 받는다. 중첩 배열·Hash 요소가 섞이면 요점 전체를 버린다.
+    # 모든 요소가 문자열인 배열만 받는다. 문자열이 아닌 요소(nil·숫자·중첩 배열·Hash)가
+    # 하나라도 있으면 요점 전체를 버린다. 공백뿐인 문자열 요소는 제거하고, 남은 것이 없으면 nil이다.
     #: (untyped value) -> Array[String]?
     def string_list(value)
       return unless value.is_a?(Array) && value.all?(String)
 
       value.filter_map { stripped_string(it) }.presence
+    end
+
+    # 모든 값이 비어 있지 않은 문자열인 Hash만 받는다. 하나라도 어기면 상세 전체를 버린다.
+    # 일부만 받으면 update!가 Hash 전체를 교체해 기존 값 중 빠진 키가 사라진다.
+    #: (untyped value) -> Hash[String, String]?
+    def string_map(value)
+      return unless value.is_a?(Hash)
+
+      result = {} #: Hash[String, String]
+      value.each do |key, item|
+        text = stripped_string(item)
+        return unless key.is_a?(String) && text
+
+        result[key] = text
+      end
+      result.presence
     end
   end
 end
