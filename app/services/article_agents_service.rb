@@ -45,15 +45,17 @@ class ArticleAgentsService < OperationService
   end
 
   # 본문을 얻지 못했거나 요약할 만큼 길지 않으면 수집 대상이 아니므로 폐기한다. 폐기는
-  # 공개 사이트와 연합에 Delete를 전파하므로 그 두 경우로만 한정하고, 저장 실패나
-  # 일시적 예외는 기사를 남긴 채 Failure로 끝낸다. title_ko가 없는 기사는
-  # ArticleBatchJob이 다시 집는다.
+  # 공개 사이트와 연합에 Delete를 전파하므로 그 두 경우로만 한정하고, 일시적인 수집 실패
+  # (ContentService::TRANSIENT_FAILURES), 저장 실패, 예외는 기사를 남긴 채 Failure로
+  # 끝낸다. title_ko가 없는 기사는 ArticleBatchJob이 다시 집는다.
   #: (Article article) -> Dry::Monads::Result
   def ensure_body(article)
     body = article.body
     return Success(article) if body.present? && body.size > 30
 
     body_result = ContentService.new.call(article)
+    # Success의 failure는 nil이라 일시 실패일 때만 참이다.
+    return keep_for_retry(article, body_result.failure) if ContentService::TRANSIENT_FAILURES.include?(body_result.failure)
     return discard_with(article, body_result.failure) if body_result.failure?
 
     fetched_body = body_result.value!
@@ -77,6 +79,13 @@ class ArticleAgentsService < OperationService
     article.restore_attributes
     logger.error "Failed to save article #{article.id} with fetched body: #{e.class}: #{e.message}"
     Failure(:article_save_failed)
+  end
+
+  # 일시적인 수집 실패는 폐기하지 않는다. title_ko가 없는 기사는 ArticleBatchJob이 다시 집는다.
+  #: (Article article, Symbol reason) -> Dry::Monads::Result
+  def keep_for_retry(article, reason)
+    logger.warn "Keeping article #{article.id} for retry: #{reason}"
+    Failure(reason)
   end
 
   #: (Article article, Symbol reason) -> Dry::Monads::Result

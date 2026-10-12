@@ -86,6 +86,23 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     assert_predicate article.reload, :discarded?
   end
 
+  # 일시적인 본문 수집 실패로 기사를 지우지 않는다. ArticleBatchJob이 다시 집는다(#1099).
+  test "본문 수집이 일시적으로 실패하면 discard하지 않고 사유를 남긴다" do
+    article = articles(:ruby_article)
+    article.update!(body: nil)
+    content_service = Object.new
+    content_service.define_singleton_method(:call) { |_article = nil| Dry::Monads::Failure(:fetch_failed) }
+
+    result = nil #: Dry::Monads::Result?
+    warnings = capture_logs(:warn) do
+      ContentService.stub(:new, -> { content_service }) { result = ArticleAgentsService.new.call(article) }
+    end
+
+    assert_equal :fetch_failed, result.failure
+    assert_not_predicate article.reload, :discarded?
+    assert_logged warnings, "article #{article.id}", "fetch_failed"
+  end
+
   # 폐기는 공개 사이트와 연합에 Delete를 전파하므로 사유가 로그에 남아야 한다.
   test "본문을 얻지 못해 discard할 때 사유를 로그로 남긴다" do
     article = articles(:ruby_article)

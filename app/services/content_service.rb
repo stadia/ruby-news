@@ -7,6 +7,15 @@ require "mcp_client"
 class ContentService < OperationService
   include LinkHelper
 
+  # 다시 시도하면 본문을 얻을 수 있는 실패. ArticleAgentsService는 이 사유로는 기사를
+  # 폐기하지 않고, title_ko가 없는 기사를 다시 집는 ArticleBatchJob에 맡긴다.
+  TRANSIENT_FAILURES = %i[fetch_failed].freeze
+  # 5xx와 함께 서버가 잠시 응답하지 못한 것으로 보는 상태 코드.
+  TRANSIENT_STATUSES = [ 408, 429 ].freeze
+
+  # 원 서버나 Scrapling이 잠시 응답하지 못했다. execute_html이 :fetch_failed로 바꾼다.
+  class TransientFetchError < StandardError; end
+
   #: (Article article) -> Dry::Monads::Result
   def call(article)
     url = article.url.to_s
@@ -53,6 +62,9 @@ class ContentService < OperationService
   rescue SafeHttp::BlockedUrlError => e
     logger.warn e.message
     Failure(:blocked_url)
+  rescue TransientFetchError, Faraday::Error => e
+    logger.warn "Transient failure fetching #{url}: #{e.class}: #{e.message}"
+    Failure(:fetch_failed)
   end
 
   #: (String url) -> Dry::Monads::Result
@@ -78,16 +90,20 @@ class ContentService < OperationService
       logger.error "Error fetching Youtube transcript: #{e.message}"
     end
 
+    # 백업 조회는 자막이 없다는 답을 줄 수 있는 마지막 시도다. 그것마저 예외로 끝나면
+    # 자막이 없는 것인지 알 수 없으므로 일시 실패로 본다.
+    backup_failed = false
     if transcript.blank?
       begin
         fetched_transcript = YoutubeRb::Transcript::YouTubeTranscriptApi.new.fetch(youtube_id)
         transcript = YoutubeRb::Formatters::TextFormatter.new.format_transcript(fetched_transcript) if fetched_transcript.present?
       rescue StandardError => e
+        backup_failed = true
         logger.error "Error fetching Youtube transcript: #{e.message}"
       end
     end
 
-    return Failure(:no_content) if transcript.blank?
+    return Failure(backup_failed ? :fetch_failed : :no_content) if transcript.blank?
 
     Success(transcript)
   end
@@ -122,7 +138,18 @@ class ContentService < OperationService
 
   #: (String url) -> String?
   def faraday_fetch_html(url)
-    SafeHttp.get_following_redirects(url).response.body
+    response = SafeHttp.get_following_redirects(url).response
+    response.body if usable_response?(response)
+  end
+
+  # 2xx만 본문으로 쓴다. 4xx·리다이렉트 한도에 걸린 3xx는 오류 페이지라 쓰지 않고(영구 실패),
+  # 408·429·5xx는 TransientFetchError를 낸다(일시 실패).
+  #: (untyped response) -> bool
+  def usable_response?(response)
+    status = response.status
+    raise TransientFetchError, "HTTP #{status}" if TRANSIENT_STATUSES.include?(status) || status >= 500
+
+    status.between?(200, 299)
   end
 
   #: (String url) -> String?
@@ -133,12 +160,13 @@ class ContentService < OperationService
     response = fetched.response
     url = fetched.url
     # 리다이렉트 한도에 걸린 3xx는 Location을 검사하지 않았으므로 넘기지 않는다.
-    return nil if response.status.between?(300, 399)
+    return nil unless usable_response?(response)
 
     client = MCPClient.connect(ENV.fetch("SCRAPLING_URL") { "http://localhost::8000/mcp" })
     result = client.call_tool("fetch", { url: })&.[]("structuredContent")
     logger.debug result
-    return nil if result["status"] != 200
+    # Scrapling이 200을 못 받은 것은 차단·과부하 같은 Scrapling 쪽 사정일 수 있다.
+    raise TransientFetchError, "Scrapling status #{result['status']}" if result["status"] != 200
 
     result["content"].first
   end

@@ -309,6 +309,51 @@ class ContentServiceTest < ActiveSupport::TestCase
     end
   end
 
+  # 일시 실패(:fetch_failed)는 ArticleAgentsService가 기사를 폐기하지 않고 재시도에 맡긴다.
+  # 영구 실패(:no_content)는 폐기된다. 오류 페이지 본문을 요약하지 않도록 status를 본다(#1099).
+  { 408 => :fetch_failed, 429 => :fetch_failed, 500 => :fetch_failed, 503 => :fetch_failed,
+    404 => :no_content, 410 => :no_content }.each do |status, reason|
+    test "execute_html은 HTTP #{status} 응답이면 #{reason}를 반환한다" do
+      response = MockResponse.new(status:, body: "<html><body><article><p>#{'오류 페이지 ' * 20}</p></article></body></html>")
+
+      SafeHttp.stub(:fetch, ->(*) { response }) do
+        assert_equal reason, ContentService.new.call(Article.new(url: "https://example.com/post")).failure
+      end
+    end
+  end
+
+  test "execute_html은 네트워크 예외가 나면 :fetch_failed를 반환한다" do
+    SafeHttp.stub(:fetch, ->(*) { raise Faraday::TimeoutError, "timed out" }) do
+      assert_equal :fetch_failed, ContentService.new.call(Article.new(url: "https://example.com/post")).failure
+    end
+  end
+
+  test "execute_html은 SCRAPLING 경로에서도 원 서버의 5xx를 :fetch_failed로 본다" do
+    ENV["SCRAPLING_URL"] = "http://scrapling.test/mcp"
+    SafeHttp.stub(:fetch, ->(*) { MockResponse.new(status: 503) }) do
+      MCPClient.stub(:connect, ->(*) { flunk "원 서버가 5xx면 Scrapling을 부르지 않는다" }) do
+        assert_equal :fetch_failed, ContentService.new.call(Article.new(url: "https://example.com/post")).failure
+      end
+    end
+  ensure
+    ENV.delete("SCRAPLING_URL")
+  end
+
+  # 자막 조회가 예외로 끝났으면 자막이 없는 것인지 알 수 없으므로 일시 실패로 본다.
+  test "execute_youtube는 자막 조회가 모두 예외로 끝나면 :fetch_failed를 반환한다" do
+    article = articles(:youtube_ruby_talk)
+    mock_video = Object.new
+    mock_video.define_singleton_method(:captions) { raise StandardError, "API Error" }
+    mock_api = Object.new
+    mock_api.define_singleton_method(:fetch) { |_| raise StandardError, "backup down" }
+
+    stub_constructor(Yt::Video, ->(*, **) { mock_video }) do
+      stub_constructor(YoutubeRb::Transcript::YouTubeTranscriptApi, ->(*, **) { mock_api }) do
+        assert_equal :fetch_failed, ContentService.new.call(article).failure
+      end
+    end
+  end
+
   # 헬퍼 메서드 테스트
   test "is_youtube? 확인을 통해 올바른 메서드가 호출된다" do
     # 일반 기사
@@ -421,16 +466,19 @@ class ContentServiceTest < ActiveSupport::TestCase
     end
   end
 
-  test "mcp_fetch_html은 상태 코드가 200이 아니면 nil을 반환한다" do
-    service = ContentService.new
+  # Scrapling이 200을 못 받은 것은 Scrapling 쪽 사정(차단·과부하)일 수 있어 일시 실패로 본다.
+  test "execute_html은 SCRAPLING 상태 코드가 200이 아니면 :fetch_failed를 반환한다" do
     client = Object.new
     client.define_singleton_method(:call_tool) { |*, **| { "structuredContent" => { "status" => 500, "content" => [] } } }
 
+    ENV["SCRAPLING_URL"] = "http://scrapling.test/mcp"
     SafeHttp.stub(:fetch, ->(*) { MockResponse.new(status: 200) }) do
       MCPClient.stub(:connect, client) do
-        assert_nil service.send(:mcp_fetch_html, "https://example.com")
+        assert_equal :fetch_failed, ContentService.new.call(Article.new(url: "https://example.com/post")).failure
       end
     end
+  ensure
+    ENV.delete("SCRAPLING_URL")
   end
 
   test "mcp_fetch_html은 첫 번째 content 항목을 반환한다" do
