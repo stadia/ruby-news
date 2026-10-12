@@ -44,9 +44,11 @@ module RubyNews
     # Enable query log tags around perform for better debugging
     config.active_job.log_query_tags_around_perform = true
 
-    config.rails_semantic_logger.started = true
-    config.rails_semantic_logger.processing = true
-    config.rails_semantic_logger.rendered = true
+    # Started/Processing/Rendered 줄은 요청당 레코드를 4~5개로 불리지만 정보는 Completed 한 줄과
+    # 트레이스 span에 이미 있다(SigNoz 실측: 하루 3.7만 건 중 약 40%).
+    config.rails_semantic_logger.started = false
+    config.rails_semantic_logger.processing = false
+    config.rails_semantic_logger.rendered = false
     config.rails_semantic_logger.quiet_assets = true
     config.colorize_logging = false
     config.rails_semantic_logger.format = :json

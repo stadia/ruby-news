@@ -51,7 +51,12 @@ if Rails.env.production?
 
   # Must run AFTER logger_provider is set: the appender captures the provider
   # at construction time. metrics:false — no meter pipeline is configured.
-  SemanticLogger.add_appender(appender: :open_telemetry, metrics: false)
+  # OtelLogAppender (lib/) keeps body = message and flattens the rest into
+  # typed attributes so ClickHouse map/body indexes stay useful.
+  # after_initialize: lib/ is reloadable, and initializers may not autoload it.
+  Rails.application.config.after_initialize do
+    SemanticLogger.add_appender(appender: OtelLogAppender.new(metrics: false))
+  end
 
   at_exit { logger_provider.shutdown }
 end
