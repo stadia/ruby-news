@@ -18,11 +18,13 @@ class Components::Layout < Components::Base
         yield(:head)
         render Components::Layout::AssetPreloads.new(section: :pwa_and_icons)
         render Components::Layout::AssetPreloads.new(section: :google_fonts)
-        stylesheet_link_tag :app, data_turbo_track: "reload"
-        stylesheet_link_tag "lexxy", data_turbo_track: "reload"
-        # vendor/lightgallery.css는 렌더 차단을 피하려고 head에서 제거했다.
-        # lightbox 컨트롤러가 연결될 때(=갤러리가 있는 페이지)만 주입한다.
+        # :app은 app/assets의 CSS를 전부 펼쳐 vendor/lightgallery.css까지 렌더 차단으로 끌어온다.
+        # lightgallery.css는 lightbox 컨트롤러가 연결될 때(=갤러리가 있는 페이지)만 주입한다.
+        stylesheet_link_tag "tailwind", data_turbo_track: "reload"
+        # lexxy.css는 @import 체인(lexxy → content/editor → variables)이라 직렬 왕복이 3번 생긴다(#1108).
+        stylesheet_link_tag "lexxy-variables", "lexxy-content", "lexxy-editor", data_turbo_track: "reload"
         javascript_importmap_tags
+        render_controller_entry_preloads
         render Components::Layout::StructuredData.new
       end
 
@@ -46,6 +48,15 @@ class Components::Layout < Components::Base
   end
 
   private
+
+  # application.js가 정적으로 import하는 컨트롤러 진입 모듈. importmap에서는 preload: false라
+  # 그대로 두면 HTML 이후 index → application/page_loader로 직렬 왕복이 2번 더 생긴다(#1108).
+  CONTROLLER_ENTRY_MODULES = %w[controllers/index.js controllers/application.js controllers/page_loader_controller.js].freeze
+
+  def render_controller_entry_preloads
+    vc = view_context
+    raw(vc.javascript_module_preload_tag(*CONTROLLER_ENTRY_MODULES.map { vc.asset_path(it) }))
+  end
 
   def render_theme_init_script
     script do

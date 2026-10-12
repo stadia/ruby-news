@@ -9,6 +9,8 @@ pin "@hotwired/stimulus-loading", to: "stimulus-loading.js"
 # (preload하면 모든 컨트롤러 파일이 즉시 다운로드되고, modulepreload가
 #  chart.js 같은 무거운 의존성까지 재귀적으로 끌어올 수 있다.)
 pin_all_from "app/javascript/controllers", under: "controllers", preload: false
+# 단, application.js가 정적으로 import하는 진입 모듈은 layout에서 따로 modulepreload한다
+# (pin_all_from이 같은 이름의 개별 pin을 덮어써서 여기서는 preload를 켤 수 없다).
 # utils(form_helpers)의 소비자(post_form/reply_form 컨트롤러)가 모두 lazy이므로
 # 함께 preload에서 제외한다.
 pin_all_from "app/javascript/utils", under: "utils", preload: false
@@ -22,6 +24,8 @@ pin "@floating-ui/utils", to: "@floating-ui--utils.js", preload: false # @0.2.11
 pin "@floating-ui/utils/dom", to: "@floating-ui--utils--dom.js", preload: false # @0.2.11
 pin "embla-carousel", preload: false # @8.6.0
 pin "lexxy", to: "lexxy.min.js"
+# reactionview 젬이 preload: true로 pin하지만 앱 JS는 import하지 않는다.
+pin "reactionview", to: "reactionview.esm.js", preload: false
 pin "@rails/activestorage", to: "activestorage.esm.js"
 pin "chart.js", preload: false # @4.5.1
 pin "@kurkle/color", to: "@kurkle--color.js", preload: false # @0.3.4

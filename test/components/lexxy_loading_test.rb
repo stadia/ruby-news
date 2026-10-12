@@ -22,7 +22,7 @@ class LexxyLoadingTest < ActiveSupport::TestCase
   end
 
   test "layout은 head에서 lexxy CSS를 전역 로드한다" do
-    assert_match(/stylesheet_link_tag "lexxy", data_turbo_track: "reload"/, LAYOUT)
+    assert_match(/stylesheet_link_tag "lexxy-variables", "lexxy-content", "lexxy-editor", data_turbo_track: "reload"/, LAYOUT)
     refute_includes LAYOUT, "lexxy CSS는 head에서 전역 로드하지 않는다"
   end
 
