@@ -17,20 +17,37 @@ class ArticleTest < ActiveSupport::TestCase
     @site = sites(:ruby_weekly)
   end
 
-  test "duplicate_url? is true only when both url and origin_url are taken" do
+  # ========== Validation Tests ==========
+
+  test "url과 origin_url이 모두 등록된 기사와 겹치면 duplicate_url?이 참이다" do
     existing = articles(:ruby_article)
     duplicate = Article.new(url: existing.url, origin_url: existing.origin_url, user: existing.user)
 
     assert_not duplicate.valid?
     assert_predicate duplicate, :duplicate_url?
+  end
 
+  test "url만 겹치면 duplicate_url?이 거짓이다" do
+    existing = articles(:ruby_article)
     partial = Article.new(url: existing.url, origin_url: "https://example.com/another-origin", user: existing.user)
 
     assert_not partial.valid?
     assert_not partial.duplicate_url?
   end
 
-  # ========== Validation Tests ==========
+  test "origin_url만 겹치면 duplicate_url?이 거짓이다" do
+    existing = articles(:ruby_article)
+    partial = Article.new(url: "https://example.com/another-url", origin_url: existing.origin_url, user: existing.user)
+
+    assert_not partial.valid?
+    assert_not partial.duplicate_url?
+  end
+
+  test "검증 전에는 duplicate_url?이 거짓이다" do
+    existing = articles(:ruby_article)
+
+    assert_not Article.new(url: existing.url, origin_url: existing.origin_url, user: existing.user).duplicate_url?
+  end
 
   test "유효한 속성을 가진 경우 유효해야 한다" do
     article = Article.new(

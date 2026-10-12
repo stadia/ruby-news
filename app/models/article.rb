@@ -178,8 +178,10 @@ class Article < ApplicationRecord
 
   # ── Public Instance Methods ──────────────────────────────────────────
 
-  # 저장 실패 원인이 url·origin_url 둘 다 이미 등록된 기사와 겹친 것인지.
-  # 하나만 겹치면 다른 기사와 충돌한 것이라 기존 기사로 보낼 수 없다.
+  # 직전 `valid?`/`save`가 남긴 `errors`를 읽어, url과 origin_url이 모두 이미 등록된
+  # 기사와 겹쳐 실패했는지 알려 준다. 검증을 직접 실행하지 않으므로 검증 전에는 항상
+  # false다. 한쪽만 겹친 경우는 어느 기사를 가리키는지 단정할 수 없어 false로 두고,
+  # 호출부가 검증 오류로 처리하게 한다.
   #: () -> bool
   def duplicate_url?
     errors.of_kind?(:url, :taken) && errors.of_kind?(:origin_url, :taken)
