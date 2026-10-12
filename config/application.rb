@@ -44,9 +44,11 @@ module RubyNews
     # Enable query log tags around perform for better debugging
     config.active_job.log_query_tags_around_perform = true
 
-    config.rails_semantic_logger.started = true
-    config.rails_semantic_logger.processing = true
-    config.rails_semantic_logger.rendered = true
+    # Processing(payload 없음)·Started(method/path는 Completed payload, ip는 log_tags)는 Completed와 중복이고,
+    # Rendered의 템플릿별 정보는 action_view span에 남는다. 전 환경 공통이라 개발 로그에서도 이 줄들이 사라진다.
+    config.rails_semantic_logger.started = false
+    config.rails_semantic_logger.processing = false
+    config.rails_semantic_logger.rendered = false
     config.rails_semantic_logger.quiet_assets = true
     config.colorize_logging = false
     config.rails_semantic_logger.format = :json

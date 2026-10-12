@@ -35,9 +35,10 @@ if Rails.env.production?
 
   # --- Logs: send structured records to SigNoz over OTLP ---
   # rails_semantic_logger still writes JSON to $stdout (see production.rb) for
-  # `kubectl logs`. This appender additionally emits OTLP LogRecords where the
-  # log `payload` becomes structured `attributes`, so SigNoz can index/filter
-  # fields instead of storing the whole JSON line as an opaque `body` string.
+  # `kubectl logs`. OtelLogAppender (lib/otel_log_appender.rb) additionally
+  # emits OTLP LogRecords with body = message and everything else (logger name,
+  # named tags, payload, duration, exception) as typed `attributes`, so SigNoz
+  # can index/filter fields instead of tokenizing them inside `body`.
   #
   # Endpoint/headers come from the standard OTEL_EXPORTER_OTLP_* env vars
   # (falls back to OTEL_EXPORTER_OTLP_LOGS_ENDPOINT), same as traces.
@@ -51,7 +52,16 @@ if Rails.env.production?
 
   # Must run AFTER logger_provider is set: the appender captures the provider
   # at construction time. metrics:false — no meter pipeline is configured.
-  SemanticLogger.add_appender(appender: :open_telemetry, metrics: false)
+  # after_initialize: the main autoloader (lib/ via autoload_lib) is set up
+  # after config/initializers run, so OtelLogAppender cannot be referenced here.
+  Rails.application.config.after_initialize do
+    SemanticLogger.add_appender(appender: OtelLogAppender.new(metrics: false))
+  end
 
-  at_exit { logger_provider.shutdown }
+  # at_exit runs in reverse order, so this runs before semantic_logger's own
+  # flush. Drain its queue first, or the last logs hit a stopped provider.
+  at_exit do
+    SemanticLogger.flush
+    logger_provider.shutdown
+  end
 end
