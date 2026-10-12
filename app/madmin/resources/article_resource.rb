@@ -28,6 +28,7 @@ class ArticleResource < Madmin::Resource
   attribute :summary_introduction, index: false
   attribute :summary_body, index: false
   attribute :summary_conclusion, index: false
+  attribute :humanize_status, index: false, form: false
 
   # attribute :twitter_id, index: false, form: false
   attribute :mastodon_id, index: false, form: false
@@ -44,6 +45,7 @@ class ArticleResource < Madmin::Resource
   scope :discarded
   scope :related
   scope :unrelated
+  scope :humanize_not_applied
 
   # Add actions to the resource's show page
   member_action do |record|

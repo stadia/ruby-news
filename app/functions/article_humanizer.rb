@@ -57,6 +57,10 @@ module ArticleHumanizer
     def to_attributes
       { summary_key:, summary_detail:, summary_body: }.compact.freeze
     end
+
+    # 응답에서 받지 못해(비었거나 타입이 틀려) 기존 값을 유지한 윤문 필드.
+    #: () -> Array[Symbol]
+    def dropped_keys = %i[summary_key summary_detail].select { public_send(it).nil? }
   end
 
   # 반영하지 않은 사유. 오타가 조용히 로그에만 남지 않도록 SKIP_REASONS만 받는다.
@@ -78,6 +82,25 @@ module ArticleHumanizer
   end
 
   class << self
+    # Article#humanize_status에 저장할 윤문 결과. 반영했으면 빠진 필드를, 건너뛰었으면 사유를 담는다.
+    #: ((Humanized | Skipped) result, ?at: ActiveSupport::TimeWithZone) -> Hash[String, untyped]
+    def status(result, at: Time.current)
+      case result
+      when Humanized
+        { "outcome" => "applied", "dropped" => result.dropped_keys.map(&:to_s), "at" => at.iso8601 }
+      when Skipped
+        { "outcome" => "skipped", "reason" => result.reason.to_s, "at" => at.iso8601 }
+      else
+        T.absurd(result)
+      end
+    end
+
+    # 에이전트 호출·저장 중 예외로 윤문하지 못한 기록. 예외 클래스로 원인을 구분한다.
+    #: (Exception error, ?at: ActiveSupport::TimeWithZone) -> Hash[String, untyped]
+    def failed_status(error, at: Time.current)
+      { "outcome" => "failed", "reason" => "humanize_failed", "error" => error.class.name, "at" => at.iso8601 }
+    end
+
     #: (Article article) -> String
     def prompt(article)
       keys = Array(article.summary_key).map(&:to_s).reject(&:blank?)

@@ -199,6 +199,23 @@ class ArticleHumanizerTest < ActiveSupport::TestCase
     assert_not_predicate ArticleHumanizer::Skipped.build(:humanize_blank_body), :aborted?
   end
 
+  test "Humanized#dropped_keys는 응답에서 받지 못한 윤문 필드다" do
+    assert_equal %i[summary_key summary_detail], ArticleHumanizer.extract({ "summary_body" => "본문" }).dropped_keys
+    assert_empty ArticleHumanizer::Humanized.build(summary_key: [ "a" ], summary_detail: { "introduction" => "a", "conclusion" => "b" }, summary_body: "본문").dropped_keys
+  end
+
+  test "status는 결과별로 humanize_status에 저장할 Hash를 만든다" do
+    at = Time.zone.parse("2026-10-12 10:00:00")
+    humanized = ArticleHumanizer.extract({ "summary_body" => "본문" })
+
+    assert_equal({ "outcome" => "applied", "dropped" => %w[summary_key summary_detail], "at" => at.iso8601 },
+                 ArticleHumanizer.status(humanized, at:))
+    assert_equal({ "outcome" => "skipped", "reason" => "humanize_aborted", "at" => at.iso8601 },
+                 ArticleHumanizer.status(ArticleHumanizer::Skipped.build(:humanize_aborted), at:))
+    assert_equal({ "outcome" => "failed", "reason" => "humanize_failed", "error" => "Faraday::TimeoutError", "at" => at.iso8601 },
+                 ArticleHumanizer.failed_status(Faraday::TimeoutError.new("x"), at:))
+  end
+
   private
 
   def assert_skipped(reason, extraction)

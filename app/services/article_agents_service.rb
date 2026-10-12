@@ -133,7 +133,7 @@ class ArticleAgentsService < OperationService
     when ArticleHumanizer::Skipped
       skip_humanize(article, extraction, content)
     when ArticleHumanizer::Humanized
-      result = save_humanized(article, extraction.to_attributes)
+      result = save_humanized(article, extraction)
       logger.info "Humanize metrics for article #{article.id}: #{content['metrics']}" if result.success?
       result
     else
@@ -141,20 +141,49 @@ class ArticleAgentsService < OperationService
       T.absurd(extraction)
     end
   rescue StandardError => e
-    logger.error "Failed to humanize article #{article.id}: #{e.class}: #{e.message}"
-    Failure(:humanize_failed)
+    fail_humanize(article, e, "Failed to humanize article #{article.id}")
   end
 
   # 저장하지 못한 윤문 값이 메모리에 남으면 이후 단계(번역·정리)의 save가 검증 없이 함께
-  # 저장할 수 있으므로, 윤문이 건드린 필드만 되돌린다.
-  #: (Article article, Hash[Symbol, untyped] attributes) -> Dry::Monads::Result
-  def save_humanized(article, attributes)
+  # 저장할 수 있으므로, 윤문이 건드린 필드만 되돌린다. 윤문 결과(humanize_status)는 같은
+  # update!로 함께 저장한다.
+  #: (Article article, ArticleHumanizer::Humanized humanized) -> Dry::Monads::Result
+  def save_humanized(article, humanized)
+    attributes = humanized.to_attributes.merge(humanize_status: ArticleHumanizer.status(humanized))
     article.update!(attributes)
+    log_dropped_fields(article, humanized)
     Success(article)
   rescue StandardError => e
-    article.restore_attributes(attributes.keys)
-    logger.error "Failed to save humanized article #{article.id}: #{e.class}: #{e.message}"
+    article.restore_attributes(attributes&.keys || ArticleHumanizer::Humanized.members)
+    fail_humanize(article, e, "Failed to save humanized article #{article.id}")
+  end
+
+  # 요점·상세가 응답 검증에서 빠지면 본문만 갱신된 채 성공한다. 응답이 계약을 어긴 것이라 warn이다.
+  #: (Article article, ArticleHumanizer::Humanized humanized) -> void
+  def log_dropped_fields(article, humanized)
+    dropped = humanized.dropped_keys
+    return if dropped.empty?
+
+    logger.warn "Humanize partially applied for article #{article.id}: kept existing #{dropped.join(', ')}",
+                { article_id: article.id, dropped: }
+  end
+
+  #: (Article article, StandardError error, String message) -> Dry::Monads::Result
+  def fail_humanize(article, error, message)
+    logger.error "#{message}: #{error.class}: #{error.message}", { article_id: article.id, error: error.class.name }
+    record_humanize_status(article, ArticleHumanizer.failed_status(error))
     Failure(:humanize_failed)
+  end
+
+  # 건너뜀·실패 기록은 다른 속성 변경 없이 컬럼만 쓴다. 저장 실패로 메모리에 남은 다른 변경을
+  # 함께 저장하지 않고, updated_at(ArticleBatchJob 재시도 순서)도 건드리지 않는다.
+  # 기록이 실패해도 윤문 결과(Failure)는 그대로 돌려주도록 예외를 삼키고 로그로 남긴다.
+  #: (Article article, Hash[String, untyped] status) -> void
+  def record_humanize_status(article, status)
+    article.update_column(:humanize_status, status)
+  rescue StandardError => e
+    logger.error "Failed to record humanize status for article #{article.id}: #{e.class}: #{e.message}",
+                 { article_id: article.id, status: }
   end
 
   # call은 윤문 실패를 무시하고 진행하므로, 윤문을 건너뛴 사유를 이 메서드가 로그로 남긴다.
@@ -163,7 +192,9 @@ class ArticleAgentsService < OperationService
   #: (Article article, ArticleHumanizer::Skipped skipped, untyped content) -> Dry::Monads::Result
   def skip_humanize(article, skipped, content)
     message = "Humanize skipped for article #{article.id}: #{skipped.reason} (response #{content.class})"
-    skipped.aborted? ? logger.info(message) : logger.warn(message)
+    payload = { article_id: article.id, reason: skipped.reason, response_class: content.class.name }
+    skipped.aborted? ? logger.info(message, payload) : logger.warn(message, payload)
+    record_humanize_status(article, ArticleHumanizer.status(skipped))
     Failure(skipped.reason)
   end
 

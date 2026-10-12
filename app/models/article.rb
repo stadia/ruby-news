@@ -98,6 +98,8 @@ class Article < ApplicationRecord
   scope :related, -> { kept.where(is_related: true) }
   scope :unrelated, -> { kept.where(is_related: false) }
   scope :confirmed, -> { where("slug IS NOT NULL AND title_ko IS NOT NULL") }
+  # 윤문을 건너뛰었거나 실패해 원 요약이 그대로인 기사(#1098). 기록이 없는(NULL) 기사는 제외한다.
+  scope :humanize_not_applied, -> { where("humanize_status->>'outcome' IN ('skipped', 'failed')") }
 
   # TOAST 컬럼(body, summary_body, embedding) 제외 스코프
   scope :without_toast, -> {
