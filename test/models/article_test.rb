@@ -17,6 +17,19 @@ class ArticleTest < ActiveSupport::TestCase
     @site = sites(:ruby_weekly)
   end
 
+  test "duplicate_url? is true only when both url and origin_url are taken" do
+    existing = articles(:ruby_article)
+    duplicate = Article.new(url: existing.url, origin_url: existing.origin_url, user: existing.user)
+
+    assert_not duplicate.valid?
+    assert_predicate duplicate, :duplicate_url?
+
+    partial = Article.new(url: existing.url, origin_url: "https://example.com/another-origin", user: existing.user)
+
+    assert_not partial.valid?
+    assert_not partial.duplicate_url?
+  end
+
   # ========== Validation Tests ==========
 
   test "유효한 속성을 가진 경우 유효해야 한다" do

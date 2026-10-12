@@ -178,6 +178,13 @@ class Article < ApplicationRecord
 
   # ── Public Instance Methods ──────────────────────────────────────────
 
+  # 저장 실패 원인이 url·origin_url 둘 다 이미 등록된 기사와 겹친 것인지.
+  # 하나만 겹치면 다른 기사와 충돌한 것이라 기존 기사로 보낼 수 없다.
+  #: () -> bool
+  def duplicate_url?
+    errors.of_kind?(:url, :taken) && errors.of_kind?(:origin_url, :taken)
+  end
+
   #: () -> String
   def to_markdown
     Articles::Markdown.render(self)
