@@ -475,6 +475,21 @@ class ArticleTest < ActiveSupport::TestCase
     assert_not_nil article.host
   end
 
+  test "저장 재시도 전에 URL을 바꾸면 메타데이터를 새로 준비한다" do
+    article = Article.new(url: "https://example.com/first-metadata", user: @user)
+    response = Struct.new(:body, :status, :headers)
+    SafeHttp.stub(:fetch, ->(url, *, **) {
+      response.new("<html><title>#{url.include?('second-metadata') ? 'Second' : 'First'}</title></html>", 200, {})
+    }) do
+      article.generate_metadata
+      article.url = "https://example.com/second-metadata"
+      article.title = nil
+      article.generate_metadata
+    end
+
+    assert_equal "Second", article.title
+  end
+
   # ========== Instance Method Tests ==========
 
   test "youtube_id는 YouTube URL에서 비디오 ID를 추출해야 한다" do

@@ -139,7 +139,7 @@ class Article < ApplicationRecord
   # ── Validations ──────────────────────────────────────────────────────
   validates :title, length: { maximum: TITLE_MAX_LENGTH }, allow_blank: true
   # 경로·쿼리는 대소문자를 구분하므로(YouTube 영상 ID 등) 유니크 인덱스·기존 기사 조회와 같은
-  # 기준으로 대소문자를 구분한다. 호스트 표기 차이는 URL 정규화가 흡수한다.
+  # 기준으로 대소문자를 구분한다. 생성 시 두 URL의 호스트 표기는 검증 전에 맞춘다.
   validates :url, :origin_url, presence: true, uniqueness: { case_sensitive: true }
   validates :slug, uniqueness: true, allow_blank: true
 
@@ -147,16 +147,13 @@ class Article < ApplicationRecord
   before_validation on: :create do
     url_local = url
     self.origin_url = url_local if url_local && origin_url.blank?
+    self.url = Articles::MetadataPreparation.canonical_host_url(url_local) if url_local
+    self.origin_url = Articles::MetadataPreparation.canonical_host_url(origin_url) if origin_url
   end
 
   before_create :generate_metadata
 
-  before_save do
-    # 제목에 "Show HN"이 포함되어 있으면 discard 처리
-    if title&.match?(/Show HN/i)
-      self.deleted_at = Time.zone.now
-    end
-  end
+  before_save :discard_show_hn
 
   # title 이 일본어(가나 또는 한자 포함)인 경우 title_ja 에도 함께 저장한다.
   # 판별 기준은 JAPANESE_TITLE_REGEX 를 사용한다.
@@ -196,7 +193,13 @@ class Article < ApplicationRecord
 
   #: () -> void
   def generate_metadata
+    # INSERT가 slug 충돌로 롤백되어도 같은 인스턴스의 준비 결과는 남는다.
+    # 같은 URL의 재시도에서만 HTTP·YouTube API 준비 결과를 재사용한다.
+    return if @metadata_prepared_url == url
+
     result = metadata_service.call(self)
+    discard_show_hn
+    @metadata_prepared_url = url unless result.failure? && result.failure == :blocked_url
     return unless result.failure?
 
     logger.debug { "Article metadata preparation failed for #{url}: #{result.failure}" }
@@ -301,6 +304,12 @@ class Article < ApplicationRecord
 
   # ── Private Instance Methods ─────────────────────────────────────────
   private
+
+  # before_save는 before_create의 메타데이터보다 먼저 실행되므로 준비 직후에도 적용한다.
+  #: () -> void
+  def discard_show_hn
+    self.deleted_at = Time.zone.now if title&.match?(/Show HN/i)
+  end
 
   #: () -> void
   def handle_after_discard

@@ -112,7 +112,7 @@ class ArticlesController < ApplicationController
 
   # POST /articles
   def create
-    url = article_params[:url]&.strip
+    url = @submitted_url = article_params[:url]&.strip
     @article = Article.new(url:, origin_url: url, user: User.first_bot)
 
     case Articles::Submission.save_submitted(@article, user_id: current_user.id)
@@ -122,8 +122,20 @@ class ArticlesController < ApplicationController
       redirect_to article_path(@article), notice: t("articles.create.success")
     when :duplicate
       respond_with_existing_article
-    else
+    when :discarded
+      # 폐기된 행은 보존하되 폼은 새 URL을 POST로 등록할 수 있는 새 객체를 사용한다.
+      @article = Article.new(url: @submitted_url)
+      @article.errors.add(:base, :discarded_url)
       render_new_article
+    when :invalid
+      # 폼에 없는 origin_url의 검증 항목명을 노출하지 않는다.
+      if @article.errors.of_kind?(:origin_url, :taken)
+        @article.errors.delete(:origin_url, :taken)
+        @article.errors.add(:base, :partial_duplicate)
+      end
+      render_new_article
+    else
+      raise "Unexpected article submission result"
     end
   end
 
@@ -205,12 +217,15 @@ class ArticlesController < ApplicationController
         return
       end
 
-      @article.errors.clear
+      # 중복 판정의 URL 오류만 안내 문구로 치환하고 다른 검증 오류는 보존한다.
+      @article.errors.delete(:url, :taken)
+      @article.errors.delete(:origin_url, :taken)
       @article.errors.add(:base, existing ? :discarded_url : :submit_conflict)
       render_new_article
     end
 
     def render_new_article
+      @article.url = @submitted_url
       render Views::Articles::New.new(article: @article), status: :unprocessable_entity
     end
 

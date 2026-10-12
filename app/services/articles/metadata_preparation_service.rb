@@ -36,6 +36,7 @@ module Articles
       return Failure(:fetch_failed) if fetched.nil?
 
       article.url = fetched.url
+      step normalize_article_url(article)
       Success(fetched.response)
     rescue SafeHttp::BlockedUrlError => e
       logger.warn e.message
@@ -46,7 +47,7 @@ module Articles
     def normalize_article_url(article)
       parsed_url = URI.parse(article.url.to_s)
       article.url = MetadataPreparation.normalized_url(parsed_url)
-      article.host = parsed_url.host
+      article.host = parsed_url.host&.downcase
       article.is_youtube = parsed_url.host&.match?(/youtube/i) == true
       article.deleted_at = Time.zone.now if MetadataPreparation.should_discard_url?(article, parsed_url)
       Success(article)

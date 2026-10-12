@@ -7,6 +7,18 @@ module Articles
     Response = Struct.new(:body, :status, :headers)
     Video = Struct.new(:published_at, :title)
 
+    test "리다이렉트 최종 URL도 정규화하고 최종 호스트를 설정한다" do
+      article = Article.new(url: "https://example.com/redirect")
+      response = Response.new("<html><title>Redirected</title></html>", 200, {})
+      fetched = SafeHttp::Fetched.new(response: response, url: "https://EXAMPLE.com:8443/Final?v=AbC&utm_source=x")
+
+      MetadataPreparation.stub(:fetch_url_content, fetched) do
+        assert_predicate MetadataPreparationService.new.call(article), :success?
+      end
+      assert_equal "https://example.com:8443/Final?v=AbC", article.url
+      assert_equal "example.com", article.host
+    end
+
     test "서비스는 OperationService를 상속한다" do
       service = MetadataPreparationService.new
 
@@ -250,7 +262,7 @@ module Articles
     # 호스트와 scheme은 대소문자를 구분하지 않으므로 소문자로 맞춘다. 경로·쿼리는 서버가
     # 구분할 수 있어(YouTube ID 등) 그대로 둔다. URL 유니크 기준이 대소문자를 구분하므로(#1092)
     # 이 정규화가 없으면 호스트 표기만 다른 같은 기사가 따로 등록된다.
-    test "normalized_url은 scheme과 호스트만 소문자로 맞춘다" do
+    test "normalized_url은 호스트를 소문자로 맞추고 경로와 쿼리 대소문자를 보존한다" do
       parsed = URI.parse("HTTPS://Example.COM/Ruby/Post?v=AbC")
 
       assert_equal "https://example.com/Ruby/Post?v=AbC", MetadataPreparation.normalized_url(parsed)

@@ -20,7 +20,8 @@ ja:
         article:
           attributes:
             base:
-              discarded_url: 削除された記事のURLのため、再登録できません。
+              discarded_url: 削除またはフィルタリングされた記事のURLのため、再登録できません。
+              partial_duplicate: このURLは既存の登録情報と重複しています。URLを確認してください。
               submit_conflict: 登録中に競合が発生しました。しばらくしてから再度お試しください。
         user:
           attributes:

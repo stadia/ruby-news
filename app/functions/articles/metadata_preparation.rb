@@ -80,11 +80,23 @@ module Articles
           filtered_query_pairs.reject! { |key, _value| YOUTUBE_QUERY_KEYS.include?(key) }
         end
 
-        # scheme과 호스트는 대소문자를 구분하지 않으므로 소문자로 맞춘다. 경로·쿼리는 구분할 수
-        # 있어 그대로 둔다. URL 유니크 기준이 대소문자를 구분하므로 표기만 다른 같은 기사를 모은다.
-        normalized = +"#{parsed_url.scheme&.downcase}://#{parsed_url.host&.downcase}#{parsed_url.path}"
+        # URI가 scheme을 소문자로 파싱한다. 호스트만 소문자로 맞추고 경로·쿼리는 보존한다.
+        port = parsed_url.port
+        port_part = ":#{port}" if port && port != parsed_url.default_port
+        normalized = +"#{parsed_url.scheme}://#{parsed_url.host&.downcase}#{port_part}#{parsed_url.path}"
         normalized << "?#{URI.encode_www_form(filtered_query_pairs)}" if filtered_query_pairs.any?
         normalized
+      end
+
+      # origin_url은 원래 경로·쿼리(추적 값 포함)를 보존하되 호스트 표기만 통일한다.
+      #: (String url) -> String
+      def canonical_host_url(url)
+        parsed = URI.parse(url)
+        host = parsed.host
+        parsed.host = host.downcase if host
+        parsed.to_s
+      rescue URI::InvalidURIError
+        url
       end
 
       #: (Article article, URI::Generic parsed_url) -> bool
