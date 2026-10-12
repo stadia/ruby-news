@@ -160,3 +160,6 @@ CI runs `bin/rake quality` in the `test` job after RSpec and Minitest; a failed 
 - Partial test runs only update `coverage/.last_run.json`, so they do not lower the quality gate coverage baseline.
 - To refresh merged coverage as CI does, run `bundle exec rspec`, then `bin/rails test`, then `bin/rake quality`.
 - Use the current gate output as the baseline; do not rely on historical measurements in this document.
+
+### RubyCritic (참고 리포트, 게이트 아님)
+복잡도 × 변경 빈도로 우선 검토 후보를 고를 때 `bin/rubycritic`을 쓴다. 앱 번들과 분리된 `tools/rubycritic/Gemfile`로 돌아 앱의 `Gemfile.lock`·gem RBI에 영향이 없다. 처음에는 `BUNDLE_GEMFILE=tools/rubycritic/Gemfile bundle install`로 설치한다. 범위·churn 산정·기준선은 `docs/quality/rubycritic.md`. 점수만 올리려는 일괄 수정은 하지 않는다.

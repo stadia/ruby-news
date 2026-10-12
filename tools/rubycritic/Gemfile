@@ -1,0 +1,8 @@
+# frozen_string_literal: true
+# rbs_inline: disabled
+
+# RubyCritic 전용 번들. 앱 Gemfile과 분리해 앱의 Gemfile.lock·gem RBI·배포 이미지에
+# 영향을 주지 않는다(reek·virtus·dry-types 등 15개 젬을 끌어온다). docs/quality/rubycritic.md 참고.
+source "https://rubygems.org"
+
+gem "rubycritic", "~> 5.0", require: false
