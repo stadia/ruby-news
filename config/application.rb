@@ -44,8 +44,8 @@ module RubyNews
     # Enable query log tags around perform for better debugging
     config.active_job.log_query_tags_around_perform = true
 
-    # Started/Processing/Rendered 줄은 요청당 레코드를 4~5개로 불리지만 정보는 Completed 한 줄과
-    # 트레이스 span에 이미 있다(SigNoz 실측: 하루 3.7만 건 중 약 40%).
+    # Processing(payload 없음)·Started(method/path는 Completed payload, ip는 log_tags)는 Completed와 중복이고,
+    # Rendered의 템플릿별 정보는 action_view span에 남는다. 전 환경 공통이라 개발 로그에서도 이 줄들이 사라진다.
     config.rails_semantic_logger.started = false
     config.rails_semantic_logger.processing = false
     config.rails_semantic_logger.rendered = false
