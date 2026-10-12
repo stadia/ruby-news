@@ -548,13 +548,213 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
     sign_in_as(users(:john))
 
     SafeHttp.stub(:fetch, ->(*) { response }) do
-      assert_no_difference("Article.count") do
-        post articles_path, params: { article: { url: "#{existing.url}?utm_source=newsletter" } }
+      assert_no_difference([ "Article.count", "Like.count" ]) do
+        assert_no_enqueued_jobs(only: ArticleJob) do
+          post articles_path, params: { article: { url: "#{existing.url}?utm_source=newsletter" } }
+        end
       end
     end
 
     assert_redirected_to article_path(existing)
     assert_equal I18n.t("articles.create.already_exists"), flash[:notice]
+  end
+
+  # 대소문자만 다른 URL은 다른 기사로 등록된다. 예전에는 검증만 대소문자를 무시해
+  # 기존 기사 조회가 nil이 되어 500이 났다(#1092).
+  test "POST create registers a url that differs only in case as a new article" do
+    existing = articles(:similar_article)
+    response = Struct.new(:body, :status, :headers).new("<html><title>Case variant</title></html>", 200, {})
+    case_variant = existing.url.sub("ruby-performance", "Ruby-Performance")
+    sign_in_as(users(:john))
+
+    SafeHttp.stub(:fetch, ->(*) { response }) do
+      assert_difference("Article.count", 1) do
+        post articles_path, params: { article: { url: case_variant } }
+      end
+    end
+
+    assert_redirected_to article_path(Article.find_by!(url: case_variant))
+  end
+
+  # 호스트 표기만 다르면 정규화 뒤 같은 URL이라 INSERT가 유니크 인덱스에 걸린다.
+  test "POST create redirects to the existing article when only the host case differs" do
+    existing = articles(:similar_article)
+    response = Struct.new(:body, :status, :headers).new("<html><title>Host case</title></html>", 200, {})
+    sign_in_as(users(:john))
+
+    SafeHttp.stub(:fetch, ->(*) { response }) do
+      assert_no_difference("Article.count") do
+        post articles_path, params: { article: { url: existing.url.sub("example.com", "EXAMPLE.com") } }
+      end
+    end
+
+    assert_redirected_to article_path(existing)
+  end
+
+  # 삭제된 기사로 보내면 404다. 관리자 삭제·무관 판정을 사용자가 재등록으로 우회하지
+  # 못하도록 등록은 막고 이유를 알린다(#1094).
+  test "POST create with the url of a discarded article renders the form with an explanation" do
+    discarded = articles(:deleted_article)
+    sign_in_as(users(:john))
+
+    assert_no_difference([ "Article.count", "Like.count" ]) do
+      assert_no_enqueued_jobs(only: ArticleJob) do
+        post articles_path, params: { article: { url: discarded.url } }
+      end
+    end
+
+    assert_response :unprocessable_entity
+    assert_select "#error_explanation li", text: "삭제되었거나 등록 대상에서 제외된 글의 URL입니다.", count: 1
+  end
+
+  # url은 삭제된 기사와, origin_url은 살아 있는 기사와 겹치면 살아 있는 기사로 보낸다.
+  test "POST create prefers the kept article when the url also matches a discarded one" do
+    discarded = articles(:deleted_article)
+    kept = articles(:similar_article)
+    discarded.update_columns(origin_url: "https://example.com/deleted-article-origin")
+    kept.update_columns(origin_url: discarded.url)
+    sign_in_as(users(:john))
+
+    post articles_path, params: { article: { url: discarded.url } }
+
+    assert_redirected_to article_path(kept)
+  end
+
+  # slug 존재 확인과 INSERT 사이에 같은 slug가 들어온 경우. exists?를 false로 고정해 그
+  # 경쟁을 재현한다. 접미사를 붙여 한 번 다시 저장한다(#1093).
+  test "POST create retries with a suffixed slug when the slug was taken concurrently" do
+    taken = articles(:similar_article) # slug: ruby-performance
+    response = Struct.new(:body, :status, :headers).new("<html><title>Ruby Performance</title></html>", 200, {})
+    sign_in_as(users(:john))
+
+    fetches = 0
+    SafeHttp.stub(:fetch, ->(*) { fetches += 1; response }) do
+      Article.stub(:exists?, false) do
+        assert_difference([ "Article.count", "Like.count" ], 1) do
+          assert_enqueued_with(job: ArticleJob) do
+            post articles_path, params: { article: { url: "https://example.com/slug-race" } }
+          end
+        end
+      end
+    end
+
+    created = Article.find_by!(url: "https://example.com/slug-race")
+
+    assert_redirected_to article_path(created)
+    assert_match(/\A#{taken.slug}-\h{8}\z/, created.slug)
+    assert_equal 1, fetches
+  end
+
+  test "POST create prefers kept candidates with the fixture roles reversed" do
+    first, second = [ articles(:deleted_article), articles(:similar_article) ].sort_by(&:id)
+    first.update_columns(deleted_at: Time.current, url: "https://example.com/reversed", origin_url: "https://example.com/reversed-origin")
+    second.update_columns(deleted_at: nil, origin_url: first.url)
+    sign_in_as(users(:john))
+    post articles_path, params: { article: { url: first.url } }
+
+    assert_redirected_to article_path(second)
+  end
+
+  test "POST create partial origin collision hides the internal field name" do
+    existing = articles(:similar_article)
+    existing.update_columns(origin_url: "https://example.com/only-origin")
+    sign_in_as(users(:john))
+    post articles_path, params: { article: { url: existing.origin_url } }
+
+    assert_response :unprocessable_entity
+    assert_select "#error_explanation li", text: "이 URL과 겹치는 등록 정보가 있습니다. 다른 URL을 확인해 주세요.", count: 1
+    assert_select "input[name='article[url]'][value='https://example.com/only-origin']"
+  end
+
+  test "POST create restores submitted URL when a normalized article is discarded" do
+    sign_in_as(users(:john))
+    response = Struct.new(:body, :status, :headers).new("<html><title>Filtered</title></html>", 200, {})
+    url = "https://EXAMPLE.com/?utm_source=x"
+    SafeHttp.stub(:fetch, ->(*) { response }) do
+      post articles_path, params: { article: { url: url } }
+    end
+
+    assert_response :unprocessable_entity
+    assert_select "input[name='article[url]']" do |inputs|
+      assert_equal url, inputs.first["value"]
+    end
+  end
+
+  test "POST create propagates an unclassified unique violation" do
+    sign_in_as(users(:john))
+    article = Article.new(url: "https://example.com/unknown", user: User.first_bot)
+    article.stub(:save, -> { raise ActiveRecord::RecordNotUnique, "unknown" }) do
+      Article.stub(:new, article) do
+        assert_raises(ActiveRecord::RecordNotUnique) do
+          post articles_path, params: { article: { url: article.url } }
+        end
+      end
+    end
+  end
+
+  test "POST create automatically discarded article returns 422 without likes or jobs" do
+    sign_in_as(users(:john))
+    response = Struct.new(:body, :status, :headers).new("<html><title>Show HN: Demo</title></html>", 200, {})
+
+    SafeHttp.stub(:fetch, ->(*) { response }) do
+      assert_no_difference("Like.count") do
+        assert_no_enqueued_jobs(only: ArticleJob) do
+          post articles_path, params: { article: { url: "https://example.com/filtered" } }
+        end
+      end
+    end
+    assert_response :unprocessable_entity
+    assert_select "form[action='#{articles_path}'][method='post']", count: 1
+    assert_select "input[name='_method']", count: 0
+    assert_select "#error_explanation li", text: "삭제되었거나 등록 대상에서 제외된 글의 URL입니다.", count: 1
+  end
+
+  test "POST create propagates unique violations after storage" do
+    sign_in_as(users(:john))
+    response = Struct.new(:body, :status, :headers).new("<html><title>Saved article</title></html>", 200, {})
+    SafeHttp.stub(:fetch, ->(*) { response }) do
+      ArticleJob.stub(:perform_later, ->(*) { raise ActiveRecord::RecordNotUnique, "job collision" }) do
+        assert_raises(ActiveRecord::RecordNotUnique) do
+          post articles_path, params: { article: { url: "https://example.com/job-collision" } }
+        end
+      end
+    end
+  end
+
+  test "POST create recognized conflict without a candidate renders one retry message" do
+    error = begin
+      Article.transaction(requires_new: true) do
+        articles(:ruby_article).update_columns(url: articles(:similar_article).url)
+      end
+
+      flunk "URL 인덱스 위반이 필요하다"
+    rescue ActiveRecord::RecordNotUnique => violation
+      violation
+    end
+    url = "https://example.com/vanished-conflict"
+    article = Article.new(url: url, origin_url: url, user: User.first_bot)
+    sign_in_as(users(:john))
+    assert_no_difference("Like.count") do
+      assert_no_enqueued_jobs(only: ArticleJob) do
+        article.stub(:save, -> { raise error }) do
+          Article.stub(:new, article) { post articles_path, params: { article: { url: url } } }
+        end
+      end
+    end
+    assert_response :unprocessable_entity
+    assert_select "#error_explanation li", text: "등록 중 충돌이 발생했습니다. 잠시 후 다시 시도해 주세요.", count: 1
+  end
+
+  test "POST create propagates a unique violation while liking the saved article" do
+    sign_in_as(users(:john))
+    response = Struct.new(:body, :status, :headers).new("<html><title>Saved article</title></html>", 200, {})
+    SafeHttp.stub(:fetch, ->(*) { response }) do
+      Like.stub(:create_or_find_by!, ->(**) { raise ActiveRecord::RecordNotUnique, "like collision" }) do
+        assert_raises(ActiveRecord::RecordNotUnique) do
+          post articles_path, params: { article: { url: "https://example.com/like-collision" } }
+        end
+      end
+    end
   end
 
   test "GET others renders pagination and push notification modal when multiple pages exist" do

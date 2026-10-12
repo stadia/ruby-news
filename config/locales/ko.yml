@@ -17,6 +17,12 @@ ko:
         username: 아이디
     errors:
       models:
+        article:
+          attributes:
+            base:
+              discarded_url: 삭제되었거나 등록 대상에서 제외된 글의 URL입니다.
+              partial_duplicate: 이 URL과 겹치는 등록 정보가 있습니다. 다른 URL을 확인해 주세요.
+              submit_conflict: 등록 중 충돌이 발생했습니다. 잠시 후 다시 시도해 주세요.
         user:
           attributes:
             name:

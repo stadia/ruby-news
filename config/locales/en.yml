@@ -17,6 +17,12 @@ en:
         username: Username
     errors:
       models:
+        article:
+          attributes:
+            base:
+              discarded_url: This URL belongs to an article that was deleted or filtered out.
+              partial_duplicate: This URL overlaps an existing submission. Please check the URL.
+              submit_conflict: A conflict occurred while registering. Please try again shortly.
         user:
           attributes:
             name:

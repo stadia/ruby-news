@@ -112,21 +112,31 @@ class ArticlesController < ApplicationController
 
   # POST /articles
   def create
-    url = article_params[:url]&.strip
+    url = @submitted_url = article_params[:url]&.strip
     @article = Article.new(url:, origin_url: url, user: User.first_bot)
 
-    if @article.save
+    case Articles::Submission.save_submitted(@article, user_id: current_user.id)
+    when :created
       current_user.like!(@article)
       ArticleJob.perform_later(@article.id)
       redirect_to article_path(@article), notice: t("articles.create.success")
-    elsif @article.duplicate_url?
-      redirect_to_existing_article
+    when :duplicate
+      respond_with_existing_article
+    when :discarded
+      # 폐기된 행은 보존하되 폼은 새 URL을 POST로 등록할 수 있는 새 객체를 사용한다.
+      @article = Article.new(url: @submitted_url)
+      @article.errors.add(:base, :discarded_url)
+      render_new_article
+    when :invalid
+      # 폼에 없는 origin_url의 검증 항목명을 노출하지 않는다.
+      if @article.errors.of_kind?(:origin_url, :taken)
+        @article.errors.delete(:origin_url, :taken)
+        @article.errors.add(:base, :partial_duplicate)
+      end
+      render_new_article
     else
-      render Views::Articles::New.new(article: @article), status: :unprocessable_entity
+      raise "Unexpected article submission result"
     end
-  rescue ActiveRecord::RecordNotUnique => e
-    logger.error e
-    redirect_to_existing_article
   end
 
   private
@@ -198,9 +208,25 @@ class ArticlesController < ApplicationController
       ActionController::Parameters.new({}).permit!
     end
 
-    def redirect_to_existing_article
-      existing = Article.where(url: @article.url).or(Article.where(origin_url: @article.origin_url)).first
-      redirect_to article_path(existing), notice: t("articles.create.already_exists")
+    # 겹친 기사가 살아 있으면 그 기사로 보낸다. 삭제된 기사면 404로 보내지 않고 재등록을
+    # 막는 이유를 알리고, 찾지 못하면(slug 충돌 재발 등) 다시 시도를 안내한다.
+    def respond_with_existing_article
+      existing = Articles::Submission.existing_for(@article)
+      if existing&.kept?
+        redirect_to article_path(existing), notice: t("articles.create.already_exists")
+        return
+      end
+
+      # 중복 판정의 URL 오류만 안내 문구로 치환하고 다른 검증 오류는 보존한다.
+      @article.errors.delete(:url, :taken)
+      @article.errors.delete(:origin_url, :taken)
+      @article.errors.add(:base, existing ? :discarded_url : :submit_conflict)
+      render_new_article
+    end
+
+    def render_new_article
+      @article.url = @submitted_url
+      render Views::Articles::New.new(article: @article), status: :unprocessable_entity
     end
 
     def liked_article_ids(articles)
