@@ -216,6 +216,11 @@ jobs:
       # RSpec를 먼저 실행해 커버리지를 계측하고, 이어서 Minitest를 실행한다.
       # 두 스텝은 같은 job의 동일한 coverage/ 디렉토리를 공유하므로 결과가 병합되며,
       # Minitest의 at_exit(persist_result!)가 마지막에 돌아 병합된 최종 스냅샷을 저장한다.
+      # 레이아웃이 builds/tailwind.css를 직접 링크한다. bin/rails test는 test:prepare에서 빌드하지만
+      # RSpec이 먼저 돌므로 따로 빌드한다(프로덕션은 assets:precompile이 빌드).
+      - name: Build Tailwind CSS
+        run: bin/rails tailwindcss:build
+
       - name: Run RSpec with coverage
         env:
           RAILS_ENV: test

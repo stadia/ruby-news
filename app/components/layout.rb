@@ -18,11 +18,14 @@ class Components::Layout < Components::Base
         yield(:head)
         render Components::Layout::AssetPreloads.new(section: :pwa_and_icons)
         render Components::Layout::AssetPreloads.new(section: :google_fonts)
-        stylesheet_link_tag :app, data_turbo_track: "reload"
-        stylesheet_link_tag "lexxy", data_turbo_track: "reload"
-        # vendor/lightgallery.css는 렌더 차단을 피하려고 head에서 제거했다.
-        # lightbox 컨트롤러가 연결될 때(=갤러리가 있는 페이지)만 주입한다.
+        # tailwind만 링크한다. `:app`은 app/assets/**/*.css를 펼쳐 vendor/lightgallery.css까지
+        # 렌더 차단으로 만들었다(#1108). lightgallery.css는 lightbox 컨트롤러가 연결될 때만 주입한다.
+        stylesheet_link_tag "tailwind", data_turbo_track: "reload"
+        # lexxy.css는 @import 체인(lexxy → content/editor → variables)이라 직접 링크보다
+        # 직렬 왕복이 2번 더 생긴다(#1108).
+        stylesheet_link_tag "lexxy-variables", "lexxy-content", "lexxy-editor", data_turbo_track: "reload"
         javascript_importmap_tags
+        render_controller_entry_preloads
         render Components::Layout::StructuredData.new
       end
 
@@ -45,7 +48,20 @@ class Components::Layout < Components::Base
     end
   end
 
+  # application.js → controllers(index.js) → application·page_loader_controller로 이어지는 정적
+  # import 체인의 importmap 이름. pin_all_from preload: false라 그대로 두면 HTML 이후 직렬 왕복이
+  # 2번 더 생긴다(#1108). controllers/index.js의 import 목록과 맞춰 둔다(테스트가 대조한다).
+  CONTROLLER_ENTRY_MODULES = %w[controllers controllers/application controllers/page_loader_controller].freeze
+
   private
+
+  # importmap JSON은 요청 host와 무관하게 프로세스 단위로 캐시된다. asset_host 람다가 host마다
+  # 다른 URL을 주므로, asset_path로 따로 풀면 preload URL이 importmap과 어긋나 재사용되지 않는다.
+  def render_controller_entry_preloads
+    vc = view_context
+    imports = JSON.parse(Rails.application.importmap.to_json(resolver: vc)).fetch("imports")
+    raw(vc.javascript_module_preload_tag(*imports.values_at(*CONTROLLER_ENTRY_MODULES)))
+  end
 
   def render_theme_init_script
     script do

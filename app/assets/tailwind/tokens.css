@@ -268,7 +268,7 @@
 /* ========================================
    Lexxy Highlight Palette (Dark Theme)
    lexxy-variables.css는 밝은 배경 기준 --highlight-*를 레이어 없는 :root에 두고
-   stylesheet_link_tag :app이 펼친 앱 CSS 다음에 로드된다.
+   앱 CSS(tailwind) 다음에 로드된다.
    @layer base 안의 값은 로드 순서와 무관하게 레이어 없는 규칙에 지므로 레이어 밖에 둔다.
    같은 :root 명시도로는 나중에 로드된 lexxy가 이기므로, 원본 :root(0-1-0)보다
    높은 명시도(0-2-0)로 다시 정의한다. 기본값이 어두운 테마인
