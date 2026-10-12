@@ -40,14 +40,19 @@ module Quality
 
       private
 
-      # 분석 경로가 없거나 git log가 실패하면 RubyCritic은 0건·churn 0으로 정상 종료한다.
+      # 분석 0건이나 기간 내 커밋 부재를 정상적인 순위표로 게시하지 않는다.
       #: (Array[Hash[String, untyped]] modules) -> void
       def validate!(modules)
         raise InvalidReport, "no modules analysed" if modules.empty?
 
+        modules.each do |mod|
+          Integer(mod.fetch("churn"))
+          Float(mod.fetch("complexity"))
+          Float(mod.fetch("cost"))
+        end
         unknown = modules.map { it.fetch("rating") } - RATINGS
         raise InvalidReport, "unknown ratings: #{unknown.uniq.join(", ")}" if unknown.any?
-        raise InvalidReport, "churn is 0 for every module; git history was not read" if modules.all? { it.fetch("churn").to_i.zero? }
+        raise InvalidReport, "churn is 0 for every module; no commits in the selected period or git log failed" if modules.all? { Integer(it.fetch("churn")).zero? }
       end
 
       #: (Array[Hash[String, untyped]] modules) -> String
@@ -60,14 +65,14 @@ module Quality
       def candidate_rows(modules, top)
         # 동점은 경로 순으로 고정해 실행마다 표 순서가 같게 한다.
         modules.sort_by { [ -priority(it), it.fetch("path") ] }.first(top).each_with_index.map do |mod, index|
-          "| #{index + 1} | `#{mod.fetch("path")}` | #{priority(mod)} | #{mod.fetch("churn").to_i} | " \
-            "#{mod.fetch("complexity").to_f.round} | #{mod.fetch("rating")} | #{mod.fetch("cost").to_f.round(1)} |"
+          "| #{index + 1} | `#{mod.fetch("path")}` | #{priority(mod)} | #{Integer(mod.fetch("churn"))} | " \
+            "#{Float(mod.fetch("complexity")).round} | #{mod.fetch("rating")} | #{Float(mod.fetch("cost")).round(1)} |"
         end
       end
 
       #: (Hash[String, untyped] mod) -> Integer
       def priority(mod)
-        (mod.fetch("churn").to_i * mod.fetch("complexity").to_f).round
+        (Integer(mod.fetch("churn")) * Float(mod.fetch("complexity"))).round
       end
     end
   end

@@ -82,6 +82,19 @@ module Quality
       assert_includes error.message, "E"
     end
 
+    test "변경되지 않은 모듈과 변경된 모듈이 섞인 리포트는 유효하다" do
+      modules = REPORT["analysed_modules"].map.with_index { |mod, index| mod.merge("churn" => index.zero? ? 0 : mod["churn"]) }
+
+      assert_includes to_markdown(report_with(modules)), "| 분석 파일 | 4 |"
+    end
+
+    test "숫자 필드 null은 정상적인 0으로 요약하지 않는다" do
+      %w[churn complexity cost].each do |key|
+        modules = [ REPORT["analysed_modules"].first.merge(key => nil) ]
+        assert_raises(TypeError, key) { to_markdown(report_with(modules)) }
+      end
+    end
+
     private
 
     def to_markdown(report, **)

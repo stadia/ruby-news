@@ -9,20 +9,20 @@ module Quality
     TODAY = Date.new(2026, 10, 12)
 
     test "churn 시작일이 없거나 비어 있으면 6개월 전으로 둔다" do
-      assert_equal "2026-04-12", RubycriticRun.churn_after(nil, today: TODAY)
-      assert_equal "2026-04-12", RubycriticRun.churn_after("  ", today: TODAY)
+      assert_equal "2026-04-12 00:00:00 +0000", RubycriticRun.churn_after(nil, today: TODAY)
+      assert_equal "2026-04-12 00:00:00 +0000", RubycriticRun.churn_after("  ", today: TODAY)
     end
 
-    test "churn 시작일은 ISO 8601 날짜를 받아 YYYY-MM-DD로 돌려준다" do
-      assert_equal "2026-04-11", RubycriticRun.churn_after("2026-04-11", today: TODAY)
-      assert_equal "2026-04-11", RubycriticRun.churn_after(" 2026-04-11 ", today: TODAY)
+    test "churn 시작일은 ISO 8601 날짜를 받아 UTC 자정으로 돌려준다" do
+      assert_equal "2026-04-11 00:00:00 +0000", RubycriticRun.churn_after("2026-04-11", today: TODAY)
+      assert_equal "2026-04-11 00:00:00 +0000", RubycriticRun.churn_after(" 2026-04-11 ", today: TODAY)
     end
 
     # 값은 RubyCritic 안에서 셸 문자열(--after='...')로 들어가므로 날짜가 아닌 문자는 거부한다.
     test "날짜가 아니거나 미래인 churn 시작일은 거부한다" do
-      [ "garbage", "2026-13-01", "2026-04-11'; rm -rf /'", "2026-10-13" ].each do |value|
+      [ "garbage", "2026-13-01", "2026-04-11'; rm -rf /'" ].each do |value|
         error = assert_raises(ArgumentError, value) { RubycriticRun.churn_after(value, today: TODAY) }
-        assert_includes error.message, "RUBYCRITIC_CHURN_AFTER", value
+        assert_match(/YYYY-MM-DD/, error.message, value)
       end
     end
 
@@ -33,8 +33,37 @@ module Quality
       end
     end
 
-    test "오늘 날짜는 churn 시작일로 받는다" do
-      assert_equal "2026-10-12", RubycriticRun.churn_after("2026-10-12", today: TODAY)
+    test "오늘 날짜는 완료되지 않은 churn 기간이라 거부한다" do
+      error = assert_raises(ArgumentError) { RubycriticRun.churn_after("2026-10-12", today: TODAY) }
+      assert_match(/today/, error.message)
+    end
+
+    test "저장소 하위 위치는 실행 루트 전제를 위반해 거부한다" do
+      in_repo do |repo|
+        errors = RubycriticRun.preflight_errors(root: File.join(repo, "app"), paths: %w[.])
+
+        assert_equal 1, errors.size
+        assert_match(/top level/, errors.first)
+      end
+    end
+
+    test "git trace는 stdout 구문 분석을 방해하지 않는다" do
+      in_repo do |repo|
+        previous = ENV["GIT_TRACE"]
+        ENV["GIT_TRACE"] = "1"
+
+        assert_empty RubycriticRun.preflight_errors(root: repo, paths: %w[app])
+      ensure
+        ENV["GIT_TRACE"] = previous
+      end
+    end
+
+    test "git 실행 파일이 없으면 사전 검사 메시지로 실패한다" do
+      Open3.stub(:capture3, ->(*) { raise Errno::ENOENT, "git" }) do
+        errors = RubycriticRun.preflight_errors(root: Dir.pwd, paths: %w[app])
+
+        assert_match(/git not found on PATH/, errors.join)
+      end
     end
 
     test "일반 클론에 분석 디렉터리가 모두 있으면 사전 검사를 통과한다" do
@@ -62,7 +91,7 @@ module Quality
       end
     end
 
-    # RubyCritic은 .git 디렉터리를 찾아 올라가 상위 저장소를 루트로 잡아 churn이 전부 0이 된다.
+    # 저장소 밖 worktree는 churn이 정상이어도, 위치에 따른 결과 차이를 피하려고 모두 거부한다.
     test "git 작업 트리를 거부한다" do
       in_repo do |repo|
         worktree = File.join(File.dirname(repo), "wt")
@@ -76,7 +105,34 @@ module Quality
       Dir.mktmpdir do |dir|
         FileUtils.mkdir_p(File.join(dir, "app"))
 
-        assert_match(/git/, RubycriticRun.preflight_errors(root: dir, paths: %w[app]).join)
+        errors = RubycriticRun.preflight_errors(root: dir, paths: %w[app])
+
+        assert_equal 1, errors.size
+        assert_match(/not a git repository/, errors.first)
+      end
+    end
+
+    test "저장소 안에 만든 worktree도 거부한다" do
+      in_repo do |repo|
+        worktree = File.join(repo, "nested-worktree")
+        git!(repo, "worktree", "add", "-q", worktree)
+
+        assert_match(/worktree/, RubycriticRun.preflight_errors(root: worktree, paths: %w[app]).join)
+      end
+    end
+
+    test "미래 churn 날짜는 형식 오류와 구분해서 알린다" do
+      error = assert_raises(ArgumentError) { RubycriticRun.churn_after("2026-10-13", today: TODAY) }
+      assert_match(/future/, error.message)
+    end
+
+    test "git 출력 줄 수가 계약과 다르면 경로로 해석하지 않는다" do
+      _out, _err, status = Open3.capture3("git", "--version")
+      Open3.stub(:capture3, ->(*) { [ "false\nshort\n", "warning", status ] }) do
+        errors = RubycriticRun.preflight_errors(root: Dir.pwd, paths: %w[app])
+
+        assert_equal 1, errors.size
+        assert_match(/unexpected git rev-parse output/, errors.first)
       end
     end
 
@@ -95,7 +151,9 @@ module Quality
     end
 
     def git!(dir, *args)
-      output, status = Open3.capture2e("git", "-C", dir, *args)
+      env = { "GIT_CONFIG_GLOBAL" => "/dev/null", "GIT_CONFIG_NOSYSTEM" => "1",
+              "GIT_DIR" => nil, "GIT_INDEX_FILE" => nil, "GIT_WORK_TREE" => nil }
+      output, status = Open3.capture2e(env, "git", "-C", dir, *args)
       raise "git #{args.join(" ")} failed: #{output}" unless status.success?
     end
   end

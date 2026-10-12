@@ -40,8 +40,8 @@ Dir.chdir(ROOT) do
   errors = Quality::RubycriticRun.preflight_errors(root: ROOT, paths: PATHS)
   abort "rubycritic preflight failed:\n#{errors.map { "- #{it}" }.join("\n")}" if errors.any?
 
-  # 이전 실행의 report.json을 이번 결과로 오인하지 않게 지운다.
-  FileUtils.rm_f(REPORT)
+  # 실패 뒤에도 지난 HTML·JSON을 이번 결과로 오인하지 않게 산출물 디렉터리를 지운다.
+  FileUtils.rm_rf(OUTPUT)
   # 분석 실패가 묻히지 않도록 rubycritic가 실패하면 1로 끝난다. 진행 출력은 stderr로 보내 stdout을 마크다운 전용으로 둔다.
   unless system(env, *command, out: $stderr)
     abort "rubycritic failed (#{$?}): #{command.join(" ")}\n" \
@@ -51,7 +51,7 @@ Dir.chdir(ROOT) do
   begin
     report = JSON.parse(File.read(REPORT))
     puts Quality::RubycriticReport.to_markdown(report, churn_after:, paths: PATHS)
-  rescue Quality::RubycriticReport::InvalidReport, KeyError => e
-    abort "rubycritic report is not usable (#{REPORT}): #{e.message}"
+  rescue Quality::RubycriticReport::InvalidReport, KeyError, TypeError, ArgumentError, Errno::ENOENT, JSON::ParserError => e
+    abort "rubycritic report is not usable (#{REPORT}, #{e.class}): #{e.message}"
   end
 end

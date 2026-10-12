@@ -350,7 +350,7 @@ jobs:
           retention-days: 7
 
   # 복잡도 × 변경 빈도 참고 리포트(docs/quality/rubycritic.md). 머지를 막는 게이트가
-  # 아니라 추세를 보는 용도라 profile처럼 main push에서만 돈다. 머지 전 확인·재실행은
+  # 아니라 추세를 보는 용도라 main push와 수동 실행에서 돈다. 머지 전 확인·재실행은
   # workflow_dispatch로 한다(Actions 화면의 Run workflow에서 브랜치를 고른다).
   #
   # `continue-on-error`를 두지 않는다: 분석이 깨지면 main CI가 빨개져 묻히지 않는다.
