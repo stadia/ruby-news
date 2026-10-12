@@ -45,24 +45,36 @@ class OtelLogAppender < SemanticLogger::Appender::OpenTelemetry
     attrs = {
       "code.namespace" => record[:name],
       "metric" => record[:metric],
-      "metric_amount" => record[:metric_amount],
+      "metric_amount" => record[:metric_amount] && primitive(record[:metric_amount]),
       "duration_ms" => record[:duration_ms],
       "tags" => record[:tags]&.map(&:to_s),
       # 호출 위치는 backtrace_level(:error) 이상에서만 잡힌다. 예외 없는 error 로그의 유일한 위치 정보다.
-      "code.filepath" => record[:file],
-      "code.lineno" => record[:line],
+      "code.file.path" => record[:file],
+      "code.line.number" => record[:line],
       "thread.name" => record[:thread]
-    }.compact
+    }
+    attrs.merge!(exception_attributes(record[:exception])) if record[:exception]
+    attrs.compact!
     record[:named_tags]&.each { |key, value| attrs[TAG_RENAMES.fetch(key.to_s, key.to_s)] = primitive(value) }
-    renames = record[:metric] == REQUEST_METRIC ? HTTP_RENAMES : {}
-    # payload는 호출부가 넣는 값이라 request_id·client.address 같은 기준 필드를 덮지 못하게 한다.
+    request = record[:metric] == REQUEST_METRIC
+    # payload는 호출부가 넣는 값이라 request_id·client.address·exception.* 같은 기준 필드를 덮지 못하게 한다.
     # 충돌은 이름을 바꾼 뒤의 키로 검사한다.
     record[:payload]&.each do |key, value|
-      key = renames.fetch(key, key)
-      attrs[attrs.key?(key) ? "payload.#{key}" : key] = value
+      pairs = request ? request_attributes(key, value) : { key => value }
+      pairs.each { |name, v| attrs[attrs.key?(name) ? "payload.#{name}" : name] = v }
     end
-    attrs.merge!(exception_attributes(record[:exception]).compact) if record[:exception]
     attrs
+  end
+
+  # Rails는 payload path를 filtered_path("/articles?page=2")로 채운다. url.path 카디널리티를 지키려고 query를 뗀다.
+  # @rbs key: String
+  # @rbs value: untyped
+  # @rbs return: Hash[String, untyped]
+  def request_attributes(key, value)
+    return { HTTP_RENAMES.fetch(key, key) => value } unless key == "path" && value.is_a?(String)
+
+    path, query = value.split("?", 2)
+    { "url.path" => path, "url.query" => query }.compact
   end
 
   # OTel attribute가 받는 원시 타입은 그대로 두어 attributes_number/bool 맵에 들어가게 한다.

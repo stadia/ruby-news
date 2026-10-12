@@ -106,6 +106,28 @@ class OtelLogAppenderTest < ActiveSupport::TestCase
     assert_equal 500, record.attributes["payload.http.response.status_code"]
   end
 
+  test "요청 완료 로그의 path는 url.path와 url.query로 나눈다" do
+    record = emit("ArticlesController", message: "m", metric: "rails.controller.process_action",
+                  payload: { path: "/articles?page=2&q=ruby" })
+
+    assert_equal "/articles", record.attributes["url.path"]
+    assert_equal "page=2&q=ruby", record.attributes["url.query"]
+  end
+
+  test "OTel이 받지 않는 숫자 타입의 metric_amount는 문자열로 보낸다" do
+    record = emit("Rails", message: "m", metric: "x", metric_amount: BigDecimal("1.5"))
+
+    assert_equal BigDecimal("1.5").to_s, record.attributes["metric_amount"]
+  end
+
+  test "예외 속성과 겹치는 payload 값은 payload.* 로 남긴다" do
+    record = emit("Rails", message: "boom", level: :error, exception: ArgumentError.new("x"),
+                  payload: { "exception.type": "원래 값" })
+
+    assert_equal "ArgumentError", record.attributes["exception.type"]
+    assert_equal "원래 값", record.attributes["payload.exception.type"]
+  end
+
   test "named_tags·payload가 없는 로그(잡·부팅)는 code.namespace만 보낸다" do
     record = emit("Rails", message: "boot")
 
@@ -127,7 +149,7 @@ class OtelLogAppenderTest < ActiveSupport::TestCase
     assert_not record.attributes.key?("exception.cause")
   end
 
-  test "error 로그는 호출 위치와 스레드를 code.filepath·code.lineno·thread.name으로 남긴다" do
+  test "error 로그는 호출 위치와 스레드를 code.file.path·code.line.number·thread.name으로 남긴다" do
     # 예외 없는 logger.error도 backtrace_level(:error) 이상이면 호출 위치가 잡힌다.
     record = Thread.new do
       Thread.current.name = "worker-1"
@@ -135,8 +157,8 @@ class OtelLogAppenderTest < ActiveSupport::TestCase
     end.value
 
     assert_equal "worker-1", record.attributes["thread.name"]
-    assert record.attributes["code.filepath"].end_with?("otel_log_appender_test.rb")
-    assert_kind_of Integer, record.attributes["code.lineno"]
+    assert record.attributes["code.file.path"].end_with?("otel_log_appender_test.rb")
+    assert_kind_of Integer, record.attributes["code.line.number"]
   end
 
   test "로그 호출 시점의 OTel 컨텍스트로 trace_id·span_id를 잇는다" do
