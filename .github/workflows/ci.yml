@@ -353,6 +353,7 @@ jobs:
   # `continue-on-error`를 두지 않는다: 분석이 깨지면 main CI가 빨개져 묻히지 않는다.
   # 앱 번들이 아니라 tools/rubycritic 번들만 설치하므로 DB·시스템 패키지가 필요 없다.
   rubycritic:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # 서드파티 젬을 실행하는 잡이라 쓰기 토큰을 주지 않는다. artifact·step summary는 contents 권한이 필요 없다.
