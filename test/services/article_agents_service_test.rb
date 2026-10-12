@@ -30,6 +30,17 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     chat
   end
 
+  def assert_logged(messages, *fragments)
+    assert messages.any? { |message| fragments.all? { message.include?(it) } }, "#{fragments} 로그가 없다: #{messages}"
+  end
+
+  # OperationService#logger는 Rails.logger를 그대로 돌려준다.
+  def capture_logs(level)
+    messages = []
+    Rails.logger.stub(level, ->(message = nil, *_rest, &block) { messages << (message || block&.call).to_s }) { yield }
+    messages
+  end
+
   test "서비스는 OperationService를 상속한다" do
     service = ArticleAgentsService.new
 
@@ -89,6 +100,28 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     assert_predicate result, :failure?
     assert_equal :short_body, result.failure
     assert_predicate article.reload, :discarded?
+  end
+
+  # 가져온 본문을 저장하지 못했는데 메모리상 body만 채운 채 진행하면 요약·임베딩이
+  # DB에 없는 본문으로 만들어진다.
+  test "가져온 본문을 저장하지 못하면 실패를 반환하고 discard한다" do
+    article = articles(:ruby_article)
+    article.update!(body: nil)
+    article.url = articles(:similar_article).url # uniqueness 검증 실패를 만든다
+
+    content_service = Object.new
+    content_service.define_singleton_method(:call) { |_article = nil| Dry::Monads::Success("가져온 기사 본문입니다. " * 5) }
+
+    result = nil #: Dry::Monads::Result?
+    errors = capture_logs(:error) do
+      ContentService.stub(:new, -> { content_service }) do
+        result = ArticleAgentsService.new.call(article)
+      end
+    end
+
+    assert_predicate result, :failure?
+    assert_predicate article.reload, :discarded?
+    assert_logged errors, "article #{article.id}", "ActiveRecord::RecordInvalid"
   end
 
   test "run_humanize는 HumanMonolithAgent의 구조화된 응답으로 summary_* 필드를 갱신한다" do
@@ -243,12 +276,15 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     chat = build_humanize_chat(aborted_response)
 
     result = nil
-    HumanMonolithAgent.stub(:chat, chat) do
-      result = ArticleAgentsService.new.send(:run_humanize, article)
+    infos = capture_logs(:info) do
+      HumanMonolithAgent.stub(:chat, chat) do
+        result = ArticleAgentsService.new.send(:run_humanize, article)
+      end
     end
 
-    assert_predicate result, :failure?
+    assert_equal :humanize_aborted, result.failure
     assert_equal "원본 요약", article.reload.summary_body
+    assert_logged infos, "article #{article.id}", "humanize_aborted"
   end
 
   # 모델이 JSON이 아닌 텍스트를 돌려주면 parsed가 JSON::ParserError를 낸다.
@@ -263,12 +299,50 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     chat = build_humanize_chat(raw_response)
 
     result = nil
+    warnings = capture_logs(:warn) do
+      HumanMonolithAgent.stub(:chat, chat) do
+        result = ArticleAgentsService.new.send(:run_humanize, article)
+      end
+    end
+
+    assert_equal :humanize_invalid_response, result.failure
+    assert_equal "원본 요약", article.reload.summary_body
+    assert_logged warnings, "article #{article.id}", "humanize_invalid_response"
+  end
+
+  test "run_humanize는 빈 요점 응답으로 기존 요점을 지우지 않는다" do
+    article = articles(:ruby_article)
+    article.update!(summary_key: [ "기존 요점" ], summary_body: "원본 요약")
+
+    chat = build_humanize_chat(llm_message({ "summary_key" => [], "summary_body" => "다듬은 요약" }))
+
+    result = nil
     HumanMonolithAgent.stub(:chat, chat) do
       result = ArticleAgentsService.new.send(:run_humanize, article)
     end
 
-    assert_predicate result, :failure?
-    assert_equal "원본 요약", article.reload.summary_body
+    assert_predicate result, :success?
+    assert_equal [ "기존 요점" ], article.reload.summary_key
+    assert_equal "다듬은 요약", article.summary_body
+  end
+
+  # 에이전트 호출·DB 저장 오류는 모두 :humanize_failed지만, 로그에 예외 클래스를
+  # 남겨 원인을 구분할 수 있어야 한다.
+  test "run_humanize는 예외가 나면 예외 클래스를 로그에 남기고 :humanize_failed를 반환한다" do
+    article = articles(:ruby_article)
+    chat = Object.new
+    chat.define_singleton_method(:with_skills) { self }
+    chat.define_singleton_method(:ask) { |_prompt| raise Faraday::TimeoutError, "timed out" }
+
+    result = nil
+    errors = capture_logs(:error) do
+      HumanMonolithAgent.stub(:chat, chat) do
+        result = ArticleAgentsService.new.send(:run_humanize, article)
+      end
+    end
+
+    assert_equal :humanize_failed, result.failure
+    assert_logged errors, "article #{article.id}", "Faraday::TimeoutError"
   end
 
   # 번역 대상이 아닌 기사는 파이프라인 실패가 아니다. 판정은 ArticleJapaneseService가 한다.

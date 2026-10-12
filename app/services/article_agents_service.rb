@@ -12,7 +12,7 @@ class ArticleAgentsService < OperationService
     step ensure_body(article)
     step run_embed(article)
     step Articles::AgentRunner.run(article:, prompt: Articles::SummaryPrompt.build(article))
-    run_humanize(article) # 실패해도 원문 요약은 유효하므로 이후 단계를 계속 진행한다
+    run_humanize(article) # 실패해도 원문 요약은 유효하므로 이후 단계를 계속 진행한다(사유는 run_humanize가 로그로 남긴다)
     run_thumbnail(article) # 썸네일은 부가 산출물이라 실패해도 일본어 번역까지 진행한다
     japanese_result = run_japanese(article)
     discard_unrelated(article) # 정리는 모든 산출물 생성이 끝난 뒤 마지막에 한다
@@ -61,9 +61,12 @@ class ArticleAgentsService < OperationService
       return Failure(:short_body)
     end
 
-    article.update(body: fetched_body)
+    article.update!(body: fetched_body)
     Success(article)
   rescue StandardError => e
+    logger.error "Failed to ensure body for article #{article.id}: #{e.class}: #{e.message}"
+    # discard!는 검증 없이 레코드 전체를 저장하므로, 저장에 실패한 변경을 먼저 되돌린다.
+    article.restore_attributes
     article.discard!
     Failure(e.message)
   end
@@ -92,16 +95,25 @@ class ArticleAgentsService < OperationService
     prompt = ArticleHumanizer.prompt(article)
     message = HumanMonolithAgent.chat.with_skills.ask(prompt)
     content = Articles::AgentResponse.structured(message)
-    humanized = ArticleHumanizer.extract(content)
-
-    return Failure(:humanize_failed) if humanized.blank? || humanized[:summary_body].blank?
+    extraction = ArticleHumanizer.extract(content)
+    skip_reason = extraction.skip_reason
+    return skip_humanize(article, skip_reason, content) if skip_reason
 
     logger.info "Humanize metrics for article #{article.id}: #{content['metrics']}"
-    article.update!(humanized)
+    article.update!(extraction.attributes)
     Success(article)
   rescue StandardError => e
-    logger.error "Failed to humanize article #{article.id}: #{e.message}"
+    logger.error "Failed to humanize article #{article.id}: #{e.class}: #{e.message}"
     Failure(:humanize_failed)
+  end
+
+  # call은 윤문 실패를 무시하고 진행하므로, 윤문을 건너뛴 기사를 사유와 함께 여기서 남긴다.
+  # 과윤문 롤백은 모델의 정상 판단이라 info, 응답이 계약을 어긴 경우는 warn이다.
+  #: (Article article, Symbol reason, untyped content) -> Dry::Monads::Result
+  def skip_humanize(article, reason, content)
+    message = "Humanize skipped for article #{article.id}: #{reason} (response #{content.class})"
+    reason == :humanize_aborted ? logger.info(message) : logger.warn(message)
+    Failure(reason)
   end
 
   # 번역은 admin에서도 호출하는 ArticleJapaneseService가 맡는다. 번역 대상이 아닌 기사는
