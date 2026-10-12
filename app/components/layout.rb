@@ -18,10 +18,11 @@ class Components::Layout < Components::Base
         yield(:head)
         render Components::Layout::AssetPreloads.new(section: :pwa_and_icons)
         render Components::Layout::AssetPreloads.new(section: :google_fonts)
-        # :app은 app/assets의 CSS를 전부 펼쳐 vendor/lightgallery.css까지 렌더 차단으로 끌어온다.
-        # lightgallery.css는 lightbox 컨트롤러가 연결될 때(=갤러리가 있는 페이지)만 주입한다.
+        # tailwind만 링크한다. `:app`은 app/assets/**/*.css를 펼쳐 vendor/lightgallery.css까지
+        # 렌더 차단으로 만들었다(#1108). lightgallery.css는 lightbox 컨트롤러가 연결될 때만 주입한다.
         stylesheet_link_tag "tailwind", data_turbo_track: "reload"
-        # lexxy.css는 @import 체인(lexxy → content/editor → variables)이라 직렬 왕복이 3번 생긴다(#1108).
+        # lexxy.css는 @import 체인(lexxy → content/editor → variables)이라 직접 링크보다
+        # 직렬 왕복이 2번 더 생긴다(#1108).
         stylesheet_link_tag "lexxy-variables", "lexxy-content", "lexxy-editor", data_turbo_track: "reload"
         javascript_importmap_tags
         render_controller_entry_preloads
@@ -47,15 +48,19 @@ class Components::Layout < Components::Base
     end
   end
 
+  # application.js → controllers(index.js) → application·page_loader_controller로 이어지는 정적
+  # import 체인의 importmap 이름. pin_all_from preload: false라 그대로 두면 HTML 이후 직렬 왕복이
+  # 2번 더 생긴다(#1108). controllers/index.js의 import 목록과 맞춰 둔다(테스트가 대조한다).
+  CONTROLLER_ENTRY_MODULES = %w[controllers controllers/application controllers/page_loader_controller].freeze
+
   private
 
-  # application.js가 정적으로 import하는 컨트롤러 진입 모듈. importmap에서는 preload: false라
-  # 그대로 두면 HTML 이후 index → application/page_loader로 직렬 왕복이 2번 더 생긴다(#1108).
-  CONTROLLER_ENTRY_MODULES = %w[controllers/index.js controllers/application.js controllers/page_loader_controller.js].freeze
-
+  # importmap JSON은 요청 host와 무관하게 프로세스 단위로 캐시된다. asset_host 람다가 host마다
+  # 다른 URL을 주므로, asset_path로 따로 풀면 preload URL이 importmap과 어긋나 재사용되지 않는다.
   def render_controller_entry_preloads
     vc = view_context
-    raw(vc.javascript_module_preload_tag(*CONTROLLER_ENTRY_MODULES.map { vc.asset_path(it) }))
+    imports = JSON.parse(Rails.application.importmap.to_json(resolver: vc)).fetch("imports")
+    raw(vc.javascript_module_preload_tag(*imports.values_at(*CONTROLLER_ENTRY_MODULES)))
   end
 
   def render_theme_init_script

@@ -40,7 +40,7 @@ class Components::Layout::AssetPreloads < Components::Base
   end
 
   # asset_host(예: assets.ruby-news.dev)는 cross-origin이라, 렌더 차단
-  # app.css와 preload되는 코어 JS 모듈의 첫 요청 전에 DNS+TLS 연결을 예열한다.
+  # CSS(tailwind·lexxy)와 preload되는 코어 JS 모듈의 첫 요청 전에 DNS+TLS 연결을 예열한다.
   # asset_host 설정(람다 또는 문자열)을 그대로 사용해 호스트 판별 로직(단일 진실원)을
   # 재사용한다. ruby-news.jp(same-origin)나 개발환경(asset_host nil)에서는 아무것도
   # 렌더하지 않는다.

@@ -9,8 +9,10 @@ pin "@hotwired/stimulus-loading", to: "stimulus-loading.js"
 # (preload하면 모든 컨트롤러 파일이 즉시 다운로드되고, modulepreload가
 #  chart.js 같은 무거운 의존성까지 재귀적으로 끌어올 수 있다.)
 pin_all_from "app/javascript/controllers", under: "controllers", preload: false
-# 단, application.js가 정적으로 import하는 진입 모듈은 layout에서 따로 modulepreload한다
-# (pin_all_from이 같은 이름의 개별 pin을 덮어써서 여기서는 preload를 켤 수 없다).
+# 단, 진입 모듈(index·application·page_loader_controller)은 Components::Layout의
+# CONTROLLER_ENTRY_MODULES에서 따로 modulepreload한다. pin_all_from은 같은 이름의 개별 pin을
+# 디렉터리의 preload 값으로 덮어써서, 개별 pin으로는 켤 수 없다.
+
 # utils(form_helpers)의 소비자(post_form/reply_form 컨트롤러)가 모두 lazy이므로
 # 함께 preload에서 제외한다.
 pin_all_from "app/javascript/utils", under: "utils", preload: false

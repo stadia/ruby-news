@@ -121,3 +121,11 @@ module Bundler
     module ForkTracker; end
   end
 end
+
+# importmap-rails adds `Rails.application.importmap` at require time via
+# `Rails::Application.send(:attr_accessor, :importmap)` (lib/importmap/engine.rb),
+# which `tapioca gem` does not reflect. Read by Components::Layout.
+class Rails::Application
+  sig { returns(::Importmap::Map) }
+  def importmap; end
+end
