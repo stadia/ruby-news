@@ -5,22 +5,20 @@
 module ArticleHumanizer
   # extract의 결과는 반영(Humanized)과 건너뜀(Skipped) 중 하나다.
   # 멤버 타입: sorbet/rbi/shims/data_definitions.rbi
-  Humanized = Data.define(:attributes)
+  Humanized = Data.define(:summary_body, :summary_key, :summary_detail)
   Skipped = Data.define(:reason)
 
   # 원 요약(ArticleSchema)과 윤문(HumanMonolithAgent) 스키마가 공유하는 summary_detail 키.
   DETAIL_KEYS = %w[introduction conclusion].freeze
-  # 윤문이 갱신할 수 있는 Article 속성. Humanized#attributes는 이 키만 갖는다.
-  ATTRIBUTE_KEYS = %i[summary_key summary_detail summary_body].freeze
-
   # 모델이 과윤문을 스스로 롤백한 정상 판단. 나머지 사유는 응답이 계약을 어긴 경우다.
   ABORTED = :humanize_aborted
   INVALID_RESPONSE = :humanize_invalid_response
   BLANK_BODY = :humanize_blank_body
   SKIP_REASONS = [ ABORTED, INVALID_RESPONSE, BLANK_BODY ].freeze
 
-  # 반영할 윤문 필드. attributes의 키가 Article 컬럼명이라 update!에 넘기므로, 본문이 반드시
-  # 있고 다른 속성이나 nil 값(기존 값을 지운다)은 받지 않는다. 받지 못한 필드는 키를 뺀다.
+  # 반영할 윤문 필드. 멤버 이름이 Article 컬럼명이고 to_attributes로 update!에 넘긴다.
+  # 본문은 반드시 있고, 요점·상세는 응답에서 받지 못했으면 nil이다(기존 값을 유지한다).
+  # 비었거나 타입이 틀린 요점·상세는 기존 값을 지우거나 깨뜨리므로 받지 않는다.
   #
   # 불변식은 build에서 검사한다. Sorbet이 Data.define의 initialize 재정의를 허용하지 않아
   # 생성자 대신 팩토리를 쓰고, Data의 다른 생성 경로(new·[]·allocate·#with)는 모두 막는다.
@@ -29,20 +27,35 @@ module ArticleHumanizer
     private :with
 
     class << self
-      #: (Hash[Symbol, untyped] attributes) -> Humanized
-      def build(attributes)
-        unknown = attributes.keys - ATTRIBUTE_KEYS
-        raise ArgumentError, "unknown humanized attributes: #{unknown.inspect}" if unknown.any?
-
-        nil_keys = attributes.select { |_key, value| value.nil? }.keys
-        raise ArgumentError, "nil humanized attributes: #{nil_keys.inspect}" if nil_keys.any?
-
-        body = attributes[:summary_body]
-        raise ArgumentError, "summary_body is required" unless body.is_a?(String) && body.strip.present?
+      # 응답에서 꺼낸 값을 받는 검증 경계라 인자는 untyped로 받고 여기서 검사한다.
+      # 검사를 통과한 멤버의 타입은 sorbet/rbi/shims/data_definitions.rbi에 선언한다.
+      #: (summary_body: untyped, ?summary_key: untyped, ?summary_detail: untyped) -> Humanized
+      def build(summary_body:, summary_key: nil, summary_detail: nil)
+        raise ArgumentError, "summary_body is required" unless non_blank_string?(summary_body)
+        unless summary_key.nil? || (summary_key.is_a?(Array) && summary_key.any? && summary_key.all? { non_blank_string?(it) })
+          raise ArgumentError, "summary_key must be a non-empty array of strings: #{summary_key.inspect}"
+        end
+        unless summary_detail.nil? || (summary_detail.is_a?(Hash) && summary_detail.any? &&
+                                        summary_detail.all? { |key, value| key.is_a?(String) && non_blank_string?(value) })
+          raise ArgumentError, "summary_detail must be a non-empty hash of strings: #{summary_detail.inspect}"
+        end
 
         # 안쪽 배열·Hash·문자열까지 얼린다. copy: true라 호출자가 넘긴 값은 얼리지 않는다.
-        new(attributes: Ractor.make_shareable(attributes, copy: true))
+        new(summary_body: Ractor.make_shareable(summary_body, copy: true),
+            summary_key: Ractor.make_shareable(summary_key, copy: true),
+            summary_detail: Ractor.make_shareable(summary_detail, copy: true))
       end
+
+      private
+
+      #: (untyped value) -> bool
+      def non_blank_string?(value) = value.is_a?(String) ? !value.strip.empty? : false
+    end
+
+    # update!에 넘길 Hash. 받지 못한(nil) 필드는 빼서 기존 값을 지우지 않는다.
+    #: () -> Hash[Symbol, untyped]
+    def to_attributes
+      { summary_key:, summary_detail:, summary_body: }.compact.freeze
     end
   end
 
@@ -96,13 +109,9 @@ module ArticleHumanizer
       summary_body = stripped_string(content["summary_body"])
       return Skipped.build(BLANK_BODY) unless summary_body
 
-      # 비었거나 타입이 틀린 요점·상세는 키를 빼서 update!가 기존 값을 지우지 않게 한다.
-      attributes = {
-        summary_key: string_list(content["summary_key"]),
-        summary_detail: string_map(content["summary_detail"]),
-        summary_body:
-      }.compact
-      Humanized.build(attributes)
+      # 비었거나 타입이 틀린 요점·상세는 nil로 두어 update!가 기존 값을 지우지 않게 한다.
+      Humanized.build(summary_body:, summary_key: string_list(content["summary_key"]),
+                      summary_detail: string_map(content["summary_detail"]))
     end
 
     private

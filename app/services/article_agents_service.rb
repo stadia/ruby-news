@@ -133,7 +133,7 @@ class ArticleAgentsService < OperationService
     when ArticleHumanizer::Skipped
       skip_humanize(article, extraction, content)
     when ArticleHumanizer::Humanized
-      result = save_humanized(article, extraction.attributes)
+      result = save_humanized(article, extraction.to_attributes)
       logger.info "Humanize metrics for article #{article.id}: #{content['metrics']}" if result.success?
       result
     else
