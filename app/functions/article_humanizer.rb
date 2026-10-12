@@ -3,12 +3,56 @@
 # rbs_inline: enabled
 
 module ArticleHumanizer
-  # 윤문 응답에서 꺼낸 결과. 반영할 수 없으면 skip_reason에 사유가 있고 attributes는 비어 있다.
+  # extract의 결과는 반영(Humanized)과 건너뜀(Skipped) 중 하나다.
   # 멤버 타입: sorbet/rbi/shims/data_definitions.rbi
-  Extraction = Data.define(:attributes, :skip_reason)
+  Humanized = Data.define(:attributes)
+  Skipped = Data.define(:reason)
 
   # 원 요약(ArticleSchema)과 윤문(HumanMonolithAgent) 스키마가 공유하는 summary_detail 키.
   DETAIL_KEYS = %w[introduction conclusion].freeze
+  # 윤문이 갱신할 수 있는 Article 속성. Humanized#attributes는 이 키만 갖는다.
+  ATTRIBUTE_KEYS = %i[summary_key summary_detail summary_body].freeze
+
+  # 모델이 과윤문을 스스로 롤백한 정상 판단. 나머지 사유는 응답이 계약을 어긴 경우다.
+  ABORTED = :humanize_aborted
+  SKIP_REASONS = [ ABORTED, :humanize_invalid_response, :humanize_blank_body ].freeze
+
+  # 반영할 윤문 필드. update!에 그대로 넘기므로 본문이 반드시 있고, 다른 속성은 받지 않는다.
+  # 불변식을 build에서 검사하도록 new는 막는다. Sorbet이 Data.define의 initialize 재정의를
+  # 허용하지 않아 생성자 대신 팩토리를 쓴다.
+  class Humanized
+    private_class_method :new
+
+    class << self
+      #: (Hash[Symbol, untyped] attributes) -> Humanized
+      def build(attributes)
+        unknown = attributes.keys - ATTRIBUTE_KEYS
+        raise ArgumentError, "unknown humanized attributes: #{unknown.inspect}" if unknown.any?
+
+        body = attributes[:summary_body]
+        raise ArgumentError, "summary_body is required" unless body.is_a?(String) && body.strip.present?
+
+        new(attributes: attributes.transform_values(&:freeze).freeze)
+      end
+    end
+  end
+
+  # 반영하지 않은 사유. 오타가 조용히 로그에만 남지 않도록 SKIP_REASONS만 받는다.
+  class Skipped
+    private_class_method :new
+
+    class << self
+      #: (Symbol reason) -> Skipped
+      def build(reason)
+        raise ArgumentError, "unknown humanize skip reason: #{reason.inspect}" unless SKIP_REASONS.include?(reason)
+
+        new(reason:)
+      end
+    end
+
+    #: () -> bool
+    def aborted? = reason == ABORTED
+  end
 
   class << self
     #: (Article article) -> String
@@ -33,15 +77,14 @@ module ArticleHumanizer
     # content["summary_body"]는 String#[] 부분문자열 매칭이 되어 키 이름 자체를 돌려준다.
     # 그대로 두면 본문이 "summary_body"라는 글자로 덮이므로 반드시 Hash만 받는다.
     #
-    # 반영할 수 없는 응답은 사유를 skip_reason에 담는다. 과윤문 롤백(:humanize_aborted)은
-    # 모델의 정상 판단이고, 나머지는 응답이 계약을 어긴 경우다.
-    #: (untyped content) -> Extraction
+    # 반영할 수 없는 응답은 사유와 함께 Skipped로 돌려준다.
+    #: (untyped content) -> (Humanized | Skipped)
     def extract(content)
-      return skipped(:humanize_invalid_response) unless content.is_a?(Hash)
-      return skipped(:humanize_aborted) if content["over_polish_aborted"]
+      return Skipped.build(:humanize_invalid_response) unless content.is_a?(Hash)
+      return Skipped.build(ABORTED) if content["over_polish_aborted"]
 
       summary_body = stripped_string(content["summary_body"])
-      return skipped(:humanize_blank_body) unless summary_body
+      return Skipped.build(:humanize_blank_body) unless summary_body
 
       # 비었거나 타입이 틀린 요점·상세는 키를 빼서 update!가 기존 값을 지우지 않게 한다.
       attributes = {
@@ -49,15 +92,10 @@ module ArticleHumanizer
         summary_detail: string_map(content["summary_detail"]),
         summary_body:
       }.compact
-      Extraction.new(attributes:, skip_reason: nil)
+      Humanized.build(attributes)
     end
 
     private
-
-    #: (Symbol reason) -> Extraction
-    def skipped(reason)
-      Extraction.new(attributes: {}, skip_reason: reason)
-    end
 
     # 문자열이 아니거나 공백뿐이면 nil이다. `.to_s`로 받으면 배열 등의 inspect 문자열이 저장된다.
     #: (untyped value) -> String?

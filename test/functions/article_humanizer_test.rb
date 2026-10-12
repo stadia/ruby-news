@@ -13,7 +13,7 @@ class ArticleHumanizerTest < ActiveSupport::TestCase
 
     extraction = ArticleHumanizer.extract(content)
 
-    assert_nil extraction.skip_reason
+    assert_instance_of ArticleHumanizer::Humanized, extraction
     assert_equal(
       { summary_key: [ "요점" ], summary_detail: { "introduction" => "도입", "conclusion" => "결론" }, summary_body: "본문" },
       extraction.attributes
@@ -101,10 +101,52 @@ class ArticleHumanizerTest < ActiveSupport::TestCase
     end
   end
 
+  # 반영 결과는 본문을 반드시 담고, 윤문 필드 외의 키는 받지 않는다(update!에 그대로 넘어간다).
+  test "Humanized는 본문이 없거나 비었으면 만들 수 없다" do
+    [ {}, { summary_key: [ "a" ] }, { summary_body: " " }, { summary_body: nil } ].each do |attributes|
+      assert_raises(ArgumentError, attributes.inspect) { ArticleHumanizer::Humanized.build(attributes) }
+    end
+  end
+
+  test "Humanized는 윤문 필드가 아닌 키를 받지 않는다" do
+    error = assert_raises(ArgumentError) do
+      ArticleHumanizer::Humanized.build({ summary_body: "본문", title_ko: "제목" })
+    end
+    assert_includes error.message, "title_ko"
+  end
+
+  # 검사를 우회해 불변식이 깨진 값을 만들 수 없게 한다.
+  test "Humanized와 Skipped는 build로만 만든다" do
+    assert_raises(NoMethodError) { ArticleHumanizer::Humanized.new(attributes: {}) }
+    assert_raises(NoMethodError) { ArticleHumanizer::Skipped.new(reason: :typo) }
+  end
+
+  test "Humanized의 attributes와 그 값은 얼어 있다" do
+    extraction = ArticleHumanizer.extract({ "summary_key" => [ "요점" ], "summary_body" => "본문" })
+
+    assert_predicate extraction.attributes, :frozen?
+    assert_predicate extraction.attributes[:summary_key], :frozen?
+    assert_raises(FrozenError) { extraction.attributes[:summary_body] = "다른 본문" }
+  end
+
+  # 사유 집합을 닫아 두어 오타가 난 사유가 조용히 로그에만 남지 않게 한다.
+  test "Skipped는 정해진 사유만 받는다" do
+    ArticleHumanizer::SKIP_REASONS.each do |reason|
+      assert_equal reason, ArticleHumanizer::Skipped.build(reason).reason
+    end
+    assert_raises(ArgumentError) { ArticleHumanizer::Skipped.build(:humanize_abortd) }
+    assert_raises(ArgumentError) { ArticleHumanizer::Skipped.build(nil) }
+  end
+
+  test "Skipped#aborted?는 과윤문 롤백일 때만 참이다" do
+    assert_predicate ArticleHumanizer::Skipped.build(:humanize_aborted), :aborted?
+    assert_not_predicate ArticleHumanizer::Skipped.build(:humanize_blank_body), :aborted?
+  end
+
   private
 
   def assert_skipped(reason, extraction)
-    assert_equal reason, extraction.skip_reason
-    assert_equal({}, extraction.attributes)
+    assert_instance_of ArticleHumanizer::Skipped, extraction
+    assert_equal reason, extraction.reason
   end
 end
