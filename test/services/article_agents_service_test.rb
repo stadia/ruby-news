@@ -86,6 +86,55 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     assert_predicate article.reload, :discarded?
   end
 
+  # 일시적인 본문 수집 실패로 기사를 지우지 않는다. ArticleBatchJob이 다시 집는다(#1099).
+  test "본문 수집이 일시적으로 실패하면 discard하지 않고 사유를 남긴다" do
+    article = articles(:ruby_article)
+    article.update!(body: nil)
+    content_service = Object.new
+    content_service.define_singleton_method(:call) { |_article = nil| Dry::Monads::Failure(:fetch_failed) }
+
+    result = nil #: Dry::Monads::Result?
+    warnings = capture_logs(:warn) do
+      ContentService.stub(:new, -> { content_service }) { result = ArticleAgentsService.new.call(article) }
+    end
+
+    assert_equal :fetch_failed, result.failure
+    assert_not_predicate article.reload, :discarded?
+    assert_logged warnings, "article #{article.id}", article.url, "fetch_failed"
+  end
+
+  # 영구 실패는 기존대로 폐기한다. 일시 실패 집합에 섞이면 SSRF 차단 URL까지 계속 재시도된다.
+  %i[no_content blocked_url not_youtube].each do |reason|
+    test "본문 수집이 #{reason}로 실패하면 discard한다" do
+      article = articles(:ruby_article)
+      article.update!(body: nil)
+      content_service = Object.new
+      content_service.define_singleton_method(:call) { |_article = nil| Dry::Monads::Failure(reason) }
+
+      result = nil #: Dry::Monads::Result?
+      ContentService.stub(:new, -> { content_service }) { result = ArticleAgentsService.new.call(article) }
+
+      assert_equal reason, result.failure
+      assert_predicate article.reload, :discarded?
+    end
+  end
+
+  # 이틀 넘게 일시 실패하는 기사는 오분류일 수 있다. 재시도 기간이 끝나면 kept 상태로 남으므로
+  # error로 올려 알 수 있게 한다.
+  test "오래 일시 실패한 기사는 재시도 종료 시각과 함께 error로 남긴다" do
+    article = articles(:ruby_article)
+    article.update!(body: nil, created_at: 50.hours.ago)
+    content_service = Object.new
+    content_service.define_singleton_method(:call) { |_article = nil| Dry::Monads::Failure(:fetch_failed) }
+
+    errors = capture_logs(:error) do
+      ContentService.stub(:new, -> { content_service }) { ArticleAgentsService.new.call(article) }
+    end
+
+    assert_logged errors, "article #{article.id}", article.url, "retries stop"
+    assert_not_predicate article.reload, :discarded?
+  end
+
   # 폐기는 공개 사이트와 연합에 Delete를 전파하므로 사유가 로그에 남아야 한다.
   test "본문을 얻지 못해 discard할 때 사유를 로그로 남긴다" do
     article = articles(:ruby_article)

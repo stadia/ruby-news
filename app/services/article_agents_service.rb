@@ -6,6 +6,8 @@ class ArticleAgentsService < OperationService
   # 에이전트가 무관하다고 판정하면 자동 정리하는 수집원. 사람이 직접 등록하는 경로는
   # 오판으로 지우면 안 되므로 제외한다.
   AUTO_DISCARD_CLIENTS = %w[hacker_news rss gmail rss_page].freeze
+  # 이보다 오래 일시 실패한 기사는 재시도 기간(ArticleBatchJob::LOOKBACK)이 곧 끝나므로 error로 알린다.
+  STALE_RETRY_AGE = 2.days
 
   #: (Article article) -> Dry::Monads::Result
   def call(article)
@@ -45,15 +47,17 @@ class ArticleAgentsService < OperationService
   end
 
   # 본문을 얻지 못했거나 요약할 만큼 길지 않으면 수집 대상이 아니므로 폐기한다. 폐기는
-  # 공개 사이트와 연합에 Delete를 전파하므로 그 두 경우로만 한정하고, 저장 실패나
-  # 일시적 예외는 기사를 남긴 채 Failure로 끝낸다. title_ko가 없는 기사는
-  # ArticleBatchJob이 다시 집는다.
+  # 공개 사이트와 연합에 Delete를 전파하므로 그 두 경우로만 한정하고, 일시적인 수집 실패
+  # (ContentService::TRANSIENT_FAILURES), 저장 실패, 예외는 기사를 남긴 채 Failure로
+  # 끝낸다. 재시도는 keep_for_retry 참고.
   #: (Article article) -> Dry::Monads::Result
   def ensure_body(article)
     body = article.body
     return Success(article) if body.present? && body.size > 30
 
     body_result = ContentService.new.call(article)
+    # Success#failure는 nil이고 TRANSIENT_FAILURES에는 nil이 없으므로 failure?를 먼저 보지 않아도 된다.
+    return keep_for_retry(article, body_result.failure) if ContentService::TRANSIENT_FAILURES.include?(body_result.failure)
     return discard_with(article, body_result.failure) if body_result.failure?
 
     fetched_body = body_result.value!
@@ -77,6 +81,21 @@ class ArticleAgentsService < OperationService
     article.restore_attributes
     logger.error "Failed to save article #{article.id} with fetched body: #{e.class}: #{e.message}"
     Failure(:article_save_failed)
+  end
+
+  # 일시적인 수집 실패는 폐기하지 않는다. title_ko가 없는 기사는 ArticleBatchJob이 생성 후
+  # LOOKBACK(3일) 안에서 다시 집는다(실행당 1건). 그 뒤에는 kept 상태로 남고 더 재시도되지
+  # 않으므로, STALE_RETRY_AGE를 넘긴 기사는 오분류일 수 있어 종료 시각과 함께 error로 남긴다.
+  #: (Article article, Symbol reason) -> Dry::Monads::Result
+  def keep_for_retry(article, reason)
+    message = "Keeping article #{article.id} (#{article.url}) for retry: #{reason}"
+    created_at = article.created_at
+    if created_at < STALE_RETRY_AGE.ago
+      logger.error "#{message}; retries stop after #{(created_at + ArticleBatchJob::LOOKBACK).iso8601}"
+    else
+      logger.warn message
+    end
+    Failure(reason)
   end
 
   #: (Article article, Symbol reason) -> Dry::Monads::Result
