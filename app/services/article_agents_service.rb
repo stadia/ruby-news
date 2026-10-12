@@ -67,6 +67,7 @@ class ArticleAgentsService < OperationService
   end
 
   # 실패를 예외로 올려 저장하지 못한 본문을 모른 채 요약·임베딩으로 넘어가지 않게 한다.
+  # body에는 검증이 없으므로 실패 원인은 본문이 아니라 레코드다(url·slug 중복 검증, DB 오류).
   # 되돌리지 않으면 메모리에 남은 변경을 이후 단계의 save가 함께 저장할 수 있다.
   #: (Article article, String body) -> Dry::Monads::Result
   def save_body(article, body)
@@ -74,8 +75,8 @@ class ArticleAgentsService < OperationService
     Success(article)
   rescue StandardError => e
     article.restore_attributes
-    logger.error "Failed to save body for article #{article.id}: #{e.class}: #{e.message}"
-    Failure(:body_save_failed)
+    logger.error "Failed to save article #{article.id} with fetched body: #{e.class}: #{e.message}"
+    Failure(:article_save_failed)
   end
 
   #: (Article article, Symbol reason) -> Dry::Monads::Result

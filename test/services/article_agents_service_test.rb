@@ -119,7 +119,7 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
 
   # 본문 확보 단계의 일시적·검증 실패는 기사를 지울 사유가 아니다. 폐기하면 Delete가
   # 연합에 전파되지만, 남겨 두면 ArticleBatchJob이 title_ko가 없는 기사를 다시 집는다.
-  test "가져온 본문을 저장하지 못하면 discard하지 않고 :body_save_failed를 반환한다" do
+  test "가져온 본문과 함께 기사를 저장하지 못하면 discard하지 않고 :article_save_failed를 반환한다" do
     article = articles(:ruby_article)
     article.update!(body: nil)
     original_url = article.url
@@ -135,7 +135,7 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
       end
     end
 
-    assert_equal :body_save_failed, result.failure
+    assert_equal :article_save_failed, result.failure
     assert_not_predicate article.reload, :discarded?
     assert_nil article.body
     assert_equal original_url, article.url
