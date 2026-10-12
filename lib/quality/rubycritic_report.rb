@@ -3,7 +3,7 @@
 # rbs_inline: enabled
 
 module Quality
-  # RubyCritic의 report.json을 기준선 문서·GitHub Actions step summary용 마크다운으로 옮긴다.
+  # RubyCritic의 report.json을 기준선 문서에 붙일 마크다운 요약으로 옮긴다.
   #
   # 우선 검토 후보는 변경 빈도(churn) × 복잡도(complexity) 순이다. 자주 바뀌지만 단순한 파일이나
   # 복잡하지만 거의 안 바뀌는 파일보다, 둘 다 높은 파일을 먼저 본다(docs/quality/rubycritic.md).

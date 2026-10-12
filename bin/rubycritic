@@ -20,12 +20,15 @@ PATHS = %w[app/models app/controllers app/services app/functions app/clients].fr
 OUTPUT = "tmp/rubycritic"
 
 churn_after = ENV.fetch("RUBYCRITIC_CHURN_AFTER") { (Date.today << 6).iso8601 }
-env = { "BUNDLE_GEMFILE" => File.join(ROOT, "tools/rubycritic/Gemfile") }
+env = {
+  "BUNDLE_GEMFILE" => File.join(ROOT, "tools/rubycritic/Gemfile"),
+  "RUBYOPT" => "-r#{File.join(ROOT, "tools/rubycritic/head_only_churn.rb")} #{ENV["RUBYOPT"]}"
+}
 command = [ "bundle", "exec", "rubycritic", "--no-browser", "-f", "html", "-f", "json",
             "--churn-after", churn_after, "-p", OUTPUT, *PATHS ]
 
 Dir.chdir(ROOT) do
-  # 분석 실패가 묻히지 않도록 rubycritic의 종료 코드를 그대로 돌려준다.
+  # 분석 실패가 묻히지 않도록 rubycritic가 실패하면 1로 끝난다. 진행 출력은 stderr로 보내 stdout을 마크다운 전용으로 둔다.
   abort "rubycritic failed: #{command.join(" ")}" unless system(env, *command, out: $stderr)
 
   report = JSON.parse(File.read(File.join(OUTPUT, "report.json")))
