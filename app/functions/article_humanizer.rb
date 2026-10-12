@@ -15,13 +15,18 @@ module ArticleHumanizer
 
   # 모델이 과윤문을 스스로 롤백한 정상 판단. 나머지 사유는 응답이 계약을 어긴 경우다.
   ABORTED = :humanize_aborted
-  SKIP_REASONS = [ ABORTED, :humanize_invalid_response, :humanize_blank_body ].freeze
+  INVALID_RESPONSE = :humanize_invalid_response
+  BLANK_BODY = :humanize_blank_body
+  SKIP_REASONS = [ ABORTED, INVALID_RESPONSE, BLANK_BODY ].freeze
 
-  # 반영할 윤문 필드. update!에 그대로 넘기므로 본문이 반드시 있고, 다른 속성은 받지 않는다.
-  # 불변식을 build에서 검사하도록 new는 막는다. Sorbet이 Data.define의 initialize 재정의를
-  # 허용하지 않아 생성자 대신 팩토리를 쓴다.
+  # 반영할 윤문 필드. attributes의 키가 Article 컬럼명이라 update!에 넘기므로, 본문이 반드시
+  # 있고 다른 속성이나 nil 값(기존 값을 지운다)은 받지 않는다. 받지 못한 필드는 키를 뺀다.
+  #
+  # 불변식은 build에서 검사한다. Sorbet이 Data.define의 initialize 재정의를 허용하지 않아
+  # 생성자 대신 팩토리를 쓰고, Data의 다른 생성 경로(new·[]·allocate·#with)는 모두 막는다.
   class Humanized
-    private_class_method :new
+    private_class_method :new, :[], :allocate
+    private :with
 
     class << self
       #: (Hash[Symbol, untyped] attributes) -> Humanized
@@ -29,17 +34,22 @@ module ArticleHumanizer
         unknown = attributes.keys - ATTRIBUTE_KEYS
         raise ArgumentError, "unknown humanized attributes: #{unknown.inspect}" if unknown.any?
 
+        nil_keys = attributes.select { |_key, value| value.nil? }.keys
+        raise ArgumentError, "nil humanized attributes: #{nil_keys.inspect}" if nil_keys.any?
+
         body = attributes[:summary_body]
         raise ArgumentError, "summary_body is required" unless body.is_a?(String) && body.strip.present?
 
-        new(attributes: attributes.transform_values(&:freeze).freeze)
+        # 안쪽 배열·Hash·문자열까지 얼린다. copy: true라 호출자가 넘긴 값은 얼리지 않는다.
+        new(attributes: Ractor.make_shareable(attributes, copy: true))
       end
     end
   end
 
   # 반영하지 않은 사유. 오타가 조용히 로그에만 남지 않도록 SKIP_REASONS만 받는다.
   class Skipped
-    private_class_method :new
+    private_class_method :new, :[], :allocate
+    private :with
 
     class << self
       #: (Symbol reason) -> Skipped
@@ -80,11 +90,11 @@ module ArticleHumanizer
     # 반영할 수 없는 응답은 사유와 함께 Skipped로 돌려준다.
     #: (untyped content) -> (Humanized | Skipped)
     def extract(content)
-      return Skipped.build(:humanize_invalid_response) unless content.is_a?(Hash)
+      return Skipped.build(INVALID_RESPONSE) unless content.is_a?(Hash)
       return Skipped.build(ABORTED) if content["over_polish_aborted"]
 
       summary_body = stripped_string(content["summary_body"])
-      return Skipped.build(:humanize_blank_body) unless summary_body
+      return Skipped.build(BLANK_BODY) unless summary_body
 
       # 비었거나 타입이 틀린 요점·상세는 키를 빼서 update!가 기존 값을 지우지 않게 한다.
       attributes = {

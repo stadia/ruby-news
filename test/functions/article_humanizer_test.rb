@@ -101,7 +101,7 @@ class ArticleHumanizerTest < ActiveSupport::TestCase
     end
   end
 
-  # 반영 결과는 본문을 반드시 담고, 윤문 필드 외의 키는 받지 않는다(update!에 그대로 넘어간다).
+  # 반영 결과는 본문을 반드시 담고, 윤문 필드 외의 키는 받지 않는다(키가 update!의 컬럼명이다).
   test "Humanized는 본문이 없거나 비었으면 만들 수 없다" do
     [ {}, { summary_key: [ "a" ] }, { summary_body: " " }, { summary_body: nil } ].each do |attributes|
       assert_raises(ArgumentError, attributes.inspect) { ArticleHumanizer::Humanized.build(attributes) }
@@ -115,18 +115,56 @@ class ArticleHumanizerTest < ActiveSupport::TestCase
     assert_includes error.message, "title_ko"
   end
 
-  # 검사를 우회해 불변식이 깨진 값을 만들 수 없게 한다.
+  # 검사를 우회해 불변식이 깨진 값을 만들 수 없게 한다. Data는 new 외에 []·allocate·#with로도
+  # 인스턴스를 만들 수 있으므로 모두 막는다.
   test "Humanized와 Skipped는 build로만 만든다" do
-    assert_raises(NoMethodError) { ArticleHumanizer::Humanized.new(attributes: {}) }
-    assert_raises(NoMethodError) { ArticleHumanizer::Skipped.new(reason: :typo) }
+    humanized = ArticleHumanizer.extract({ "summary_body" => "본문" })
+    skipped = ArticleHumanizer::Skipped.build(:humanize_aborted)
+
+    [
+      -> { ArticleHumanizer::Humanized.new(attributes: {}) },
+      -> { ArticleHumanizer::Humanized[attributes: {}] },
+      -> { ArticleHumanizer::Humanized.allocate },
+      -> { humanized.with(attributes: {}) },
+      -> { ArticleHumanizer::Skipped.new(reason: :typo) },
+      -> { ArticleHumanizer::Skipped[reason: :typo] },
+      -> { ArticleHumanizer::Skipped.allocate },
+      -> { skipped.with(reason: :typo) }
+    ].each_with_index do |bypass, index|
+      assert_raises(NoMethodError, "bypass ##{index}") { bypass.call }
+    end
   end
 
-  test "Humanized의 attributes와 그 값은 얼어 있다" do
-    extraction = ArticleHumanizer.extract({ "summary_key" => [ "요점" ], "summary_body" => "본문" })
+  # nil 값을 update!에 넘기면 기존 요점·상세가 지워지므로, 빠진 필드는 키를 빼야 한다.
+  test "Humanized는 nil 값을 받지 않는다" do
+    error = assert_raises(ArgumentError) do
+      ArticleHumanizer::Humanized.build({ summary_body: "본문", summary_key: nil })
+    end
+    assert_includes error.message, "summary_key"
+  end
 
-    assert_predicate extraction.attributes, :frozen?
-    assert_predicate extraction.attributes[:summary_key], :frozen?
-    assert_raises(FrozenError) { extraction.attributes[:summary_body] = "다른 본문" }
+  test "Humanized의 attributes는 안쪽 문자열까지 얼어 있다" do
+    extraction = ArticleHumanizer.extract({
+      "summary_key" => [ "요점" ],
+      "summary_detail" => { "introduction" => "도입", "conclusion" => "결론" },
+      "summary_body" => "본문"
+    })
+    attributes = extraction.attributes
+
+    assert_predicate attributes, :frozen?
+    assert_predicate attributes[:summary_key], :frozen?
+    assert_predicate attributes[:summary_key].first, :frozen?
+    assert_predicate attributes[:summary_detail]["introduction"], :frozen?
+    assert_raises(FrozenError) { attributes[:summary_key].first << "변조" }
+  end
+
+  # 얼리는 것은 복사본이다. 호출자가 넘긴 값은 그대로 둔다.
+  test "Humanized.build는 넘겨받은 값을 얼리지 않는다" do
+    summary_key = [ +"요점" ]
+    ArticleHumanizer::Humanized.build({ summary_key:, summary_body: +"본문" })
+
+    assert_not_predicate summary_key, :frozen?
+    assert_not_predicate summary_key.first, :frozen?
   end
 
   # 사유 집합을 닫아 두어 오타가 난 사유가 조용히 로그에만 남지 않게 한다.
