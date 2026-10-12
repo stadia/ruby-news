@@ -42,12 +42,25 @@ class OtelLogAppender < SemanticLogger::Appender::OpenTelemetry
     attrs = {
       "code.namespace" => record[:name],
       "metric" => record[:metric],
-      "duration_ms" => record[:duration_ms]
+      "metric_amount" => record[:metric_amount],
+      "duration_ms" => record[:duration_ms],
+      "tags" => record[:tags]&.map(&:to_s)
     }
-    record[:named_tags]&.each { |key, value| attrs[key.to_s] = value.to_s }
-    attrs.merge!(record[:payload]) if record[:payload]
+    record[:named_tags]&.each { |key, value| attrs[key.to_s] = primitive(value) }
+    # payload는 호출부가 넣는 값이라 request_id·code.namespace 같은 기준 필드를 덮지 못하게 한다.
+    record[:payload]&.each { |key, value| attrs[attrs.key?(key) ? "payload.#{key}" : key] = value }
     attrs.merge!(exception_attributes(record[:exception])) if record[:exception]
     attrs.compact.transform_keys { |key| RENAMES.fetch(key, key) }
+  end
+
+  # OTel attribute가 받는 원시 타입은 그대로 두어 attributes_number/bool 맵에 들어가게 한다.
+  # @rbs value: untyped
+  # @rbs return: String | Numeric | bool
+  def primitive(value)
+    case value
+    when String, Numeric, true, false then value
+    else value.to_s
+    end
   end
 
   # @rbs exception: Hash[Symbol, untyped]
