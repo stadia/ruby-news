@@ -176,6 +176,10 @@ class Article < ApplicationRecord
   # 판별 기준은 JAPANESE_TITLE_REGEX 를 사용한다.
   before_save :assign_japanese_title
 
+  # 요약을 어느 경로로 바꾸든(원 요약 재생성, 관리자 수정) 이전 윤문 기록은 현재 요약에 대한
+  # 것이 아니므로 대기로 되돌린다. 윤문 결과를 같은 저장에서 함께 쓰는 경우는 그대로 둔다.
+  before_update :reset_humanize_status, if: :humanize_status_stale?
+
   after_commit :clear_rss_cache, on: [ :create, :update, :destroy ]
   after_commit :enqueue_index_now, on: [ :create, :update ]
 
@@ -321,6 +325,22 @@ class Article < ApplicationRecord
 
   # ── Private Instance Methods ─────────────────────────────────────────
   private
+
+  HUMANIZED_SUMMARY_FIELDS = %w[summary_body summary_key summary_detail].freeze
+
+  # humanize_status 접근은 범용 속성 API를 쓴다. sorbet/rbi/dsl/article.rbi에 이 컬럼이 아직 없다
+  # (로컬에서 bin/tapioca dsl이 reactionview 로드 오류로 실행되지 않는다).
+  #: () -> bool
+  def humanize_status_stale?
+    return false if attribute_changed?("humanize_status")
+
+    HUMANIZED_SUMMARY_FIELDS.any? { attribute_changed?(it) }
+  end
+
+  #: () -> void
+  def reset_humanize_status
+    self[:humanize_status] = ArticleHumanizer.pending_status
+  end
 
   # before_save는 before_create의 메타데이터보다 먼저 실행되므로 준비 직후에도 적용한다.
   #: () -> void

@@ -70,9 +70,7 @@ class Articles::AgentRunnerTest < ActiveSupport::TestCase
     end
 
     assert_equal [ "ruby" ], article.tag_list.added
-    assert_equal({ "summary_body" => "body" }, article.updated_content.except("humanize_status"))
-    # 원 요약을 새로 저장하므로 이전 윤문 기록을 대기로 바꾼다.
-    assert_equal "pending", article.updated_content.dig("humanize_status", "outcome")
+    assert_equal({ "summary_body" => "body" }, article.updated_content)
     refute article.discarded
   end
 
@@ -88,7 +86,7 @@ class Articles::AgentRunnerTest < ActiveSupport::TestCase
     end
 
     assert_equal %w[ruby rails], article.tag_list.added
-    assert_equal({ "summary_body" => "body" }, article.updated_content.except("humanize_status"))
+    assert_equal({ "summary_body" => "body" }, article.updated_content)
     refute article.discarded
   end
 
@@ -102,7 +100,7 @@ class Articles::AgentRunnerTest < ActiveSupport::TestCase
       assert_predicate result, :success?
     end
 
-    assert_equal({ "summary_body" => "첫 줄\n둘째 줄\t탭 \"인용\"" }, article.updated_content.except("humanize_status"))
+    assert_equal({ "summary_body" => "첫 줄\n둘째 줄\t탭 \"인용\"" }, article.updated_content)
   end
 
   # 성공 판별을 Article 클래스 검사로 하면 개발 환경 리로딩 시 is_a?(Article)이 false가 되어

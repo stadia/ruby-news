@@ -662,6 +662,31 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     assert_logged errors, "article #{article.id}", "after commit"
   end
 
+  # update!는 끝났지만 COMMIT이 실패하면(직렬화 실패·연결 오류) 저장되지 않았으므로 실패로 기록한다.
+  test "run_humanize는 COMMIT이 실패하면 커밋 후 실패로 오인하지 않고 failed로 남긴다" do
+    article = articles(:ruby_article)
+    article.update_column(:summary_body, "원본 요약")
+    failing_commit = lambda do |&block|
+      Article.connection.transaction(requires_new: true) do
+        block.call
+        raise ActiveRecord::Rollback
+      end
+      raise ActiveRecord::SerializationFailure, "could not serialize access"
+    end
+
+    result = nil
+    capture_logs(:error) do
+      Article.stub(:transaction, failing_commit) { result = run_humanize_with(article, full_humanize_response) }
+    end
+
+    assert_equal :humanize_failed, result.failure
+    article.reload
+
+    assert_equal "원본 요약", article.summary_body
+    assert_equal({ "outcome" => "failed", "reason" => "humanize_failed", "stage" => "save",
+                   "error" => "ActiveRecord::SerializationFailure" }, article.humanize_status.except("at"))
+  end
+
   # 상태 기록이 실패해도 윤문 결과는 그대로 돌려준다. 메모리의 humanize_status도 되돌려
   # 이후 단계의 save가 반영되지 않은 상태를 저장하지 않게 한다.
   test "run_humanize는 상태 기록이 실패해도 Failure를 돌려주고 메모리 값을 되돌린다" do

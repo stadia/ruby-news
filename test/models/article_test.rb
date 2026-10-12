@@ -276,6 +276,32 @@ class ArticleTest < ActiveSupport::TestCase
     assert_equal [ @article, @korean_article, @site_article ].map(&:id).sort, Article.humanize_not_applied.ids.sort
   end
 
+  # 요약을 어느 경로로 바꾸든(관리자 수정 등) 이전 윤문 기록은 현재 요약에 대한 것이 아니다.
+  test "요약 필드를 바꾸면 humanize_status를 pending으로 바꾼다" do
+    applied = { "outcome" => "applied", "dropped" => [] }
+
+    { summary_body: "관리자가 고친 요약", summary_key: [ "고친 요점" ],
+      summary_detail: { "introduction" => "고친 도입", "conclusion" => "고친 결론" } }.each do |field, value|
+      @article.update_column(:humanize_status, applied)
+      @article.reload.update!(field => value)
+
+      assert_equal "pending", @article.reload.humanize_status["outcome"], field.to_s
+    end
+  end
+
+  test "요약과 humanize_status를 함께 저장하거나 요약 외 필드만 바꾸면 상태를 유지한다" do
+    applied = { "outcome" => "applied", "dropped" => [] }
+    @article.update_column(:humanize_status, nil)
+
+    @article.update!(summary_body: "윤문된 요약", humanize_status: applied)
+
+    assert_equal applied, @article.reload.humanize_status
+
+    @article.update!(title_ko: "다른 제목")
+
+    assert_equal applied, @article.reload.humanize_status
+  end
+
   test "humanize_partially_applied 스코프는 필드가 빠진 반영만 반환한다" do
     Article.update_all(humanize_status: nil)
     @article.update_column(:humanize_status, { "outcome" => "applied", "dropped" => [ "summary_key" ] })

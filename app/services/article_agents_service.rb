@@ -158,7 +158,7 @@ class ArticleAgentsService < OperationService
   #
   # update!는 커밋 뒤 after_commit 콜백(RSS 캐시·IndexNow)의 예외도 다시 던진다. 그때는 이미
   # 저장됐으므로 실패로 기록하지 않는다. 롤백이 dirty 추적을 되돌려 dirty로는 구분할 수 없어,
-  # 명시적 트랜잭션 안에서 update!가 끝났는지로 구분한다(콜백은 바깥 트랜잭션 커밋 때 돈다).
+  # 명시적 트랜잭션 안에서 update!가 끝났는지(saved)와 DB에 실제로 커밋됐는지(committed?)로 구분한다.
   #: (Article article, ArticleHumanizer::Humanized humanized) -> Dry::Monads::Result
   def save_humanized(article, humanized)
     attributes = humanized.to_attributes.merge(humanize_status: ArticleHumanizer.status(humanized))
@@ -169,12 +169,21 @@ class ArticleAgentsService < OperationService
         saved = true
       end
     rescue StandardError => e
-      return post_commit_failure(article, e) if saved
+      return post_commit_failure(article, e) if saved && committed?(article, attributes[:humanize_status])
 
       article.restore_attributes(attributes.keys)
       return fail_humanize(article, e, stage: :save, message: "Failed to save humanized article #{article.id}")
     end
     Success(article)
+  end
+
+  # saved는 COMMIT 전에 켜진다. COMMIT 자체가 실패할 수도 있으므로(직렬화 실패·연결 오류) 이번에
+  # 쓴 humanize_status가 DB에 실제로 있는지 다시 읽어 확인한다. 읽지 못하면 커밋되지 않은 것으로 본다.
+  #: (Article article, Hash[String, untyped] status) -> bool
+  def committed?(article, status)
+    Article.where(id: article.id).pick(:humanize_status) == status
+  rescue ActiveRecord::ActiveRecordError
+    false
   end
 
   #: (Article article, StandardError error) -> Dry::Monads::Result
