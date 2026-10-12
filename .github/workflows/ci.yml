@@ -7,6 +7,8 @@ on:
   # CI가 붙어야 하는데, `branches: [main]` 이면 스택의 2번째부터는 base가
   # main이 될 때까지 아무 잡도 돌지 않는다.
   pull_request:
+  # 수동 실행. push 전용 잡(rubycritic)을 머지 전 브랜치에서 미리 돌리거나 다시 돌릴 때 쓴다.
+  workflow_dispatch:
 
 jobs:
   scan_ruby:
@@ -348,12 +350,14 @@ jobs:
           retention-days: 7
 
   # 복잡도 × 변경 빈도 참고 리포트(docs/quality/rubycritic.md). 머지를 막는 게이트가
-  # 아니라 추세를 보는 용도라 profile처럼 main push에서만 돈다.
+  # 아니라 추세를 보는 용도라 main push와 수동 실행에서 돈다. 머지 전 확인·재실행은
+  # workflow_dispatch로 한다(Actions 화면의 Run workflow에서 브랜치를 고른다).
   #
   # `continue-on-error`를 두지 않는다: 분석이 깨지면 main CI가 빨개져 묻히지 않는다.
+  # bin/rubycritic이 얕은 클론·churn 0·분석 0건 같은 입력 이상도 실패로 끝낸다(#1087).
   # 앱 번들이 아니라 tools/rubycritic 번들만 설치하므로 DB·시스템 패키지가 필요 없다.
   rubycritic:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # 서드파티 젬을 실행하는 잡이라 쓰기 토큰을 주지 않는다. artifact·step summary는 contents 권한이 필요 없다.
@@ -376,6 +380,10 @@ jobs:
         with:
           ruby-version: .ruby-version
           bundler-cache: true
+
+      # head_only_churn.rb 패치 테스트. RubyCritic 젬이 필요해 앱 test 잡이 아니라 이 번들에서 돈다.
+      - name: Test RubyCritic patch
+        run: bundle exec ruby tools/rubycritic/test/head_only_churn_test.rb
 
       - name: Run RubyCritic
         run: bin/rubycritic >> "$GITHUB_STEP_SUMMARY"

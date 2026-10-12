@@ -9,17 +9,28 @@
 #
 # 리포트: tmp/rubycritic/overview.html, tmp/rubycritic/report.json
 # 분석은 앱 번들이 아니라 tools/rubycritic 번들로 돌고 Rails를 부팅하지 않는다.
+# 입력(날짜·분석 범위·git 이력)이 무너지면 요약을 찍지 않고 1로 끝난다(#1087).
 # 기준선과 churn 산정 방법은 docs/quality/rubycritic.md.
 
-require "date"
+require "fileutils"
 require "json"
 require_relative "../lib/quality/rubycritic_report"
+require_relative "../lib/quality/rubycritic_run"
 
 ROOT = File.expand_path("..", __dir__)
 PATHS = %w[app/models app/controllers app/services app/functions app/clients].freeze
 OUTPUT = "tmp/rubycritic"
+REPORT = File.join(OUTPUT, "report.json")
 
-churn_after = ENV.fetch("RUBYCRITIC_CHURN_AFTER") { (Date.today << 6).iso8601 }
+# 어느 단계에서 실패하든 지난 HTML·JSON을 이번 결과로 오인하지 않게 검사보다 먼저 지운다.
+FileUtils.rm_rf(File.join(ROOT, OUTPUT))
+
+begin
+  churn_after = Quality::RubycriticRun.churn_after(ENV["RUBYCRITIC_CHURN_AFTER"])
+rescue ArgumentError => e
+  abort e.message
+end
+
 env = {
   "BUNDLE_GEMFILE" => File.join(ROOT, "tools/rubycritic/Gemfile"),
   # 패치는 bundle 런처 프로세스에도 먼저 로드되므로, 젬 경로를 잡는 bundler/setup을 앞에 둔다(vendor 설치 대비).
@@ -29,9 +40,19 @@ command = [ "bundle", "exec", "rubycritic", "--no-browser", "-f", "html", "-f", 
             "--churn-after", churn_after, "-p", OUTPUT, *PATHS ]
 
 Dir.chdir(ROOT) do
-  # 분석 실패가 묻히지 않도록 rubycritic가 실패하면 1로 끝난다. 진행 출력은 stderr로 보내 stdout을 마크다운 전용으로 둔다.
-  abort "rubycritic failed: #{command.join(" ")}" unless system(env, *command, out: $stderr)
+  errors = Quality::RubycriticRun.preflight_errors(root: ROOT, paths: PATHS)
+  abort "rubycritic preflight failed:\n#{errors.map { "- #{it}" }.join("\n")}" if errors.any?
 
-  report = JSON.parse(File.read(File.join(OUTPUT, "report.json")))
-  puts Quality::RubycriticReport.to_markdown(report, churn_after:)
+  # 분석 실패가 묻히지 않도록 rubycritic가 실패하면 1로 끝난다. 진행 출력은 stderr로 보내 stdout을 마크다운 전용으로 둔다.
+  unless system(env, *command, out: $stderr)
+    abort "rubycritic failed (#{$?}): #{command.join(" ")}\n" \
+          "First run? Install the bundle: BUNDLE_GEMFILE=tools/rubycritic/Gemfile bundle install"
+  end
+
+  begin
+    report = JSON.parse(File.read(REPORT))
+    puts Quality::RubycriticReport.to_markdown(report, churn_after:, paths: PATHS)
+  rescue Quality::RubycriticReport::InvalidReport, KeyError, TypeError, ArgumentError, Errno::ENOENT, JSON::ParserError => e
+    abort "rubycritic report is not usable (#{REPORT}, #{e.class}): #{e.message}"
+  end
 end
