@@ -7,6 +7,9 @@ module ArticleHumanizer
   # 멤버 타입: sorbet/rbi/shims/data_definitions.rbi
   Extraction = Data.define(:attributes, :skip_reason)
 
+  # 원 요약(ArticleSchema)과 윤문(HumanMonolithAgent) 스키마가 공유하는 summary_detail 키.
+  DETAIL_KEYS = %w[introduction conclusion].freeze
+
   class << self
     #: (Article article) -> String
     def prompt(article)
@@ -71,11 +74,12 @@ module ArticleHumanizer
       value.filter_map { stripped_string(it) }.presence
     end
 
-    # 모든 값이 비어 있지 않은 문자열인 Hash만 받는다. 하나라도 어기면 상세 전체를 버린다.
-    # 일부만 받으면 update!가 Hash 전체를 교체해 기존 값 중 빠진 키가 사라진다.
+    # 스키마의 두 키(DETAIL_KEYS)가 모두 있고, 모든 값이 비어 있지 않은 문자열인 Hash만
+    # 받는다. 하나라도 어기면 상세 전체를 버린다. 일부만 받으면 update!가 Hash 전체를
+    # 교체해 기존 값 중 빠진 키가 사라진다.
     #: (untyped value) -> Hash[String, String]?
     def string_map(value)
-      return unless value.is_a?(Hash)
+      return unless value.is_a?(Hash) && DETAIL_KEYS.all? { value.key?(it) }
 
       result = {} #: Hash[String, String]
       value.each do |key, item|

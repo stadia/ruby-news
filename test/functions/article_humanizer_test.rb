@@ -6,7 +6,7 @@ class ArticleHumanizerTest < ActiveSupport::TestCase
   test "응답 Hash에서 윤문 필드만 정규화해 꺼낸다" do
     content = {
       "summary_key" => [ " 요점 ", "" ],
-      "summary_detail" => { "a" => "설명" },
+      "summary_detail" => { "introduction" => "도입", "conclusion" => "결론" },
       "summary_body" => "  본문  ",
       "metrics" => { "x" => 1 }
     }
@@ -15,7 +15,7 @@ class ArticleHumanizerTest < ActiveSupport::TestCase
 
     assert_nil extraction.skip_reason
     assert_equal(
-      { summary_key: [ "요점" ], summary_detail: { "a" => "설명" }, summary_body: "본문" },
+      { summary_key: [ "요점" ], summary_detail: { "introduction" => "도입", "conclusion" => "결론" }, summary_body: "본문" },
       extraction.attributes
     )
   end
@@ -65,14 +65,16 @@ class ArticleHumanizerTest < ActiveSupport::TestCase
     assert_equal({ summary_body: "본문" }, extraction.attributes)
   end
 
-  # 값이 하나라도 문자열이 아니거나 비어 있으면 상세 전체를 받지 않는다. 일부만 받으면
-  # update!가 Hash 전체를 교체해 기존 도입·결론 중 빠진 쪽이 사라진다.
+  # 도입·결론 중 하나가 빠졌거나, 값이 하나라도 문자열이 아니거나 비어 있으면 상세 전체를
+  # 받지 않는다. 일부만 받으면 update!가 Hash 전체를 교체해 기존 도입·결론 중 빠진 쪽이 사라진다.
   test "상세 값이 문자열이 아니거나 비어 있으면 상세를 제외해 기존 값을 보존한다" do
     [
       { "introduction" => [ "a" ] },
       { "introduction" => nil },
       { "introduction" => " ", "conclusion" => "" },
       { "introduction" => "도입", "conclusion" => "" },
+      { "introduction" => "도입" },
+      { "conclusion" => "결론" },
       { "introduction" => 1 }
     ].each do |detail|
       extraction = ArticleHumanizer.extract({ "summary_detail" => detail, "summary_body" => "본문" })
@@ -82,9 +84,11 @@ class ArticleHumanizerTest < ActiveSupport::TestCase
   end
 
   test "상세 값은 strip해서 받는다" do
-    extraction = ArticleHumanizer.extract({ "summary_detail" => { "introduction" => " 도입 " }, "summary_body" => "본문" })
+    extraction = ArticleHumanizer.extract({
+      "summary_detail" => { "introduction" => " 도입 ", "conclusion" => "결론 " }, "summary_body" => "본문"
+    })
 
-    assert_equal({ summary_body: "본문", summary_detail: { "introduction" => "도입" } }, extraction.attributes)
+    assert_equal({ summary_body: "본문", summary_detail: { "introduction" => "도입", "conclusion" => "결론" } }, extraction.attributes)
   end
 
   # 문자열이 아닌 요소가 하나라도 있으면 요점 전체를 받지 않는다. 중첩 배열·Hash는
