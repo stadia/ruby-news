@@ -381,6 +381,10 @@ jobs:
           ruby-version: .ruby-version
           bundler-cache: true
 
+      # head_only_churn.rb 패치 테스트. RubyCritic 젬이 필요해 앱 test 잡이 아니라 이 번들에서 돈다.
+      - name: Test RubyCritic patch
+        run: bundle exec ruby tools/rubycritic/test/head_only_churn_test.rb
+
       - name: Run RubyCritic
         run: bin/rubycritic >> "$GITHUB_STEP_SUMMARY"
 

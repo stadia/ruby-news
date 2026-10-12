@@ -24,6 +24,7 @@ RUBYCRITIC_CHURN_AFTER=2026-04-11 bin/rubycritic  # 기준선과 같은 기간�
 
 - RubyCritic 내장 churn을 쓴다: `--churn-after DATE` 이후 **해당 파일을 건드린 커밋 수**(`git log --follow`). PR 수가 아니다. PR 번호 없이 main에 직접 들어간 커밋도 섞여 있다.
 - **HEAD 조상만 센다.** RubyCritic 5.0은 `git log --all`이라 미병합 로컬 브랜치·remote ref의 커밋까지 세어 머신마다 값이 달랐다. `tools/rubycritic/head_only_churn.rb`가 `--all`을 `HEAD`로 바꾼다(RubyCritic을 올려 명령 모양이 바뀌면 이 패치가 실패로 멈춘다).
+- **패치 테스트**: `tools/rubycritic/test/head_only_churn_test.rb`. RubyCritic 젬이 필요해 앱 테스트 스위트(`bin/rails test`)에 넣지 않고 tools 번들로 돈다. CI는 `rubycritic` 잡에서 실행한다(main push·수동 실행). 로컬: `BUNDLE_GEMFILE=tools/rubycritic/Gemfile bundle exec ruby tools/rubycritic/test/head_only_churn_test.rb`
 - 기간은 **UTC 날짜 기준 최근 6개월**이며 시작 시각을 `YYYY-MM-DD 00:00:00 +0000`으로 고정한다. 입력 날짜가 오늘이면 완료되지 않은 기간이라 거부한다. 경로별 git 명령은 종료 상태를 검사해 일부 경로 실패도 분석을 중단한다. 전체 이력을 쓰면 초기 대량 커밋(생성기 출력)에 끌려간다.
 - **우선순위 = churn × complexity(Flog 총점)**. 자주 바뀌지만 단순한 파일, 복잡하지만 거의 안 바뀌는 파일보다 둘 다 높은 파일을 먼저 본다.
 - 한계

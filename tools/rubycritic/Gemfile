@@ -6,3 +6,6 @@
 source "https://rubygems.org"
 
 gem "rubycritic", "~> 5.0", require: false
+
+# tools/rubycritic/test(head_only_churn 패치 테스트) 전용. 앱 테스트 스위트와 분리해 rubycritic 잡에서 돈다.
+gem "minitest", "~> 6.0", require: false
