@@ -10,7 +10,7 @@ RUBYCRITIC_CHURN_AFTER=2026-04-11 bin/rubycritic  # 기준선과 같은 기간�
 ```
 
 - 범위: `app/models app/controllers app/services app/functions app/clients`(`bin/rubycritic`에 고정)
-- 산출물: `tmp/rubycritic/overview.html`, `tmp/rubycritic/report.json`(`/tmp/*`라 Git에 안 들어간다)
+- 산출물: `tmp/rubycritic/overview.html`, `tmp/rubycritic/report.json`(`/tmp/*`라 Git에 안 들어간다). 실행하면 입력 검사보다 먼저 `tmp/rubycritic/`를 지우므로, 실패한 실행 뒤에는 지난 산출물이 남지 않는다.
 - stdout에는 요약 마크다운(`lib/quality/rubycritic_report.rb`)을 찍는다. 요약에 분석 범위도 적는다.
 - **입력이 무너지면 요약을 찍지 않고 1로 끝난다**(#1087). 이력 오류는 churn 0·1로, 경로 누락은 일부 파일 분석으로 정상처럼 보일 수 있기 때문이다.
   - 분석 전(`lib/quality/rubycritic_run.rb`): `RUBYCRITIC_CHURN_AFTER`가 `YYYY-MM-DD`가 아니거나 오늘·미래 날짜, 분석 디렉터리 누락, git 저장소가 아님, 얕은 클론, git 작업 트리(`git worktree`), 저장소 최상위가 아닌 위치

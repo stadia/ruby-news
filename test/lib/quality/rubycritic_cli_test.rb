@@ -22,8 +22,9 @@ module Quality
       end
     end
 
-    test "날짜가 잘못되면 분석을 실행하지 않는다" do
+    test "날짜가 잘못되면 분석을 실행하지 않고 이전 산출물을 지운다" do
       in_cli_repo do |repo, env|
+        output = write_stale_output(repo)
         fake_bundle(repo, "touch called; exit 0")
         stdout, stderr, status = run_cli(repo, env.merge("RUBYCRITIC_CHURN_AFTER" => "garbage"))
 
@@ -31,6 +32,22 @@ module Quality
         assert_empty stdout
         assert_match(/YYYY-MM-DD/, stderr)
         assert_not File.exist?(File.join(repo, "called"))
+        assert_not File.exist?(output)
+      end
+    end
+
+    test "사전 검사가 실패하면 분석을 실행하지 않고 이전 산출물을 지운다" do
+      in_cli_repo do |repo, env|
+        output = write_stale_output(repo)
+        FileUtils.rm_rf(File.join(repo, "app/clients"))
+        fake_bundle(repo, "touch called; exit 0")
+        stdout, stderr, status = run_cli(repo, env)
+
+        assert_equal 1, status.exitstatus
+        assert_empty stdout
+        assert_includes stderr, "preflight failed"
+        assert_not File.exist?(File.join(repo, "called"))
+        assert_not File.exist?(output)
       end
     end
 
@@ -67,6 +84,13 @@ module Quality
 
         yield repo, env
       end
+    end
+
+    def write_stale_output(repo)
+      output = File.join(repo, "tmp/rubycritic")
+      FileUtils.mkdir_p(output)
+      %w[report.json overview.html].each { File.write(File.join(output, it), "stale") }
+      output
     end
 
     def fake_bundle(repo, script)

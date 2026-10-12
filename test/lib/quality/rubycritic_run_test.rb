@@ -108,7 +108,8 @@ module Quality
         errors = RubycriticRun.preflight_errors(root: dir, paths: %w[app])
 
         assert_equal 1, errors.size
-        assert_match(/not a git repository/, errors.first)
+        # git 메시지는 로케일에 따라 번역되므로(예: LANG=ko) 고정된 접두어와 종료 코드만 본다.
+        assert_match(/\Agit rev-parse failed \(128\): fatal:/, errors.first)
       end
     end
 
