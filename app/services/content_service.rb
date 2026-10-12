@@ -7,13 +7,15 @@ require "mcp_client"
 class ContentService < OperationService
   include LinkHelper
 
-  # 다시 시도하면 본문을 얻을 수 있는 실패. ArticleAgentsService는 이 사유로는 기사를
-  # 폐기하지 않고, title_ko가 없는 기사를 다시 집는 ArticleBatchJob에 맡긴다.
+  # 일시적 원인으로 본문을 얻지 못한 실패 사유. 다시 시도하면 얻을 수도 있으므로 호출자는
+  # 폐기하지 않고 재시도 대상으로 다룬다.
   TRANSIENT_FAILURES = %i[fetch_failed].freeze
-  # 5xx와 함께 서버가 잠시 응답하지 못한 것으로 보는 상태 코드.
+  # 5xx 외에 일시 실패로 보는 상태 코드(408 요청 시간 초과, 429 요청 한도 초과).
+  # 5xx는 범위라 usable_status?가 따로 비교한다.
   TRANSIENT_STATUSES = [ 408, 429 ].freeze
 
-  # 원 서버나 Scrapling이 잠시 응답하지 못했다. execute_html이 :fetch_failed로 바꾼다.
+  # 원 서버·Scrapling·YouTube가 잠시 응답하지 못했거나 일시적 상태 코드를 돌려줬다.
+  # execute_html·execute_youtube가 :fetch_failed로 바꾼다.
   class TransientFetchError < StandardError; end
 
   #: (Article article) -> Dry::Monads::Result
@@ -62,6 +64,9 @@ class ContentService < OperationService
   rescue SafeHttp::BlockedUrlError => e
     logger.warn e.message
     Failure(:blocked_url)
+  # Faraday 예외는 연결 실패·타임아웃·SSL 오류 같은 전송 계층 오류다(HTTP 상태로는 예외가 나지
+  # 않는다). 만료 인증서처럼 영구적인 것도 섞여 있지만 구분하기 어렵고 폐기는 되돌릴 수 없으므로
+  # 일시 실패로 보수적으로 다룬다. 계속 실패하는 기사는 ArticleAgentsService가 error로 남긴다.
   rescue TransientFetchError, Faraday::Error => e
     logger.warn "Transient failure fetching #{url}: #{e.class}: #{e.message}"
     Failure(:fetch_failed)
@@ -74,41 +79,55 @@ class ContentService < OperationService
     logger.info "Youtube ID: #{youtube_id}"
     return Failure(:not_youtube) unless youtube_id
 
-    # Declared up front, so without the annotation the local is pinned to
-    # `nil` and every later assignment in the blocks below is rejected.
-    transcript = nil #: String?
-    video = Yt::Video.new id: youtube_id
+    primary_failed = false
     begin
-      video.captions.map(&:language).each do |lang|
-        rc = Youtube::Transcript.get(youtube_id, lang: lang)
-        next if rc["error"].present?
-
-        transcript = format_transcript(rc.dig("actions"))
-        break if transcript.present?
-      end
+      transcript = primary_transcript(youtube_id)
     rescue StandardError => e
-      logger.error "Error fetching Youtube transcript: #{e.message}"
+      primary_failed = true
+      logger.warn "Primary YouTube transcript lookup failed for #{youtube_id}: #{e.class}: #{e.message}"
     end
+    return Success(transcript) if transcript.present?
 
-    # 백업 조회는 자막이 없다는 답을 줄 수 있는 마지막 시도다. 그것마저 예외로 끝나면
-    # 자막이 없는 것인지 알 수 없으므로 일시 실패로 본다.
-    backup_failed = false
-    if transcript.blank?
-      begin
-        fetched_transcript = YoutubeRb::Transcript::YouTubeTranscriptApi.new.fetch(youtube_id)
-        transcript = YoutubeRb::Formatters::TextFormatter.new.format_transcript(fetched_transcript) if fetched_transcript.present?
-      rescue StandardError => e
-        backup_failed = true
-        logger.error "Error fetching Youtube transcript: #{e.message}"
-      end
-    end
+    transcript = backup_transcript(youtube_id)
+    return Success(transcript) if transcript.present?
 
-    return Failure(backup_failed ? :fetch_failed : :no_content) if transcript.blank?
-
-    Success(transcript)
+    # 백업이 예외 없이 비었더라도 1차 조회가 예외였다면 자막이 없다고 단정할 수 없다.
+    Failure(primary_failed ? :fetch_failed : :no_content)
+  # 백업 조회는 자막이 없다는 사실을 빈 값이 아니라 예외로 알린다. 영상 자체의 상태를 알리는
+  # 예외만 영구 실패로 본다. PoTokenRequired·YouTubeDataUnparsable처럼 모든 영상에 걸릴 수
+  # 있는 예외까지 영구로 보면 한꺼번에 폐기되므로 나머지는 일시 실패로 둔다.
+  rescue YoutubeRb::Transcript::TranscriptsDisabled, YoutubeRb::Transcript::NoTranscriptFound,
+         YoutubeRb::Transcript::NoTranscriptAvailable, YoutubeRb::Transcript::VideoUnavailable,
+         YoutubeRb::Transcript::InvalidVideoId, YoutubeRb::Transcript::AgeRestricted,
+         YoutubeRb::Transcript::VideoUnplayable => e
+    logger.info "No YouTube transcript for #{youtube_id}: #{e.class}"
+    Failure(:no_content)
+  rescue YoutubeRb::Transcript::Error, Faraday::Error => e
+    logger.warn "Backup YouTube transcript lookup failed for #{youtube_id}: #{e.class}: #{e.message}"
+    Failure(:fetch_failed)
   end
 
   private
+
+  # 언어별로 조회해 처음 얻은 자막을 돌려준다. 예외는 호출자가 일시 실패 판단에 쓴다.
+  #: (String youtube_id) -> String?
+  def primary_transcript(youtube_id)
+    Yt::Video.new(id: youtube_id).captions.map(&:language).each do |lang|
+      rc = Youtube::Transcript.get(youtube_id, lang: lang)
+      next if rc["error"].present?
+
+      transcript = format_transcript(rc.dig("actions"))
+      return transcript if transcript.present?
+    end
+    nil
+  end
+
+  # 분류되지 않은 예외(코드 버그)는 삼키지 않고 올려, ArticleAgentsService가 클래스와 함께 남기게 한다.
+  #: (String youtube_id) -> String?
+  def backup_transcript(youtube_id)
+    fetched = YoutubeRb::Transcript::YouTubeTranscriptApi.new.fetch(youtube_id)
+    YoutubeRb::Formatters::TextFormatter.new.format_transcript(fetched) if fetched.present?
+  end
 
   #: (String url) -> bool
   def github_url?(url)
@@ -139,14 +158,14 @@ class ContentService < OperationService
   #: (String url) -> String?
   def faraday_fetch_html(url)
     response = SafeHttp.get_following_redirects(url).response
-    response.body if usable_response?(response)
+    response.body if usable_status?(response.status)
   end
 
-  # 2xx만 본문으로 쓴다. 4xx·리다이렉트 한도에 걸린 3xx는 오류 페이지라 쓰지 않고(영구 실패),
-  # 408·429·5xx는 TransientFetchError를 낸다(일시 실패).
-  #: (untyped response) -> bool
-  def usable_response?(response)
-    status = response.status
+  # 2xx만 본문으로 쓴다. 408·429·5xx는 일시 실패라 TransientFetchError를 올리고, 그 밖의 4xx와
+  # 따라가지 못한 3xx는 false를 돌려 :no_content(영구 실패)가 되게 한다. 오류 페이지를 요약하지
+  # 않기 위해서다(#1099).
+  #: (Integer status) -> bool
+  def usable_status?(status)
     raise TransientFetchError, "HTTP #{status}" if TRANSIENT_STATUSES.include?(status) || status >= 500
 
     status.between?(200, 299)
@@ -159,16 +178,25 @@ class ContentService < OperationService
     fetched = SafeHttp.get_following_redirects(url)
     response = fetched.response
     url = fetched.url
-    # 리다이렉트 한도에 걸린 3xx는 Location을 검사하지 않았으므로 넘기지 않는다.
-    return nil unless usable_response?(response)
+    # 리다이렉트 한도에 걸린 3xx는 Location을 검사하지 않았으므로 넘기지 않는다. 그 밖의 상태는
+    # 보지 않는다. 직접 요청에 403·503을 주는 안티봇 페이지를 넘기는 것이 Scrapling을 쓰는 이유다.
+    return nil if response.status.between?(300, 399)
 
     client = MCPClient.connect(ENV.fetch("SCRAPLING_URL") { "http://localhost::8000/mcp" })
     result = client.call_tool("fetch", { url: })&.[]("structuredContent")
     logger.debug result
-    # Scrapling이 200을 못 받은 것은 차단·과부하 같은 Scrapling 쪽 사정일 수 있다.
-    raise TransientFetchError, "Scrapling status #{result['status']}" if result["status"] != 200
+    raise TransientFetchError, "Scrapling returned no structuredContent for #{url}" unless result.is_a?(Hash)
 
-    result["content"].first
+    # Scrapling의 status는 브라우저가 받은 원 서버 응답이라 직접 요청과 같은 기준으로 나눈다.
+    status = result["status"]
+    raise TransientFetchError, "Scrapling returned status #{status.inspect}" unless status.is_a?(Integer)
+    return nil unless usable_status?(status)
+
+    # 200인데 본문이 비면 Scrapling 쪽 렌더 실패로 보고 일시 실패로 둔다.
+    body = Array(result["content"]).first
+    raise TransientFetchError, "Scrapling returned empty content for #{url}" if body.blank?
+
+    body
   end
 
   #: (Array[untyped]? actions) -> String?

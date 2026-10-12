@@ -133,7 +133,7 @@ class ContentServiceTest < ActiveSupport::TestCase
     ENV["SCRAPLING_URL"] = "http://scrapling.test/mcp"
     SafeHttp.stub(:fetch, ->(*) { redirect }) do
       MCPClient.stub(:connect, ->(*) { flunk "리다이렉트 응답 URL은 넘기지 않아야 한다" }) do
-        assert_predicate ContentService.new.call(article), :failure?
+        assert_equal :no_content, ContentService.new.call(article).failure
       end
     end
   ensure
@@ -328,28 +328,114 @@ class ContentServiceTest < ActiveSupport::TestCase
     end
   end
 
-  test "execute_html은 SCRAPLING 경로에서도 원 서버의 5xx를 :fetch_failed로 본다" do
-    ENV["SCRAPLING_URL"] = "http://scrapling.test/mcp"
-    SafeHttp.stub(:fetch, ->(*) { MockResponse.new(status: 503) }) do
-      MCPClient.stub(:connect, ->(*) { flunk "원 서버가 5xx면 Scrapling을 부르지 않는다" }) do
-        assert_equal :fetch_failed, ContentService.new.call(Article.new(url: "https://example.com/post")).failure
+  # Scrapling은 안티봇 응답을 넘기려고 쓴다. 앱의 직접 요청이 403·503을 받아도 Scrapling에
+  # 넘기고, 판정은 Scrapling 결과로 한다. 사전 요청은 SSRF 검사와 리다이렉트 추적용이다.
+  [ 403, 503 ].each do |status|
+    test "execute_html은 SCRAPLING 경로에서 원 서버가 #{status}여도 Scrapling에 넘긴다" do
+      client = Object.new
+      client.define_singleton_method(:call_tool) do |*, **|
+        { "structuredContent" => { "status" => 200, "content" => [ "<html><body><article><p>#{'본문 ' * 20}</p></article></body></html>" ] } }
       end
+
+      ENV["SCRAPLING_URL"] = "http://scrapling.test/mcp"
+      SafeHttp.stub(:fetch, ->(*) { MockResponse.new(status:) }) do
+        MCPClient.stub(:connect, client) do
+          assert_predicate ContentService.new.call(Article.new(url: "https://example.com/post")), :success?
+        end
+      end
+    ensure
+      ENV.delete("SCRAPLING_URL")
     end
-  ensure
-    ENV.delete("SCRAPLING_URL")
   end
 
-  # 자막 조회가 예외로 끝났으면 자막이 없는 것인지 알 수 없으므로 일시 실패로 본다.
-  test "execute_youtube는 자막 조회가 모두 예외로 끝나면 :fetch_failed를 반환한다" do
-    article = articles(:youtube_ruby_talk)
+  # Scrapling이 돌려주는 status는 브라우저가 받은 원 서버 응답이라 직접 요청과 같은 기준으로 나눈다.
+  # structuredContent가 없거나 본문이 비면 Scrapling 쪽 렌더 실패라 일시 실패로 본다.
+  {
+    "status 404" => [ { "status" => 404, "content" => [ "<html>Not Found</html>" ] }, :no_content ],
+    "status 503" => [ { "status" => 503, "content" => [] }, :fetch_failed ],
+    "structuredContent 없음" => [ nil, :fetch_failed ],
+    "200인데 빈 content" => [ { "status" => 200, "content" => [] }, :fetch_failed ]
+  }.each do |name, (structured, reason)|
+    test "execute_html은 SCRAPLING 결과가 #{name}이면 #{reason}를 반환한다" do
+      client = Object.new
+      client.define_singleton_method(:call_tool) { |*, **| { "structuredContent" => structured } }
+
+      ENV["SCRAPLING_URL"] = "http://scrapling.test/mcp"
+      SafeHttp.stub(:fetch, ->(*) { MockResponse.new(status: 200) }) do
+        MCPClient.stub(:connect, client) do
+          assert_equal reason, ContentService.new.call(Article.new(url: "https://example.com/post")).failure
+        end
+      end
+    ensure
+      ENV.delete("SCRAPLING_URL")
+    end
+  end
+
+  test "execute_html은 직접 요청이 리다이렉트 한도에 걸리면 :no_content를 반환한다" do
+    redirect = MockResponse.new(status: 302, headers: { "location" => "https://example.com/again" })
+
+    SafeHttp.stub(:fetch, ->(*) { redirect }) do
+      assert_equal :no_content, ContentService.new.call(Article.new(url: "https://example.com/redirect-me")).failure
+    end
+  end
+
+  # README가 없는 저장소의 404 본문("404: Not Found")을 요약하지 않는다.
+  { 404 => :no_content, 503 => :fetch_failed }.each do |status, reason|
+    test "GitHub README 응답이 #{status}이면 #{reason}를 반환한다" do
+      SafeHttp.stub(:fetch, ->(*) { MockResponse.new(status:, body: "404: Not Found") }) do
+        assert_equal reason, ContentService.new.call(Article.new(url: "https://github.com/rails/rails")).failure
+      end
+    end
+  end
+
+  # 백업 조회(youtube-transcript-rb)는 자막이 없다는 사실을 빈 값이 아니라 예외로 알린다.
+  # 영상 자체의 상태를 알리는 예외는 영구 실패, 차단·요청 실패·네트워크 오류는 일시 실패다.
+  {
+    "TranscriptsDisabled" => [ ->(id) { YoutubeRb::Transcript::TranscriptsDisabled.new(id) }, :no_content ],
+    "NoTranscriptFound" => [ ->(id) { YoutubeRb::Transcript::NoTranscriptFound.new(id, [ "en" ], "") }, :no_content ],
+    "VideoUnavailable" => [ ->(id) { YoutubeRb::Transcript::VideoUnavailable.new(id) }, :no_content ],
+    "IpBlocked" => [ ->(id) { YoutubeRb::Transcript::IpBlocked.new(id) }, :fetch_failed ],
+    "TooManyRequests" => [ ->(id) { YoutubeRb::Transcript::TooManyRequests.new(id) }, :fetch_failed ],
+    "Faraday::ConnectionFailed" => [ ->(_id) { Faraday::ConnectionFailed.new("connection refused") }, :fetch_failed ]
+  }.each do |name, (build_error, reason)|
+    test "execute_youtube는 백업 조회가 #{name}이면 #{reason}를 반환한다" do
+      mock_video = Object.new
+      mock_video.define_singleton_method(:captions) { [] }
+      mock_api = Object.new
+      mock_api.define_singleton_method(:fetch) { |id| raise build_error.call(id) }
+
+      stub_constructor(Yt::Video, ->(*, **) { mock_video }) do
+        stub_constructor(YoutubeRb::Transcript::YouTubeTranscriptApi, ->(*, **) { mock_api }) do
+          assert_equal reason, ContentService.new.call(articles(:youtube_ruby_talk)).failure
+        end
+      end
+    end
+  end
+
+  # 1차 조회가 예외로 끝났으면 백업이 빈 값을 줘도 자막이 없다고 단정할 수 없다.
+  test "execute_youtube는 1차 조회가 예외이고 백업이 비면 :fetch_failed를 반환한다" do
     mock_video = Object.new
     mock_video.define_singleton_method(:captions) { raise StandardError, "API Error" }
     mock_api = Object.new
-    mock_api.define_singleton_method(:fetch) { |_| raise StandardError, "backup down" }
+    mock_api.define_singleton_method(:fetch) { |_| nil }
 
     stub_constructor(Yt::Video, ->(*, **) { mock_video }) do
       stub_constructor(YoutubeRb::Transcript::YouTubeTranscriptApi, ->(*, **) { mock_api }) do
-        assert_equal :fetch_failed, ContentService.new.call(article).failure
+        assert_equal :fetch_failed, ContentService.new.call(articles(:youtube_ruby_talk)).failure
+      end
+    end
+  end
+
+  # 분류할 수 없는 예외(코드 버그)는 삼키지 않는다. ArticleAgentsService가 클래스와 함께 남긴다.
+  test "execute_youtube는 백업 조회의 분류되지 않은 예외를 전파한다" do
+    mock_video = Object.new
+    mock_video.define_singleton_method(:captions) { [] }
+    mock_api = Object.new
+    mock_api.define_singleton_method(:fetch) { |_| raise NoMethodError, "bug" }
+
+    stub_constructor(Yt::Video, ->(*, **) { mock_video }) do
+      stub_constructor(YoutubeRb::Transcript::YouTubeTranscriptApi, ->(*, **) { mock_api }) do
+        assert_raises(NoMethodError) { ContentService.new.call(articles(:youtube_ruby_talk)) }
       end
     end
   end
