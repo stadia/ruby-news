@@ -126,3 +126,13 @@ module OauthAccounts
     end
   end
 end
+
+module ArticleHumanizer
+  class Extraction
+    sig { returns(T::Hash[Symbol, T.untyped]) }
+    def attributes; end
+
+    sig { returns(T.nilable(Symbol)) }
+    def skip_reason; end
+  end
+end
