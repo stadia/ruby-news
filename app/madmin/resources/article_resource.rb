@@ -46,6 +46,7 @@ class ArticleResource < Madmin::Resource
   scope :related
   scope :unrelated
   scope :humanize_not_applied
+  scope :humanize_partially_applied
 
   # Add actions to the resource's show page
   member_action do |record|

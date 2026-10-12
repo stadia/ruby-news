@@ -15,7 +15,7 @@ class ArticleAgentsService < OperationService
     step run_embed(article)
     step Articles::AgentRunner.run(article:, prompt: Articles::SummaryPrompt.build(article))
     # 윤문은 품질을 높이는 보조 단계다. 실패해도 원문 요약은 유효하므로 이후 단계를 계속
-    # 진행하고, 건너뛴 사유는 run_humanize가 로그로 남긴다.
+    # 진행하고, 결과(반영·건너뜀·실패)는 run_humanize가 로그와 humanize_status에 남긴다.
     run_humanize(article)
     run_thumbnail(article) # 썸네일은 부가 산출물이라 실패해도 일본어 번역까지 진행한다
     japanese_result = run_japanese(article)
@@ -124,77 +124,106 @@ class ArticleAgentsService < OperationService
     end
   end
 
+  # 에이전트 호출·응답 해석의 예외만 rescue한다. 결과 처리(else)의 예외는 저장 뒤 로깅 등에서
+  # 날 수 있어, 반영된 윤문을 실패로 덮어쓰지 않도록 여기서 잡지 않는다.
   #: (Article article) -> Dry::Monads::Result
   def run_humanize(article)
-    prompt = ArticleHumanizer.prompt(article)
-    message = HumanMonolithAgent.chat.with_skills.ask(prompt)
+    message = HumanMonolithAgent.chat.with_skills.ask(ArticleHumanizer.prompt(article))
     content = Articles::AgentResponse.structured(message)
-    case (extraction = ArticleHumanizer.extract(content))
-    when ArticleHumanizer::Skipped
-      skip_humanize(article, extraction, content)
-    when ArticleHumanizer::Humanized
-      result = save_humanized(article, extraction)
-      logger.info "Humanize metrics for article #{article.id}: #{content['metrics']}" if result.success?
-      result
+    extraction = ArticleHumanizer.extract(content)
+  rescue StandardError => e
+    fail_humanize(article, e, stage: :agent, message: "Failed to humanize article #{article.id}")
+  else
+    case extraction
+    when ArticleHumanizer::Skipped then skip_humanize(article, extraction, content)
+    when ArticleHumanizer::Humanized then apply_humanized(article, extraction, content)
     else
       # extract에 새 결과 타입이 생기면 Sorbet이 이 분기를 정적 오류로 잡는다.
       T.absurd(extraction)
     end
-  rescue StandardError => e
-    fail_humanize(article, e, "Failed to humanize article #{article.id}")
   end
 
-  # 저장하지 못한 윤문 값이 메모리에 남으면 이후 단계(번역·정리)의 save가 검증 없이 함께
-  # 저장할 수 있으므로, 윤문이 건드린 필드만 되돌린다. 윤문 결과(humanize_status)는 같은
-  # update!로 함께 저장한다.
+  #: (Article article, ArticleHumanizer::Humanized humanized, Hash[String, untyped] content) -> Dry::Monads::Result
+  def apply_humanized(article, humanized, content)
+    result = save_humanized(article, humanized)
+    return result if result.failure?
+
+    log_dropped_fields(article, humanized)
+    logger.info "Humanize metrics for article #{article.id}: #{content['metrics']}"
+    result
+  end
+
+  # 윤문 필드와 결과(humanize_status)를 같은 update!로 저장한다. 저장하지 못한 값이 메모리에
+  # 남으면 이후 단계(무관 기사 정리의 discard!)가 함께 저장할 수 있으므로 되돌린다.
+  #
+  # update!는 커밋 뒤 after_commit 콜백(RSS 캐시·IndexNow)의 예외도 다시 던진다. 그때는 이미
+  # 저장됐으므로 실패로 기록하지 않는다. 롤백이 dirty 추적을 되돌려 dirty로는 구분할 수 없어,
+  # 명시적 트랜잭션 안에서 update!가 끝났는지로 구분한다(콜백은 바깥 트랜잭션 커밋 때 돈다).
   #: (Article article, ArticleHumanizer::Humanized humanized) -> Dry::Monads::Result
   def save_humanized(article, humanized)
     attributes = humanized.to_attributes.merge(humanize_status: ArticleHumanizer.status(humanized))
-    article.update!(attributes)
-    log_dropped_fields(article, humanized)
+    saved = false #: bool
+    begin
+      Article.transaction do
+        article.update!(attributes)
+        saved = true
+      end
+    rescue StandardError => e
+      return post_commit_failure(article, e) if saved
+
+      article.restore_attributes(attributes.keys)
+      return fail_humanize(article, e, stage: :save, message: "Failed to save humanized article #{article.id}")
+    end
     Success(article)
-  rescue StandardError => e
-    article.restore_attributes(attributes&.keys || ArticleHumanizer::Humanized.members)
-    fail_humanize(article, e, "Failed to save humanized article #{article.id}")
   end
 
-  # 요점·상세가 응답 검증에서 빠지면 본문만 갱신된 채 성공한다. 응답이 계약을 어긴 것이라 warn이다.
+  #: (Article article, StandardError error) -> Dry::Monads::Result
+  def post_commit_failure(article, error)
+    logger.error "Humanized article #{article.id} was saved but an after commit callback failed: " \
+                 "#{error.class}: #{error.message}", { article_id: article.id, error: error.class.name }
+    Success(article)
+  end
+
+  # 본문만 반영되고 요점·상세는 원 요약 값으로 남은 경우. 원 요약에 그 필드가 원래 없었을 수도
+  # 있어 계약 위반으로 단정하지 않고 info로 남긴다. 조회는 humanize_partially_applied로 한다.
   #: (Article article, ArticleHumanizer::Humanized humanized) -> void
   def log_dropped_fields(article, humanized)
     dropped = humanized.dropped_keys
     return if dropped.empty?
 
-    logger.warn "Humanize partially applied for article #{article.id}: kept existing #{dropped.join(', ')}",
+    logger.info "Humanize partially applied for article #{article.id}: kept existing #{dropped.join(', ')}",
                 { article_id: article.id, dropped: }
   end
 
-  #: (Article article, StandardError error, String message) -> Dry::Monads::Result
-  def fail_humanize(article, error, message)
-    logger.error "#{message}: #{error.class}: #{error.message}", { article_id: article.id, error: error.class.name }
-    record_humanize_status(article, ArticleHumanizer.failed_status(error))
-    Failure(:humanize_failed)
+  # 기록을 먼저 해서 로깅이 실패해도 상태는 남긴다.
+  #: (Article article, StandardError error, stage: Symbol, message: String) -> Dry::Monads::Result
+  def fail_humanize(article, error, stage:, message:)
+    record_humanize_status(article, ArticleHumanizer.failed_status(error, stage:))
+    logger.error "#{message}: #{error.class}: #{error.message}",
+                 { article_id: article.id, stage: stage.to_s, error: error.class.name }
+    Failure(ArticleHumanizer::FAILED_REASON.to_sym)
   end
 
-  # 건너뜀·실패 기록은 다른 속성 변경 없이 컬럼만 쓴다. 저장 실패로 메모리에 남은 다른 변경을
-  # 함께 저장하지 않고, updated_at(ArticleBatchJob 재시도 순서)도 건드리지 않는다.
-  # 기록이 실패해도 윤문 결과(Failure)는 그대로 돌려주도록 예외를 삼키고 로그로 남긴다.
+  # 건너뜀·실패 기록은 다른 속성 변경 없이 컬럼만 쓴다(update_column). 저장 실패로 메모리에 남은
+  # 다른 변경을 함께 저장하지 않고, 검증과 콜백(RSS 캐시·IndexNow)도 건너뛴다. DB 오류로 기록하지
+  # 못해도 윤문 결과(Failure)는 그대로 돌려주도록 로그만 남긴다.
   #: (Article article, Hash[String, untyped] status) -> void
   def record_humanize_status(article, status)
     article.update_column(:humanize_status, status)
-  rescue StandardError => e
+  rescue ActiveRecord::ActiveRecordError => e
     logger.error "Failed to record humanize status for article #{article.id}: #{e.class}: #{e.message}",
-                 { article_id: article.id, status: }
+                 { article_id: article.id, status: }, e
   end
 
-  # call은 윤문 실패를 무시하고 진행하므로, 윤문을 건너뛴 사유를 이 메서드가 로그로 남긴다.
+  # call은 윤문 실패를 무시하고 진행하므로, 건너뛴 사유를 로그와 humanize_status에 남긴다.
   # 과윤문 롤백은 모델의 정상 판단이라 info, 응답이 계약을 어긴 경우는 warn이다.
   # 응답 클래스를 함께 남겨 JSON이 아닌 응답(String)과 형식이 틀린 Hash를 구분한다.
   #: (Article article, ArticleHumanizer::Skipped skipped, untyped content) -> Dry::Monads::Result
   def skip_humanize(article, skipped, content)
+    record_humanize_status(article, ArticleHumanizer.status(skipped))
     message = "Humanize skipped for article #{article.id}: #{skipped.reason} (response #{content.class})"
     payload = { article_id: article.id, reason: skipped.reason, response_class: content.class.name }
     skipped.aborted? ? logger.info(message, payload) : logger.warn(message, payload)
-    record_humanize_status(article, ArticleHumanizer.status(skipped))
     Failure(skipped.reason)
   end
 

@@ -14,6 +14,14 @@ class Article < ApplicationRecord
   # JAPANESE_KANA_REGEX 와 달리 한자까지 일본어로 취급한다.
   JAPANESE_TITLE_REGEX = /[\p{Hiragana}\p{Katakana}\p{Han}･-ﾟ]/
 
+  # humanize_status의 outcome 어휘. 값은 ArticleHumanizer.status 계열이 만든다.
+  # pending은 원 요약을 새로 저장하고 윤문 결과가 아직 기록되지 않은 상태다.
+  HUMANIZE_APPLIED = "applied"
+  HUMANIZE_SKIPPED = "skipped"
+  HUMANIZE_FAILED = "failed"
+  HUMANIZE_PENDING = "pending"
+  HUMANIZE_NOT_APPLIED = [ HUMANIZE_SKIPPED, HUMANIZE_FAILED, HUMANIZE_PENDING ].freeze
+
   # ── Extend ───────────────────────────────────────────────────────────
   extend FriendlyId
   friendly_id :slug, use: :slugged
@@ -98,8 +106,15 @@ class Article < ApplicationRecord
   scope :related, -> { kept.where(is_related: true) }
   scope :unrelated, -> { kept.where(is_related: false) }
   scope :confirmed, -> { where("slug IS NOT NULL AND title_ko IS NOT NULL") }
-  # 윤문을 건너뛰었거나 실패해 원 요약이 그대로인 기사(#1098). 기록이 없는(NULL) 기사는 제외한다.
-  scope :humanize_not_applied, -> { where("humanize_status->>'outcome' IN ('skipped', 'failed')") }
+  # 윤문이 반영되지 않아 원 요약이 그대로인 살아 있는 기사(건너뜀·실패·대기). 기록이 없는(NULL)
+  # 기사는 윤문 기록 도입 전 기사라 제외한다.
+  scope :humanize_not_applied, -> { kept.where("humanize_status->>'outcome' IN (?)", HUMANIZE_NOT_APPLIED) }
+  # 본문은 윤문됐지만 요점·상세 중 일부가 응답에서 빠져 원 요약 값으로 남은 살아 있는 기사.
+  scope :humanize_partially_applied, -> {
+    kept.where("humanize_status->>'outcome' = ?", HUMANIZE_APPLIED)
+        .where("jsonb_typeof(humanize_status->'dropped') = 'array'")
+        .where("humanize_status->'dropped' <> '[]'::jsonb")
+  }
 
   # TOAST 컬럼(body, summary_body, embedding) 제외 스코프
   scope :without_toast, -> {

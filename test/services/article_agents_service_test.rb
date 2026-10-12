@@ -542,31 +542,51 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     assert_equal :japanese_agent_empty, result.failure
   end
 
-  # 윤문 결과는 humanize_status에 남겨 반영되지 않은 기사를 조회할 수 있게 한다(#1098).
+  # 윤문 결과는 humanize_status에 남겨 반영되지 않은 기사를 조회할 수 있게 한다.
+  AT = "2026-10-12T10:00:00+09:00"
+
   def run_humanize_with(article, response)
     HumanMonolithAgent.stub(:chat, build_humanize_chat(response)) do
       ArticleAgentsService.new.send(:run_humanize, article)
     end
   end
 
+  def failing_chat(error)
+    chat = Object.new
+    chat.define_singleton_method(:with_skills) { self }
+    chat.define_singleton_method(:ask) { |_prompt| raise error }
+    chat
+  end
+
+  # capture_logs는 메시지만 모으므로 SemanticLogger payload를 확인할 때 쓴다.
+  def capture_log_payloads(level)
+    entries = []
+    Rails.logger.stub(level, ->(message = nil, payload = nil, *_rest) { entries << [ message.to_s, payload ] }) { yield }
+    entries
+  end
+
+  def full_humanize_response
+    llm_message({
+      "summary_key" => [ "요점" ],
+      "summary_detail" => { "introduction" => "도입", "conclusion" => "결론" },
+      "summary_body" => "다듬은 요약"
+    })
+  end
+
   test "run_humanize는 반영한 결과를 humanize_status에 남긴다" do
     article = articles(:ruby_article)
 
-    freeze_time do
-      run_humanize_with(article, llm_message({
-        "summary_key" => [ "요점" ],
-        "summary_detail" => { "introduction" => "도입", "conclusion" => "결론" },
-        "summary_body" => "다듬은 요약"
-      }))
-
-      assert_equal({ "outcome" => "applied", "dropped" => [], "at" => Time.current.iso8601 }, article.reload.humanize_status)
+    travel_to Time.zone.parse(AT) do
+      run_humanize_with(article, full_humanize_response)
     end
+
+    assert_equal({ "outcome" => "applied", "dropped" => [], "at" => AT }, article.reload.humanize_status)
   end
 
-  test "run_humanize는 일부 필드만 반영하면 빠진 필드를 기록하고 warn으로 남긴다" do
+  test "run_humanize는 일부 필드만 반영하면 빠진 필드를 기록하고 payload와 함께 로그로 남긴다" do
     article = articles(:ruby_article)
 
-    warnings = capture_logs(:warn) do
+    entries = capture_log_payloads(:info) do
       run_humanize_with(article, llm_message({ "summary_key" => "문자열 요점", "summary_body" => "다듬은 요약" }))
     end
 
@@ -574,47 +594,125 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
 
     assert_equal "applied", status["outcome"]
     assert_equal %w[summary_key summary_detail], status["dropped"]
-    assert_logged warnings, "article #{article.id}", "summary_key"
+    message, payload = entries.find { |entry| entry.first.include?("partially applied") }
+
+    assert_includes message, "summary_key, summary_detail"
+    assert_equal({ article_id: article.id, dropped: %i[summary_key summary_detail] }, payload)
   end
 
-  test "run_humanize는 건너뛴 사유를 humanize_status에 남긴다" do
+  test "run_humanize는 건너뛴 사유를 humanize_status와 로그 payload에 남긴다" do
     article = articles(:ruby_article)
 
-    capture_logs(:info) do
-      run_humanize_with(article, llm_message({ "summary_body" => "x", "over_polish_aborted" => true }))
+    entries = capture_log_payloads(:warn) do
+      run_humanize_with(article, raw_message("JSON이 아닌 응답"))
     end
 
-    assert_equal "skipped", article.reload.humanize_status["outcome"]
-    assert_equal "humanize_aborted", article.humanize_status["reason"]
+    assert_equal({ "outcome" => "skipped", "reason" => "humanize_invalid_response" },
+                 article.reload.humanize_status.except("at"))
+    assert_equal({ article_id: article.id, reason: :humanize_invalid_response, response_class: "String" },
+                 entries.find { |message, _| message.include?("Humanize skipped") }&.last)
   end
 
-  test "run_humanize는 예외로 실패하면 예외 클래스를 humanize_status에 남긴다" do
+  test "run_humanize는 에이전트 호출 예외를 stage와 예외 클래스로 남긴다" do
     article = articles(:ruby_article)
-    chat = Object.new
-    chat.define_singleton_method(:with_skills) { self }
-    chat.define_singleton_method(:ask) { |_prompt| raise Faraday::TimeoutError, "timed out" }
 
-    capture_logs(:error) { HumanMonolithAgent.stub(:chat, chat) { ArticleAgentsService.new.send(:run_humanize, article) } }
+    entries = capture_log_payloads(:error) do
+      HumanMonolithAgent.stub(:chat, failing_chat(Faraday::TimeoutError.new("timed out"))) do
+        ArticleAgentsService.new.send(:run_humanize, article)
+      end
+    end
 
-    status = article.reload.humanize_status
-
-    assert_equal "failed", status["outcome"]
-    assert_equal "humanize_failed", status["reason"]
-    assert_equal "Faraday::TimeoutError", status["error"]
+    assert_equal({ "outcome" => "failed", "reason" => "humanize_failed", "stage" => "agent", "error" => "Faraday::TimeoutError" },
+                 article.reload.humanize_status.except("at"))
+    assert_equal({ article_id: article.id, stage: "agent", error: "Faraday::TimeoutError" },
+                 entries.find { |message, _| message.include?("Failed to humanize") }&.last)
   end
 
-  # 저장 실패 시에는 윤문 필드를 되돌리고, 실패 기록만 컬럼 단위로 남긴다.
-  test "run_humanize는 저장에 실패해도 실패 기록을 남기고 updated_at은 건드리지 않는다" do
+  test "run_humanize는 저장 검증에 실패하면 stage를 save로 남기고 updated_at은 건드리지 않는다" do
     article = articles(:ruby_article)
     updated_at = article.updated_at
-    article.url = articles(:similar_article).url # update!가 검증에서 실패하도록 한다
+    article.url = nil # update!가 presence 검증에서 실패하도록 한다
 
-    capture_logs(:error) { run_humanize_with(article, llm_message({ "summary_body" => "다듬은 요약" })) }
+    result = nil
+    capture_logs(:error) { result = run_humanize_with(article, full_humanize_response) }
 
+    assert_equal :humanize_failed, result.failure
     article.reload
 
-    assert_equal "failed", article.humanize_status["outcome"]
-    assert_equal "ActiveRecord::RecordInvalid", article.humanize_status["error"]
+    assert_equal({ "outcome" => "failed", "reason" => "humanize_failed", "stage" => "save", "error" => "ActiveRecord::RecordInvalid" },
+                 article.humanize_status.except("at"))
     assert_equal updated_at, article.updated_at
+  end
+
+  # update!는 커밋 뒤 after_commit 콜백 예외를 다시 던진다. 이때 윤문은 이미 저장됐으므로
+  # 실패로 덮어쓰지 않는다.
+  test "run_humanize는 커밋 뒤 콜백이 실패해도 applied 기록을 유지한다" do
+    article = articles(:ruby_article)
+
+    result = nil
+    errors = capture_logs(:error) do
+      article.stub(:enqueue_index_now, -> { raise "index now down" }) do
+        result = run_humanize_with(article, full_humanize_response)
+      end
+    end
+
+    assert_predicate result, :success?
+    assert_equal "다듬은 요약", article.reload.summary_body
+    assert_equal "applied", article.humanize_status["outcome"]
+    assert_logged errors, "article #{article.id}", "after commit"
+  end
+
+  # 상태 기록이 실패해도 윤문 결과는 그대로 돌려준다. 메모리의 humanize_status도 되돌려
+  # 이후 단계의 save가 반영되지 않은 상태를 저장하지 않게 한다.
+  test "run_humanize는 상태 기록이 실패해도 Failure를 돌려주고 메모리 값을 되돌린다" do
+    article = articles(:ruby_article)
+    article.update_column(:humanize_status, { "outcome" => "pending" })
+    article.url = nil
+
+    result = nil
+    errors = capture_logs(:error) do
+      article.stub(:update_column, ->(*) { raise ActiveRecord::StatementInvalid, "db down" }) do
+        result = run_humanize_with(article, full_humanize_response)
+      end
+    end
+
+    assert_equal :humanize_failed, result.failure
+    assert_equal({ "outcome" => "pending" }, article.humanize_status)
+    assert_logged errors, "Failed to record humanize status", "ActiveRecord::StatementInvalid"
+  end
+
+  # 재실행하면 상태 전체를 새 결과로 바꾼다. 이전 실패의 error·stage 키가 남지 않아야 한다.
+  test "run_humanize는 재실행 결과로 이전 상태를 통째로 바꾼다" do
+    article = articles(:ruby_article)
+
+    capture_logs(:error) do
+      HumanMonolithAgent.stub(:chat, failing_chat(Faraday::TimeoutError.new("x"))) { ArticleAgentsService.new.send(:run_humanize, article) }
+    end
+
+    assert_equal "failed", article.reload.humanize_status["outcome"]
+
+    run_humanize_with(article, full_humanize_response)
+
+    assert_equal %w[at dropped outcome], article.reload.humanize_status.keys.sort
+    assert_not_includes Article.humanize_not_applied, article
+
+    capture_logs(:info) { run_humanize_with(article, llm_message({ "summary_body" => "x", "over_polish_aborted" => true })) }
+
+    assert_equal({ "outcome" => "skipped", "reason" => "humanize_aborted" }, article.reload.humanize_status.except("at"))
+    assert_includes Article.humanize_not_applied, article
+  end
+
+  # 원 요약을 새로 저장하면 이전 윤문 기록은 더 이상 이 요약에 대한 것이 아니다.
+  test "원 요약 저장은 humanize_status를 pending으로 바꾼다" do
+    article = articles(:ruby_article)
+    article.update_column(:humanize_status, { "outcome" => "applied", "dropped" => [] })
+    summary = llm_message({ "title_ko" => "제목", "summary_key" => [ "요점" ], "summary_body" => "원 요약", "is_related" => true })
+
+    ArticleAgent.stub(:new, Struct.new(:message) { def ask(_prompt) = message }.new(summary)) do
+      Articles::AgentRunner.run(article:, prompt: "p")
+    end
+
+    assert_equal "pending", article.reload.humanize_status["outcome"]
+    assert_includes Article.humanize_not_applied, article
   end
 end

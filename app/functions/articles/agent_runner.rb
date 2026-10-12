@@ -35,7 +35,9 @@ module Articles
 
         apply_tags(article, content)
         normalize_summary_body(content)
-        article.update!(content)
+        # 원 요약을 새로 쓰므로 이전 윤문 기록은 이 요약에 대한 것이 아니다. 윤문 결과가 기록되기
+        # 전에 프로세스가 끝나도 반영되지 않은 기사로 조회되도록 같은 저장에서 대기로 바꾼다.
+        article.update!(content.merge("humanize_status" => ArticleHumanizer.pending_status))
 
         Success(article)
       end

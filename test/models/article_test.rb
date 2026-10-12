@@ -257,13 +257,32 @@ class ArticleTest < ActiveSupport::TestCase
     assert_not_includes related_articles, @site_article
   end
 
-  # 윤문이 반영되지 않은(건너뜀·실패) 기사만 고른다. 기록이 없는 기사는 윤문 전이거나 #1098 이전 기사다.
-  test "humanize_not_applied 스코프는 윤문을 건너뛰었거나 실패한 기사만 반환한다" do
-    @article.update_column(:humanize_status, { "outcome" => "skipped", "reason" => "humanize_aborted" })
-    @korean_article.update_column(:humanize_status, { "outcome" => "failed", "reason" => "humanize_failed" })
-    @site_article.update_column(:humanize_status, { "outcome" => "applied", "dropped" => [] })
+  # 윤문이 반영되지 않은(건너뜀·실패·대기) 살아 있는 기사만 고른다. 기록이 없는(NULL) 기사와
+  # 어휘에 없는 값은 제외한다.
+  test "humanize_not_applied 스코프는 윤문이 반영되지 않은 살아 있는 기사만 반환한다" do
+    Article.update_all(humanize_status: nil)
+    statuses = {
+      @article => { "outcome" => "skipped", "reason" => "humanize_aborted" },
+      @korean_article => { "outcome" => "failed", "reason" => "humanize_failed" },
+      @site_article => { "outcome" => "pending" },
+      articles(:similar_article) => { "outcome" => "applied", "dropped" => [] },
+      articles(:unnormalized_url_article) => { "outcome" => "weird" }
+    }
+    statuses.each { |article, status| article.update_column(:humanize_status, status) }
+    Article.where(id: articles(:similar_article)).update_all(humanize_status: "[]")
+    discarded = articles(:deleted_article)
+    discarded.update_column(:humanize_status, { "outcome" => "failed" })
 
-    assert_equal [ @article, @korean_article ].map(&:id).sort, Article.humanize_not_applied.where(id: [ @article, @korean_article, @site_article ]).ids.sort
+    assert_equal [ @article, @korean_article, @site_article ].map(&:id).sort, Article.humanize_not_applied.ids.sort
+  end
+
+  test "humanize_partially_applied 스코프는 필드가 빠진 반영만 반환한다" do
+    Article.update_all(humanize_status: nil)
+    @article.update_column(:humanize_status, { "outcome" => "applied", "dropped" => [ "summary_key" ] })
+    @korean_article.update_column(:humanize_status, { "outcome" => "applied", "dropped" => [] })
+    @site_article.update_column(:humanize_status, { "outcome" => "skipped", "dropped" => [ "summary_key" ] })
+
+    assert_equal [ @article.id ], Article.humanize_partially_applied.ids
   end
 
   test "unrelated 스코프는 관련 없는 기사를 반환해야 한다" do
