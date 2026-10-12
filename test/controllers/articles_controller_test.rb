@@ -557,6 +557,107 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
     assert_equal I18n.t("articles.create.already_exists"), flash[:notice]
   end
 
+  # 대소문자만 다른 URL은 다른 기사로 등록된다. 예전에는 검증만 대소문자를 무시해
+  # 기존 기사 조회가 nil이 되어 500이 났다(#1092).
+  test "POST create registers a url that differs only in case as a new article" do
+    existing = articles(:similar_article)
+    response = Struct.new(:body, :status, :headers).new("<html><title>Case variant</title></html>", 200, {})
+    case_variant = existing.url.sub("ruby-performance", "Ruby-Performance")
+    sign_in_as(users(:john))
+
+    SafeHttp.stub(:fetch, ->(*) { response }) do
+      assert_difference("Article.count", 1) do
+        post articles_path, params: { article: { url: case_variant } }
+      end
+    end
+
+    assert_redirected_to article_path(Article.find_by!(url: case_variant))
+  end
+
+  # 호스트 표기만 다르면 정규화 뒤 같은 URL이라 INSERT가 유니크 인덱스에 걸린다.
+  test "POST create redirects to the existing article when only the host case differs" do
+    existing = articles(:similar_article)
+    response = Struct.new(:body, :status, :headers).new("<html><title>Host case</title></html>", 200, {})
+    sign_in_as(users(:john))
+
+    SafeHttp.stub(:fetch, ->(*) { response }) do
+      assert_no_difference("Article.count") do
+        post articles_path, params: { article: { url: existing.url.sub("example.com", "EXAMPLE.com") } }
+      end
+    end
+
+    assert_redirected_to article_path(existing)
+  end
+
+  # 삭제된 기사로 보내면 404다. 관리자 삭제·무관 판정을 사용자가 재등록으로 우회하지
+  # 못하도록 등록은 막고 이유를 알린다(#1094).
+  test "POST create with the url of a discarded article renders the form with an explanation" do
+    discarded = articles(:deleted_article)
+    sign_in_as(users(:john))
+
+    assert_no_difference("Article.count") do
+      post articles_path, params: { article: { url: discarded.url } }
+    end
+
+    assert_response :unprocessable_entity
+    assert_select "#error_explanation li", text: I18n.t("activerecord.errors.models.article.attributes.base.discarded_url")
+  end
+
+  # url은 삭제된 기사와, origin_url은 살아 있는 기사와 겹치면 살아 있는 기사로 보낸다.
+  test "POST create prefers the kept article when the url also matches a discarded one" do
+    discarded = articles(:deleted_article)
+    kept = articles(:similar_article)
+    discarded.update_columns(origin_url: "https://example.com/deleted-article-origin")
+    kept.update_columns(origin_url: discarded.url)
+    sign_in_as(users(:john))
+
+    post articles_path, params: { article: { url: discarded.url } }
+
+    assert_redirected_to article_path(kept)
+  end
+
+  # slug 존재 확인과 INSERT 사이에 같은 slug가 들어온 경우. exists?를 false로 고정해 그
+  # 경쟁을 재현한다. 접미사를 붙여 한 번 다시 저장한다(#1093).
+  test "POST create retries with a suffixed slug when the slug was taken concurrently" do
+    taken = articles(:similar_article) # slug: ruby-performance
+    response = Struct.new(:body, :status, :headers).new("<html><title>Ruby Performance</title></html>", 200, {})
+    sign_in_as(users(:john))
+
+    SafeHttp.stub(:fetch, ->(*) { response }) do
+      Article.stub(:exists?, false) do
+        assert_difference("Article.count", 1) do
+          post articles_path, params: { article: { url: "https://example.com/slug-race" } }
+        end
+      end
+    end
+
+    created = Article.find_by!(url: "https://example.com/slug-race")
+
+    assert_redirected_to article_path(created)
+    assert_match(/\A#{taken.slug}-\h{8}\z/, created.slug)
+  end
+
+  # 유니크 위반인데 겹친 기사를 찾지 못하면 리다이렉트할 곳이 없다. 500 대신 폼으로
+  # 다시 시도를 안내하고, 원인을 추적할 수 있게 로그를 남긴다(#1095).
+  test "POST create renders a retry message when the unique violation has no matching article" do
+    user = users(:john)
+    url = "https://example.com/vanished-conflict"
+    sign_in_as(user)
+    article = Article.new(url:, origin_url: url, user: User.first_bot)
+    article.define_singleton_method(:save) { |*| raise ActiveRecord::RecordNotUnique, "duplicate key" }
+
+    warnings = []
+    Rails.logger.stub(:warn, ->(message = nil, *_rest, &block) { warnings << (message || block&.call).to_s }) do
+      Article.stub(:new, article) do
+        post articles_path, params: { article: { url: } }
+      end
+    end
+
+    assert_response :unprocessable_entity
+    assert_select "#error_explanation li", text: I18n.t("activerecord.errors.models.article.attributes.base.submit_conflict")
+    assert warnings.any? { it.include?("user #{user.id}") && it.include?(url) }, "등록 충돌 로그가 없다: #{warnings}"
+  end
+
   test "GET others renders pagination and push notification modal when multiple pages exist" do
     user = users(:john)
 

@@ -247,6 +247,15 @@ module Articles
       assert_equal "https://youtube.com/watch?v=test123", MetadataPreparation.normalized_url(youtube)
     end
 
+    # 호스트와 scheme은 대소문자를 구분하지 않으므로 소문자로 맞춘다. 경로·쿼리는 서버가
+    # 구분할 수 있어(YouTube ID 등) 그대로 둔다. URL 유니크 기준이 대소문자를 구분하므로(#1092)
+    # 이 정규화가 없으면 호스트 표기만 다른 같은 기사가 따로 등록된다.
+    test "normalized_url은 scheme과 호스트만 소문자로 맞춘다" do
+      parsed = URI.parse("HTTPS://Example.COM/Ruby/Post?v=AbC")
+
+      assert_equal "https://example.com/Ruby/Post?v=AbC", MetadataPreparation.normalized_url(parsed)
+    end
+
     test "should_discard_url?은 짧은 경로와 ignore URL을 처리한다" do
       short_article = Article.new(url: "https://example.com", is_youtube: false)
       safe_article = Article.new(url: "https://youtube.com/watch?v=test123", is_youtube: true)

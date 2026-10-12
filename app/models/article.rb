@@ -138,7 +138,9 @@ class Article < ApplicationRecord
 
   # ── Validations ──────────────────────────────────────────────────────
   validates :title, length: { maximum: TITLE_MAX_LENGTH }, allow_blank: true
-  validates :url, :origin_url, presence: true, uniqueness: { case_sensitive: false }
+  # 경로·쿼리는 대소문자를 구분하므로(YouTube 영상 ID 등) 유니크 인덱스·기존 기사 조회와 같은
+  # 기준으로 대소문자를 구분한다. 호스트 표기 차이는 URL 정규화가 흡수한다.
+  validates :url, :origin_url, presence: true, uniqueness: { case_sensitive: true }
   validates :slug, uniqueness: true, allow_blank: true
 
   # ── Callbacks ────────────────────────────────────────────────────────

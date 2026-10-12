@@ -19,6 +19,15 @@ class ArticleTest < ActiveSupport::TestCase
 
   # ========== Validation Tests ==========
 
+  # 경로·쿼리는 대소문자를 구분하므로(YouTube 영상 ID 등) 대소문자만 다른 URL은 다른 기사다.
+  # DB 유니크 인덱스와 기존 기사 조회도 대소문자를 구분하므로 검증도 같은 기준을 쓴다(#1092).
+  test "대소문자만 다른 URL은 중복이 아니다" do
+    existing = articles(:similar_article)
+    article = Article.new(url: existing.url.sub("ruby-performance", "Ruby-Performance"), user: existing.user)
+
+    assert_predicate article, :valid?
+  end
+
   test "url과 origin_url이 모두 등록된 기사와 겹치면 duplicate_url?이 참이다" do
     existing = articles(:ruby_article)
     duplicate = Article.new(url: existing.url, origin_url: existing.origin_url, user: existing.user)
@@ -114,30 +123,19 @@ class ArticleTest < ActiveSupport::TestCase
     assert_equal "https://example.com/test", article.origin_url
   end
 
-  test "url의 유일성을 대소문자 구분 없이 검증해야 한다" do
-    existing_article = @article
-    article = Article.new(
-      title: "Another Article",
-      url: existing_article.url.upcase,
-      origin_url: "https://different-origin.com/test",
-      user: @user
-    )
+  # 유일성은 대소문자를 구분한다(#1092). 같은 값은 막고, 대소문자만 다른 값은 통과시킨다.
+  %i[url origin_url].each do |attribute|
+    test "#{attribute}의 유일성은 대소문자를 구분해 검증한다" do
+      other = attribute == :url ? :origin_url : :url
+      same = Article.new(title: "Another Article", attribute => @article.public_send(attribute), other => "https://different.example.com/test", user: @user)
+      upcased = Article.new(title: "Another Article", attribute => @article.public_send(attribute).upcase, other => "https://different.example.com/test", user: @user)
 
-    assert_not article.valid?
-    assert_includes article.errors[:url], "이미 존재하는 값입니다"
-  end
+      assert_not same.valid?
+      assert_includes same.errors[attribute], "이미 존재하는 값입니다"
+      upcased.valid?
 
-  test "origin_url의 유일성을 대소문자 구분 없이 검증해야 한다" do
-    existing_article = @article
-    article = Article.new(
-      title: "Another Article",
-      url: "https://different-url.com/test",
-      origin_url: existing_article.origin_url.upcase,
-      user: @user
-    )
-
-    assert_not article.valid?
-    assert_includes article.errors[:origin_url], "이미 존재하는 값입니다"
+      assert_empty upcased.errors[attribute]
+    end
   end
 
   test "slug가 존재할 경우 유일성을 검증해야 한다" do

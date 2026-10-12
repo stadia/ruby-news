@@ -17,6 +17,11 @@ ko:
         username: 아이디
     errors:
       models:
+        article:
+          attributes:
+            base:
+              discarded_url: 삭제된 글의 URL이라 다시 등록할 수 없습니다.
+              submit_conflict: 등록 중 충돌이 발생했습니다. 잠시 후 다시 시도해 주세요.
         user:
           attributes:
             name:

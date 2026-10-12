@@ -17,6 +17,11 @@ ja:
         username: ユーザーID
     errors:
       models:
+        article:
+          attributes:
+            base:
+              discarded_url: 削除された記事のURLのため、再登録できません。
+              submit_conflict: 登録中に競合が発生しました。しばらくしてから再度お試しください。
         user:
           attributes:
             name:
