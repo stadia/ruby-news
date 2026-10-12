@@ -14,6 +14,14 @@ class Article < ApplicationRecord
   # JAPANESE_KANA_REGEX 와 달리 한자까지 일본어로 취급한다.
   JAPANESE_TITLE_REGEX = /[\p{Hiragana}\p{Katakana}\p{Han}･-ﾟ]/
 
+  # humanize_status의 outcome 어휘. 값은 ArticleHumanizer.status 계열이 만든다.
+  # pending은 원 요약을 새로 저장하고 윤문 결과가 아직 기록되지 않은 상태다.
+  HUMANIZE_APPLIED = "applied"
+  HUMANIZE_SKIPPED = "skipped"
+  HUMANIZE_FAILED = "failed"
+  HUMANIZE_PENDING = "pending"
+  HUMANIZE_NOT_APPLIED = [ HUMANIZE_SKIPPED, HUMANIZE_FAILED, HUMANIZE_PENDING ].freeze
+
   # ── Extend ───────────────────────────────────────────────────────────
   extend FriendlyId
   friendly_id :slug, use: :slugged
@@ -98,6 +106,15 @@ class Article < ApplicationRecord
   scope :related, -> { kept.where(is_related: true) }
   scope :unrelated, -> { kept.where(is_related: false) }
   scope :confirmed, -> { where("slug IS NOT NULL AND title_ko IS NOT NULL") }
+  # 윤문이 반영되지 않아 원 요약이 그대로인 살아 있는 기사(건너뜀·실패·대기). 기록이 없는(NULL)
+  # 기사는 윤문 기록 도입 전 기사라 제외한다.
+  scope :humanize_not_applied, -> { kept.where("humanize_status->>'outcome' IN (?)", HUMANIZE_NOT_APPLIED) }
+  # 본문은 윤문됐지만 요점·상세 중 일부가 응답에서 빠져 원 요약 값으로 남은 살아 있는 기사.
+  scope :humanize_partially_applied, -> {
+    kept.where("humanize_status->>'outcome' = ?", HUMANIZE_APPLIED)
+        .where("jsonb_typeof(humanize_status->'dropped') = 'array'")
+        .where("humanize_status->'dropped' <> '[]'::jsonb")
+  }
 
   # TOAST 컬럼(body, summary_body, embedding) 제외 스코프
   scope :without_toast, -> {
@@ -158,6 +175,10 @@ class Article < ApplicationRecord
   # title 이 일본어(가나 또는 한자 포함)인 경우 title_ja 에도 함께 저장한다.
   # 판별 기준은 JAPANESE_TITLE_REGEX 를 사용한다.
   before_save :assign_japanese_title
+
+  # 요약을 어느 경로로 바꾸든(원 요약 재생성, 관리자 수정) 이전 윤문 기록은 현재 요약에 대한
+  # 것이 아니므로 대기로 되돌린다. 윤문 결과를 같은 저장에서 함께 쓰는 경우는 그대로 둔다.
+  before_update :reset_humanize_status, if: :humanize_status_stale?
 
   after_commit :clear_rss_cache, on: [ :create, :update, :destroy ]
   after_commit :enqueue_index_now, on: [ :create, :update ]
@@ -304,6 +325,22 @@ class Article < ApplicationRecord
 
   # ── Private Instance Methods ─────────────────────────────────────────
   private
+
+  HUMANIZED_SUMMARY_FIELDS = %w[summary_body summary_key summary_detail].freeze
+
+  # humanize_status 접근은 범용 속성 API를 쓴다. sorbet/rbi/dsl/article.rbi에 이 컬럼이 아직 없다
+  # (로컬에서 bin/tapioca dsl이 reactionview 로드 오류로 실행되지 않는다).
+  #: () -> bool
+  def humanize_status_stale?
+    return false if attribute_changed?("humanize_status")
+
+    HUMANIZED_SUMMARY_FIELDS.any? { attribute_changed?(it) }
+  end
+
+  #: () -> void
+  def reset_humanize_status
+    self[:humanize_status] = ArticleHumanizer.pending_status
+  end
 
   # before_save는 before_create의 메타데이터보다 먼저 실행되므로 준비 직후에도 적용한다.
   #: () -> void

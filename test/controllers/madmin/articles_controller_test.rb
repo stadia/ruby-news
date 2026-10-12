@@ -31,6 +31,51 @@ class Madmin::ArticlesControllerTest < ActionDispatch::IntegrationTest
     assert_select "tbody a[href=?]", madmin_article_path(articles(:site_only_article)), count: 0
   end
 
+  test "기사 목록은 윤문이 반영되지 않은 기사만 골라 볼 수 있다" do
+    sign_in_as users(:admin)
+    articles(:ruby_article).update_column(:humanize_status, { "outcome" => "skipped", "reason" => "humanize_aborted" })
+    articles(:site_only_article).update_column(:humanize_status, { "outcome" => "applied", "dropped" => [] })
+
+    get madmin_articles_path(scope: "humanize_not_applied")
+
+    assert_response :success
+    assert_select "tbody a[href=?]", madmin_article_path(articles(:ruby_article))
+    assert_select "tbody a[href=?]", madmin_article_path(articles(:site_only_article)), count: 0
+  end
+
+  test "기사 목록은 일부 필드만 윤문된 기사를 따로 골라 볼 수 있다" do
+    sign_in_as users(:admin)
+    articles(:ruby_article).update_column(:humanize_status, { "outcome" => "applied", "dropped" => [ "summary_key" ] })
+    articles(:site_only_article).update_column(:humanize_status, { "outcome" => "applied", "dropped" => [] })
+
+    get madmin_articles_path(scope: "humanize_partially_applied")
+
+    assert_response :success
+    assert_select "tbody a[href=?]", madmin_article_path(articles(:ruby_article))
+    assert_select "tbody a[href=?]", madmin_article_path(articles(:site_only_article)), count: 0
+  end
+
+  # 윤문 결과는 파이프라인만 쓴다. 관리자 폼에서 JSONB를 덮어쓸 수 없어야 한다.
+  test "기사 수정 폼에는 윤문 결과 필드가 없다" do
+    sign_in_as users(:admin)
+
+    get edit_madmin_article_path(articles(:ruby_article))
+
+    assert_response :success
+    assert_select "[name='article[humanize_status]']", count: 0
+  end
+
+  test "기사 상세는 윤문 결과를 보여준다" do
+    sign_in_as users(:admin)
+    article = articles(:ruby_article)
+    article.update_column(:humanize_status, { "outcome" => "failed", "reason" => "humanize_failed", "error" => "Faraday::TimeoutError" })
+
+    get madmin_article_path(article)
+
+    assert_response :success
+    assert_includes response.body, "Faraday::TimeoutError"
+  end
+
   test "기사 수정은 Lexxy 본문과 봇 작성자를 유지한다" do
     sign_in_as users(:admin)
     article = articles(:ruby_article)

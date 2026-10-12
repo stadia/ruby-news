@@ -35,6 +35,7 @@ module Articles
 
         apply_tags(article, content)
         normalize_summary_body(content)
+        # 요약이 바뀌면 Article이 같은 저장에서 humanize_status를 대기(pending)로 되돌린다.
         article.update!(content)
 
         Success(article)

@@ -257,6 +257,60 @@ class ArticleTest < ActiveSupport::TestCase
     assert_not_includes related_articles, @site_article
   end
 
+  # 윤문이 반영되지 않은(건너뜀·실패·대기) 살아 있는 기사만 고른다. 기록이 없는(NULL) 기사와
+  # 어휘에 없는 값은 제외한다.
+  test "humanize_not_applied 스코프는 윤문이 반영되지 않은 살아 있는 기사만 반환한다" do
+    Article.update_all(humanize_status: nil)
+    statuses = {
+      @article => { "outcome" => "skipped", "reason" => "humanize_aborted" },
+      @korean_article => { "outcome" => "failed", "reason" => "humanize_failed" },
+      @site_article => { "outcome" => "pending" },
+      articles(:similar_article) => { "outcome" => "applied", "dropped" => [] },
+      articles(:unnormalized_url_article) => { "outcome" => "weird" }
+    }
+    statuses.each { |article, status| article.update_column(:humanize_status, status) }
+    Article.where(id: articles(:similar_article)).update_all(humanize_status: "[]")
+    discarded = articles(:deleted_article)
+    discarded.update_column(:humanize_status, { "outcome" => "failed" })
+
+    assert_equal [ @article, @korean_article, @site_article ].map(&:id).sort, Article.humanize_not_applied.ids.sort
+  end
+
+  # 요약을 어느 경로로 바꾸든(관리자 수정 등) 이전 윤문 기록은 현재 요약에 대한 것이 아니다.
+  test "요약 필드를 바꾸면 humanize_status를 pending으로 바꾼다" do
+    applied = { "outcome" => "applied", "dropped" => [] }
+
+    { summary_body: "관리자가 고친 요약", summary_key: [ "고친 요점" ],
+      summary_detail: { "introduction" => "고친 도입", "conclusion" => "고친 결론" } }.each do |field, value|
+      @article.update_column(:humanize_status, applied)
+      @article.reload.update!(field => value)
+
+      assert_equal "pending", @article.reload.humanize_status["outcome"], field.to_s
+    end
+  end
+
+  test "요약과 humanize_status를 함께 저장하거나 요약 외 필드만 바꾸면 상태를 유지한다" do
+    applied = { "outcome" => "applied", "dropped" => [] }
+    @article.update_column(:humanize_status, nil)
+
+    @article.update!(summary_body: "윤문된 요약", humanize_status: applied)
+
+    assert_equal applied, @article.reload.humanize_status
+
+    @article.update!(title_ko: "다른 제목")
+
+    assert_equal applied, @article.reload.humanize_status
+  end
+
+  test "humanize_partially_applied 스코프는 필드가 빠진 반영만 반환한다" do
+    Article.update_all(humanize_status: nil)
+    @article.update_column(:humanize_status, { "outcome" => "applied", "dropped" => [ "summary_key" ] })
+    @korean_article.update_column(:humanize_status, { "outcome" => "applied", "dropped" => [] })
+    @site_article.update_column(:humanize_status, { "outcome" => "skipped", "dropped" => [ "summary_key" ] })
+
+    assert_equal [ @article.id ], Article.humanize_partially_applied.ids
+  end
+
   test "unrelated 스코프는 관련 없는 기사를 반환해야 한다" do
     unrelated_articles = Article.unrelated
 

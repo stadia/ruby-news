@@ -15,6 +15,8 @@ module ArticleHumanizer
   INVALID_RESPONSE = :humanize_invalid_response
   BLANK_BODY = :humanize_blank_body
   SKIP_REASONS = [ ABORTED, INVALID_RESPONSE, BLANK_BODY ].freeze
+  # 예외로 윤문하지 못했을 때의 사유. ArticleAgentsService가 Failure로 돌려준다.
+  FAILED_REASON = "humanize_failed"
 
   # 반영할 윤문 필드. 멤버 이름이 Article 컬럼명이고 to_attributes로 update!에 넘긴다.
   # 본문은 반드시 있고, 요점·상세는 응답에서 받지 못했으면 nil이다(기존 값을 유지한다).
@@ -57,6 +59,10 @@ module ArticleHumanizer
     def to_attributes
       { summary_key:, summary_detail:, summary_body: }.compact.freeze
     end
+
+    # 응답에서 받지 못해(비었거나 타입이 틀려) 기존 값을 유지한 윤문 필드.
+    #: () -> Array[Symbol]
+    def dropped_keys = %i[summary_key summary_detail].select { public_send(it).nil? }
   end
 
   # 반영하지 않은 사유. 오타가 조용히 로그에만 남지 않도록 SKIP_REASONS만 받는다.
@@ -78,6 +84,34 @@ module ArticleHumanizer
   end
 
   class << self
+    # Article#humanize_status에 저장할 윤문 결과. 반영했으면 빠진 필드를, 건너뛰었으면 사유를 담는다.
+    # outcome 어휘는 Article::HUMANIZE_* 상수이고 조회 스코프도 같은 상수를 쓴다.
+    #: ((Humanized | Skipped) result, ?at: ActiveSupport::TimeWithZone) -> Hash[String, untyped]
+    def status(result, at: Time.current)
+      case result
+      when Humanized
+        { "outcome" => Article::HUMANIZE_APPLIED, "dropped" => result.dropped_keys.map(&:to_s), "at" => at.iso8601 }
+      when Skipped
+        { "outcome" => Article::HUMANIZE_SKIPPED, "reason" => result.reason.to_s, "at" => at.iso8601 }
+      else
+        T.absurd(result)
+      end
+    end
+
+    # 예외로 윤문하지 못한 기록. stage(agent: 에이전트 호출·응답 해석, save: 저장)와 예외 클래스로
+    # 원인을 구분한다. 예외 메시지는 길이·민감 정보 때문에 DB에 두지 않고 로그에만 남긴다.
+    #: (Exception error, stage: Symbol, ?at: ActiveSupport::TimeWithZone) -> Hash[String, untyped]
+    def failed_status(error, stage:, at: Time.current)
+      { "outcome" => Article::HUMANIZE_FAILED, "reason" => FAILED_REASON, "stage" => stage.to_s,
+        "error" => error_name(error), "at" => at.iso8601 }
+    end
+
+    # 원 요약을 새로 저장해 이전 윤문 기록이 무효가 된 상태. 윤문 결과가 기록되면 바뀐다.
+    #: (?at: ActiveSupport::TimeWithZone) -> Hash[String, untyped]
+    def pending_status(at: Time.current)
+      { "outcome" => Article::HUMANIZE_PENDING, "at" => at.iso8601 }
+    end
+
     #: (Article article) -> String
     def prompt(article)
       keys = Array(article.summary_key).map(&:to_s).reject(&:blank?)
@@ -115,6 +149,12 @@ module ArticleHumanizer
     end
 
     private
+
+    # 익명 예외 클래스는 name이 nil이다.
+    #: (Exception error) -> String
+    def error_name(error)
+      error.class.name || error.class.to_s
+    end
 
     # 문자열이 아니거나 공백뿐이면 nil이다. `.to_s`로 받으면 배열 등의 inspect 문자열이 저장된다.
     #: (untyped value) -> String?

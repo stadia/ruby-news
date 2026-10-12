@@ -199,6 +199,58 @@ class ArticleHumanizerTest < ActiveSupport::TestCase
     assert_not_predicate ArticleHumanizer::Skipped.build(:humanize_blank_body), :aborted?
   end
 
+  test "Humanized#dropped_keys는 응답에서 받지 못한 윤문 필드다" do
+    assert_equal %i[summary_key summary_detail], ArticleHumanizer.extract({ "summary_body" => "본문" }).dropped_keys
+    assert_empty ArticleHumanizer::Humanized.build(summary_key: [ "a" ], summary_detail: { "introduction" => "a", "conclusion" => "b" }, summary_body: "본문").dropped_keys
+  end
+
+  AT = Time.zone.parse("2026-10-12 10:00:00")
+
+  test "status는 반영 결과에 빠진 필드를 담는다" do
+    assert_equal({ "outcome" => "applied", "dropped" => %w[summary_key summary_detail], "at" => "2026-10-12T10:00:00+09:00" },
+                 ArticleHumanizer.status(ArticleHumanizer.extract({ "summary_body" => "본문" }), at: AT))
+  end
+
+  test "status는 건너뛴 결과에 사유를 담는다" do
+    assert_equal({ "outcome" => "skipped", "reason" => "humanize_aborted", "at" => "2026-10-12T10:00:00+09:00" },
+                 ArticleHumanizer.status(ArticleHumanizer::Skipped.build(:humanize_aborted), at: AT))
+  end
+
+  test "failed_status는 단계와 예외 클래스를 담는다" do
+    assert_equal({ "outcome" => "failed", "reason" => "humanize_failed", "stage" => "save",
+                   "error" => "Faraday::TimeoutError", "at" => "2026-10-12T10:00:00+09:00" },
+                 ArticleHumanizer.failed_status(Faraday::TimeoutError.new("x"), stage: :save, at: AT))
+  end
+
+  test "failed_status는 이름 없는 예외 클래스도 기록한다" do
+    error = Class.new(StandardError).new("x")
+
+    assert_predicate ArticleHumanizer.failed_status(error, stage: :agent, at: AT)["error"], :present?
+  end
+
+  test "pending_status는 원 요약을 새로 저장했음을 나타낸다" do
+    assert_equal({ "outcome" => "pending", "at" => "2026-10-12T10:00:00+09:00" }, ArticleHumanizer.pending_status(at: AT))
+  end
+
+  # 생산자(status 계열)의 출력이 조회 스코프의 어휘와 맞는지 실제 DB로 확인한다.
+  test "생산자 출력과 조회 스코프의 어휘가 맞는다" do
+    article = articles(:ruby_article)
+    expectations = {
+      ArticleHumanizer.status(ArticleHumanizer.extract({ "summary_body" => "본문" })) => [ false, true ],
+      ArticleHumanizer.status(ArticleHumanizer.extract({ "summary_key" => [ "a" ], "summary_detail" => { "introduction" => "a", "conclusion" => "b" }, "summary_body" => "본문" })) => [ false, false ],
+      ArticleHumanizer.status(ArticleHumanizer::Skipped.build(:humanize_aborted)) => [ true, false ],
+      ArticleHumanizer.failed_status(RuntimeError.new("x"), stage: :agent) => [ true, false ],
+      ArticleHumanizer.pending_status => [ true, false ]
+    }
+
+    expectations.each do |status, (not_applied, partial)|
+      article.update_column(:humanize_status, status)
+
+      assert_equal not_applied, Article.humanize_not_applied.exists?(article.id), status.inspect
+      assert_equal partial, Article.humanize_partially_applied.exists?(article.id), status.inspect
+    end
+  end
+
   private
 
   def assert_skipped(reason, extraction)
