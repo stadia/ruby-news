@@ -429,7 +429,9 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
     SafeHttp.stub(:fetch, ->(*) { response }) do
       assert_difference("Article.count", 1) do
         assert_difference("Like.count", 1) do
-          post articles_path, params: { article: { url: "https://example.com/submitted-by-user" } }
+          assert_enqueued_with(job: ArticleJob) do
+            post articles_path, params: { article: { url: "https://example.com/submitted-by-user" } }
+          end
         end
       end
     end
@@ -489,14 +491,66 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
 
   test "POST create with a duplicate url redirects to the existing article" do
     # url·origin_url 모두 uniqueness 검증이므로 중복 POST는 저장 실패 →
-    # errors.details.fetch(:origin_url/:url, []).any?(:taken) 분기로 빠져
-    # existing_article로 리다이렉트한다(articles_controller.rb:156). 이 분기를
-    # 커버하는 테스트가 없으면 fetch 키를 바꿔도 0 failures다.
+    # Article#duplicate_url? 분기로 빠져 기존 기사로 리다이렉트한다.
     existing = articles(:ruby_article)
     sign_in_as(users(:john))
 
     assert_no_difference("Article.count") do
       post articles_path, params: { article: { url: existing.url } }
+    end
+
+    assert_redirected_to article_path(existing)
+    assert_equal I18n.t("articles.create.already_exists"), flash[:notice]
+  end
+
+  # 중복이면 요약·임베딩 LLM 비용을 쓰지 않는다.
+  test "POST create with a duplicate url neither likes nor enqueues the article job" do
+    sign_in_as(users(:john))
+
+    assert_no_difference("Like.count") do
+      assert_no_enqueued_jobs(only: ArticleJob) do
+        post articles_path, params: { article: { url: articles(:ruby_article).url } }
+      end
+    end
+  end
+
+  # fixture의 url과 origin_url이 달라, 이 url을 제출하면 url만 :taken이다.
+  # 어느 기사로 보낼지 단정할 수 없으므로 검증 오류로 다시 보여 준다.
+  test "POST create with only the url taken renders the form with errors" do
+    sign_in_as(users(:john))
+
+    assert_no_difference("Article.count") do
+      post articles_path, params: { article: { url: articles(:unnormalized_url_article).url } }
+    end
+
+    assert_response :unprocessable_entity
+  end
+
+  # Turbo 폼은 Accept 첫 항목이 turbo-stream이다. respond_to를 걷어낸 뒤에도
+  # 검증 실패 화면은 Turbo가 페이지로 그릴 수 있게 text/html이어야 한다.
+  test "POST create from a Turbo form renders validation errors as html" do
+    sign_in_as(users(:john))
+
+    post articles_path,
+      params: { article: { url: articles(:unnormalized_url_article).url } },
+      headers: { "Accept" => "text/vnd.turbo-stream.html, text/html, application/xhtml+xml" }
+
+    assert_response :unprocessable_entity
+    assert_equal "text/html", response.media_type
+  end
+
+  # utm_* 제거 같은 URL 정규화는 검증 이후 before_create에서 일어나므로, 검증은
+  # 통과하고 INSERT에서 유니크 인덱스와 충돌한다. 테스트 resolver가 example.com만
+  # 풀어 주므로 그 호스트의 기사를 쓴다.
+  test "POST create redirects to the existing article when the insert hits the unique index" do
+    existing = articles(:similar_article)
+    response = Struct.new(:body, :status, :headers).new("<html><title>Normalized article</title></html>", 200, {})
+    sign_in_as(users(:john))
+
+    SafeHttp.stub(:fetch, ->(*) { response }) do
+      assert_no_difference("Article.count") do
+        post articles_path, params: { article: { url: "#{existing.url}?utm_source=newsletter" } }
+      end
     end
 
     assert_redirected_to article_path(existing)

@@ -115,26 +115,18 @@ class ArticlesController < ApplicationController
     url = article_params[:url]&.strip
     @article = Article.new(url:, origin_url: url, user: User.first_bot)
 
-    respond_to do |format|
-      if @article.save
-        current_user.like!(@article)
-        ArticleJob.perform_later(@article.id)
-        format.html { redirect_to article_path(@article), notice: t("articles.create.success") }
-      else
-        # `fetch(:k, [])`를 쓴 건 동등성 때문이 아니다. ActiveModel::Errors가
-        # details 해시에 `[]` 기본값을 두어 `[:k]`와 같지만, Sorbet은
-        # `details[:k]`를 nilable로 보므로 명시적 기본값이 있어야 `.any?`가
-        # 타입 검사를 통과한다.
-        if @article.errors.details.fetch(:origin_url, []).any? { |e| e[:error] == :taken } && @article.errors.details.fetch(:url, []).any? { |e| e[:error] == :taken }
-          format.html { redirect_to article_path(existing_article), notice: t("articles.create.already_exists") }
-        else
-          format.html { render Views::Articles::New.new(article: @article), status: :unprocessable_entity }
-        end
-      end
-    rescue ActiveRecord::RecordNotUnique => e
-      logger.error e
-      format.html { redirect_to article_path(existing_article), notice: t("articles.create.already_exists") }
+    if @article.save
+      current_user.like!(@article)
+      ArticleJob.perform_later(@article.id)
+      redirect_to article_path(@article), notice: t("articles.create.success")
+    elsif @article.duplicate_url?
+      redirect_to_existing_article
+    else
+      render Views::Articles::New.new(article: @article), status: :unprocessable_entity
     end
+  rescue ActiveRecord::RecordNotUnique => e
+    logger.error e
+    redirect_to_existing_article
   end
 
   private
@@ -206,8 +198,9 @@ class ArticlesController < ApplicationController
       ActionController::Parameters.new({}).permit!
     end
 
-    def existing_article
-      Article.where(url: @article.url).or(Article.where(origin_url: @article.origin_url)).first
+    def redirect_to_existing_article
+      existing = Article.where(url: @article.url).or(Article.where(origin_url: @article.origin_url)).first
+      redirect_to article_path(existing), notice: t("articles.create.already_exists")
     end
 
     def liked_article_ids(articles)
