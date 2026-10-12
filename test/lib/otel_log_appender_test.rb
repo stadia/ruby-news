@@ -85,6 +85,27 @@ class OtelLogAppenderTest < ActiveSupport::TestCase
     assert_equal "Other", record.attributes["payload.code.namespace"]
   end
 
+  test "요청 완료 로그가 아닌 payload의 status·path·method는 이름을 바꾸지 않는다" do
+    record = emit("ArticleAgentsService", message: "m",
+                  payload: { status: "skipped", path: "a/b", method: "humanize" })
+
+    assert_equal "skipped", record.attributes["status"]
+    assert_equal "a/b", record.attributes["path"]
+    assert_equal "humanize", record.attributes["method"]
+    assert_not record.attributes.key?("http.response.status_code")
+  end
+
+  test "이름을 바꾼 뒤의 키로 충돌을 검사해 named tag의 client.address를 지킨다" do
+    record = emit("ArticlesController", message: "m", named_tags: REQUEST_TAGS,
+                  metric: "rails.controller.process_action",
+                  payload: { "client.address": "9.9.9.9", status: 200, "http.response.status_code": 500 })
+
+    assert_equal "1.2.3.4", record.attributes["client.address"]
+    assert_equal "9.9.9.9", record.attributes["payload.client.address"]
+    assert_equal 200, record.attributes["http.response.status_code"]
+    assert_equal 500, record.attributes["payload.http.response.status_code"]
+  end
+
   test "named_tags·payload가 없는 로그(잡·부팅)는 code.namespace만 보낸다" do
     record = emit("Rails", message: "boot")
 

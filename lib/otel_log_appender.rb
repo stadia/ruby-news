@@ -11,14 +11,15 @@ require "semantic_logger/appender/open_telemetry"
 # application·environment는 resource(service.name·deployment.environment)와 중복이라 버린다.
 # host·pid는 resource에 없지만 버린다. 필요해지면 attributes에 추가한다.
 class OtelLogAppender < SemanticLogger::Appender::OpenTelemetry
-  # 요청 로그의 method·path·status·ip를 semconv 키로 바꾼다. 앞의 셋은 rack span 키와 같다.
-  # 키 이름 기준이라 다른 로그의 payload path·status도 같이 바뀐다.
-  RENAMES = {
+  # 요청 완료 로그(Completed)의 method·path·status만 semconv 키로 바꾼다(rack span 키와 같다).
+  # 다른 로그의 payload status·path는 도메인 값이라 그대로 둔다.
+  REQUEST_METRIC = "rails.controller.process_action"
+  HTTP_RENAMES = {
     "method" => "http.request.method",
     "path" => "url.path",
-    "status" => "http.response.status_code",
-    "ip" => "client.address"
+    "status" => "http.response.status_code"
   }.freeze
+  TAG_RENAMES = { "ip" => "client.address" }.freeze
 
   # @rbs log: SemanticLogger::Log
   # @rbs return: bool
@@ -51,12 +52,17 @@ class OtelLogAppender < SemanticLogger::Appender::OpenTelemetry
       "code.filepath" => record[:file],
       "code.lineno" => record[:line],
       "thread.name" => record[:thread]
-    }
-    record[:named_tags]&.each { |key, value| attrs[key.to_s] = primitive(value) }
-    # payload는 호출부가 넣는 값이라 request_id·code.namespace 같은 기준 필드를 덮지 못하게 한다.
-    record[:payload]&.each { |key, value| attrs[attrs.key?(key) ? "payload.#{key}" : key] = value }
-    attrs.merge!(exception_attributes(record[:exception])) if record[:exception]
-    attrs.compact.transform_keys { |key| RENAMES.fetch(key, key) }
+    }.compact
+    record[:named_tags]&.each { |key, value| attrs[TAG_RENAMES.fetch(key.to_s, key.to_s)] = primitive(value) }
+    renames = record[:metric] == REQUEST_METRIC ? HTTP_RENAMES : {}
+    # payload는 호출부가 넣는 값이라 request_id·client.address 같은 기준 필드를 덮지 못하게 한다.
+    # 충돌은 이름을 바꾼 뒤의 키로 검사한다.
+    record[:payload]&.each do |key, value|
+      key = renames.fetch(key, key)
+      attrs[attrs.key?(key) ? "payload.#{key}" : key] = value
+    end
+    attrs.merge!(exception_attributes(record[:exception]).compact) if record[:exception]
+    attrs
   end
 
   # OTel attribute가 받는 원시 타입은 그대로 두어 attributes_number/bool 맵에 들어가게 한다.
