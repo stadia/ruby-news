@@ -11,8 +11,12 @@ RUBYCRITIC_CHURN_AFTER=2026-04-11 bin/rubycritic  # 기준선과 같은 기간�
 
 - 범위: `app/models app/controllers app/services app/functions app/clients`(`bin/rubycritic`에 고정)
 - 산출물: `tmp/rubycritic/overview.html`, `tmp/rubycritic/report.json`(`/tmp/*`라 Git에 안 들어간다)
-- stdout에는 요약 마크다운(`lib/quality/rubycritic_report.rb`)을 찍는다. rubycritic 자체가 실패하면 1로 끝난다.
-- **입력이 무너져도 exit 0이다**(날짜 형식 오류, 얕은 클론, git 작업 트리 등, #1087). 후보 표의 churn이 전부 0이거나 1이면 그 실행은 무효다.
+- stdout에는 요약 마크다운(`lib/quality/rubycritic_report.rb`)을 찍는다. 요약에 분석 범위도 적는다.
+- **입력이 무너지면 요약을 찍지 않고 1로 끝난다**(#1087). RubyCritic은 이런 경우에도 churn을 0이나 1로 채우고 정상 종료하기 때문이다.
+  - 분석 전(`lib/quality/rubycritic_run.rb`): `RUBYCRITIC_CHURN_AFTER`가 `YYYY-MM-DD`가 아니거나 미래 날짜, 분석 디렉터리 누락, git 저장소가 아님, 얕은 클론, git 작업 트리(`git worktree`), 저장소 최상위가 아닌 위치
+  - 분석 후: 분석 파일 0건, 모든 파일의 churn이 0(git log 실패), 모듈 필드 누락(RubyCritic이 필드명을 바꾼 경우), 알 수 없는 등급
+  - rubycritic 자체가 실패해도 1로 끝난다. 실행 전에 이전 `report.json`을 지워 지난 결과를 이번 결과로 읽지 않는다.
+- 수동 실행: CI의 `rubycritic` 잡은 main push에서 돈다. 머지 전 브랜치는 Actions의 CI 워크플로에서 Run workflow(`workflow_dispatch`)로 돌린다.
 - **앱 번들과 분리**: `tools/rubycritic/Gemfile`로 돈다. RubyCritic은 reek·virtus·dry-types 등 앱 `Gemfile.lock`에 없는 젬 15개를 끌어오는데, 앱 Gemfile에 넣으면 앱의 `Gemfile.lock`·gem RBI(`tapioca gem --verify`)가 바뀌고 `development` 그룹 밖이면 배포 이미지도 바뀐다. 분리해 두면 앱 실행과 타입 검사에 영향이 없다. 처음 실행할 때 `BUNDLE_GEMFILE=tools/rubycritic/Gemfile bundle install`이 필요하다.
 - Rails를 부팅하지 않는다. DB도 필요 없다.
 
@@ -25,9 +29,11 @@ RUBYCRITIC_CHURN_AFTER=2026-04-11 bin/rubycritic  # 기준선과 같은 기간�
 - 한계
   - 기계적인 일괄 커밋(Sorbet 시길 부여, fedipub 리네임 등)도 1회로 센다. 상위 파일은 실제 이력을 보고 판단한다.
   - 파일을 옮기면 churn이 새 경로에서 0부터 다시 쌓인다.
-  - CI에서는 얕은 클론이면 churn이 전부 1이 된다. 전체 이력(`fetch-depth: 0`)이 필요하다.
-  - git 작업 트리(`git worktree`)에서는 churn이 전부 0이다. RubyCritic이 `.git` 디렉터리를 찾아 올라가 상위 저장소를 git 루트로 잡는다. 일반 클론에서 돌린다.
-- **복잡도**는 Flog 파일 총점이라 메서드가 많은 큰 파일일수록 높다. 표에는 반올림해 적는다(churn × 복잡도는 반올림 전 값으로 곱한다).
+  - 얕은 클론이면 churn이 전부 1이 된다. 전체 이력(CI는 `fetch-depth: 0`)이 필요하고, `bin/rubycritic`이 얕은 클론을 거부한다.
+  - git 작업 트리(`git worktree`)에서는 churn이 전부 0이다. RubyCritic이 `.git` 디렉터리를 찾아 올라가 상위 저장소를 git 루트로 잡는다. `bin/rubycritic`이 거부하므로 일반 클론에서 돌린다.
+  - Flog는 파일 하나의 파싱이 10초를 넘기면 `TIMEOUT parsing <파일>. Skipping.`을 stderr에 찍고 건너뛴다(업스트림 동작). 그 파일은 복잡도 0이 되어 표에서 빠진다. 큰 파일이 갑자기 빠지면 이 경고를 찾는다.
+  - 저장소에 `.reek.yml`이 없어서 Reek은 상위 디렉터리와 홈 디렉터리의 `.reek.yml`을 찾아 읽는다(업스트림 동작). 로컬 결과의 스멜·비용이 CI와 다르면 이 파일을 확인한다.
+- **복잡도**는 Flog 파일 총점이라 메서드가 많은 큰 파일일수록 높다. 표에는 반올림해 적는다(churn × 복잡도는 반올림 전 값으로 곱한다). 우선순위가 같으면 경로 순으로 적는다.
 - **비용**은 RubyCritic의 스멜 비용 합 + 복잡도/25이고, 등급은 비용으로 정한다(A ≤2, B ≤4, C ≤8, D ≤16, F >16).
 - RubyCritic 총점·등급은 참고용이다. **점수만 올리려는 일괄 수정은 하지 않는다.**
 
