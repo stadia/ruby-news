@@ -129,13 +129,17 @@ class ArticleAgentsService < OperationService
     prompt = ArticleHumanizer.prompt(article)
     message = HumanMonolithAgent.chat.with_skills.ask(prompt)
     content = Articles::AgentResponse.structured(message)
-    extraction = ArticleHumanizer.extract(content)
-    skip_reason = extraction.skip_reason
-    return skip_humanize(article, skip_reason, content) if skip_reason
-
-    result = save_humanized(article, extraction.attributes)
-    logger.info "Humanize metrics for article #{article.id}: #{content['metrics']}" if result.success?
-    result
+    case (extraction = ArticleHumanizer.extract(content))
+    when ArticleHumanizer::Skipped
+      skip_humanize(article, extraction, content)
+    when ArticleHumanizer::Humanized
+      result = save_humanized(article, extraction.to_attributes)
+      logger.info "Humanize metrics for article #{article.id}: #{content['metrics']}" if result.success?
+      result
+    else
+      # extract에 새 결과 타입이 생기면 Sorbet이 이 분기를 정적 오류로 잡는다.
+      T.absurd(extraction)
+    end
   rescue StandardError => e
     logger.error "Failed to humanize article #{article.id}: #{e.class}: #{e.message}"
     Failure(:humanize_failed)
@@ -156,11 +160,11 @@ class ArticleAgentsService < OperationService
   # call은 윤문 실패를 무시하고 진행하므로, 윤문을 건너뛴 사유를 이 메서드가 로그로 남긴다.
   # 과윤문 롤백은 모델의 정상 판단이라 info, 응답이 계약을 어긴 경우는 warn이다.
   # 응답 클래스를 함께 남겨 JSON이 아닌 응답(String)과 형식이 틀린 Hash를 구분한다.
-  #: (Article article, Symbol reason, untyped content) -> Dry::Monads::Result
-  def skip_humanize(article, reason, content)
-    message = "Humanize skipped for article #{article.id}: #{reason} (response #{content.class})"
-    reason == :humanize_aborted ? logger.info(message) : logger.warn(message)
-    Failure(reason)
+  #: (Article article, ArticleHumanizer::Skipped skipped, untyped content) -> Dry::Monads::Result
+  def skip_humanize(article, skipped, content)
+    message = "Humanize skipped for article #{article.id}: #{skipped.reason} (response #{content.class})"
+    skipped.aborted? ? logger.info(message) : logger.warn(message)
+    Failure(skipped.reason)
   end
 
   # 번역은 admin에서도 호출하는 ArticleJapaneseService가 맡는다. 번역 대상이 아닌 기사는

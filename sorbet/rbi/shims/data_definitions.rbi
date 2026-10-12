@@ -128,11 +128,19 @@ module OauthAccounts
 end
 
 module ArticleHumanizer
-  class Extraction
-    sig { returns(T::Hash[Symbol, T.untyped]) }
-    def attributes; end
+  class Humanized
+    sig { returns(String) }
+    def summary_body; end
 
-    sig { returns(T.nilable(Symbol)) }
-    def skip_reason; end
+    sig { returns(T.nilable(T::Array[String])) }
+    def summary_key; end
+
+    sig { returns(T.nilable(T::Hash[String, String])) }
+    def summary_detail; end
+  end
+
+  class Skipped
+    sig { returns(Symbol) }
+    def reason; end
   end
 end
