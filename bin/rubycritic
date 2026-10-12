@@ -22,7 +22,8 @@ OUTPUT = "tmp/rubycritic"
 churn_after = ENV.fetch("RUBYCRITIC_CHURN_AFTER") { (Date.today << 6).iso8601 }
 env = {
   "BUNDLE_GEMFILE" => File.join(ROOT, "tools/rubycritic/Gemfile"),
-  "RUBYOPT" => "-r#{File.join(ROOT, "tools/rubycritic/head_only_churn.rb")} #{ENV["RUBYOPT"]}"
+  # 패치는 bundle 런처 프로세스에도 먼저 로드되므로, 젬 경로를 잡는 bundler/setup을 앞에 둔다(vendor 설치 대비).
+  "RUBYOPT" => "-rbundler/setup -r#{File.join(ROOT, "tools/rubycritic/head_only_churn.rb")} #{ENV["RUBYOPT"]}"
 }
 command = [ "bundle", "exec", "rubycritic", "--no-browser", "-f", "html", "-f", "json",
             "--churn-after", churn_after, "-p", OUTPUT, *PATHS ]
