@@ -10,9 +10,10 @@ class ContentService < OperationService
   # 일시적 원인으로 본문을 얻지 못한 실패 사유. 다시 시도하면 얻을 수도 있으므로 호출자는
   # 폐기하지 않고 재시도 대상으로 다룬다.
   TRANSIENT_FAILURES = %i[fetch_failed].freeze
-  # 5xx 외에 일시 실패로 보는 상태 코드(408 요청 시간 초과, 429 요청 한도 초과).
+  # 5xx 외에 일시 실패로 보는 상태 코드(403 봇 차단일 수 있음, 408 요청 시간 초과, 429 요청 한도 초과).
+  # 403은 진짜 접근 금지와 구분할 수 없지만, 폐기는 연합 Delete까지 전파되므로 보존 쪽으로 둔다.
   # 5xx는 범위라 usable_status?가 따로 비교한다.
-  TRANSIENT_STATUSES = [ 408, 429 ].freeze
+  TRANSIENT_STATUSES = [ 403, 408, 429 ].freeze
 
   # 원 서버·Scrapling·YouTube가 잠시 응답하지 못했거나 일시적 상태 코드를 돌려줬다.
   # execute_html·execute_youtube가 :fetch_failed로 바꾼다.
@@ -161,7 +162,7 @@ class ContentService < OperationService
     response.body if usable_status?(response.status)
   end
 
-  # 2xx만 본문으로 쓴다. 408·429·5xx는 일시 실패라 TransientFetchError를 올리고, 그 밖의 4xx와
+  # 2xx만 본문으로 쓴다. TRANSIENT_STATUSES와 5xx는 일시 실패라 TransientFetchError를 올리고, 그 밖의 4xx와
   # 따라가지 못한 3xx는 false를 돌려 :no_content(영구 실패)가 되게 한다. 오류 페이지를 요약하지
   # 않기 위해서다(#1099).
   #: (Integer status) -> bool

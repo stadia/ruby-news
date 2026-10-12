@@ -311,8 +311,9 @@ class ContentServiceTest < ActiveSupport::TestCase
 
   # 일시 실패(:fetch_failed)는 ArticleAgentsService가 기사를 폐기하지 않고 재시도에 맡긴다.
   # 영구 실패(:no_content)는 폐기된다. 오류 페이지 본문을 요약하지 않도록 status를 본다(#1099).
-  { 408 => :fetch_failed, 429 => :fetch_failed, 500 => :fetch_failed, 503 => :fetch_failed,
-    404 => :no_content, 410 => :no_content }.each do |status, reason|
+  # 403은 봇 차단일 수 있어 폐기하지 않는다.
+  { 403 => :fetch_failed, 408 => :fetch_failed, 429 => :fetch_failed, 500 => :fetch_failed,
+    503 => :fetch_failed, 404 => :no_content, 410 => :no_content }.each do |status, reason|
     test "execute_html은 HTTP #{status} 응답이면 #{reason}를 반환한다" do
       response = MockResponse.new(status:, body: "<html><body><article><p>#{'오류 페이지 ' * 20}</p></article></body></html>")
 
@@ -352,6 +353,7 @@ class ContentServiceTest < ActiveSupport::TestCase
   # structuredContent가 없거나 본문이 비면 Scrapling 쪽 렌더 실패라 일시 실패로 본다.
   {
     "status 404" => [ { "status" => 404, "content" => [ "<html>Not Found</html>" ] }, :no_content ],
+    "status 403" => [ { "status" => 403, "content" => [ "<html>Forbidden</html>" ] }, :fetch_failed ],
     "status 503" => [ { "status" => 503, "content" => [] }, :fetch_failed ],
     "structuredContent 없음" => [ nil, :fetch_failed ],
     "200인데 빈 content" => [ { "status" => 200, "content" => [] }, :fetch_failed ]
