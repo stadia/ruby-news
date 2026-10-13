@@ -70,9 +70,11 @@ class Views::Articles::Index < Views::Base
         end
       end
 
-      div(class: "w-full lg:w-72 shrink-0 order-last lg:order-0 hidden lg:block space-y-6") do
+      div(class: "w-full lg:w-72 shrink-0 order-last lg:order-0 space-y-6") do
         render Components::RecentBlogPostsSidebar.new(posts: @recent_blog_posts)
-        render Components::TagsSidebar.new(tags: @sidebar_tags)
+        div(class: "hidden lg:block") do
+          render Components::TagsSidebar.new(tags: @sidebar_tags)
+        end
       end
     end
   end
