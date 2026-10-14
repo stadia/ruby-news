@@ -923,7 +923,7 @@ GEM
       tsort
     terminal-table (4.0.0)
       unicode-display_width (>= 1.1.1, < 4)
-    test-prof (1.6.3)
+    test-prof (1.6.4)
       logger
     thor (1.5.0)
     timeout (0.6.1)
