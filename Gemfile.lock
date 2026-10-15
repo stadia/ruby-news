@@ -814,9 +814,9 @@ GEM
       logger
     ruby2ruby (2.6.2)
       sexp_processor (~> 4.6)
-    ruby_llm (2.1.0)
+    ruby_llm (2.1.1)
       base64
-      faraday (>= 1.10.0)
+      faraday (>= 1.10.0, != 2.0.0)
       faraday-multipart (>= 1)
       faraday-net_http (>= 1)
       faraday-retry (>= 1)
@@ -1074,7 +1074,7 @@ DEPENDENCIES
   ruby-mcp-client (~> 3.0)
   ruby-readability
   ruby-vips (~> 2.0)
-  ruby_llm (~> 2.0)
+  ruby_llm (~> 2.1)
   ruby_llm-skills (~> 0.5.0.pre1)
   ruby_ui (~> 1.2)
   schema_dot_org
