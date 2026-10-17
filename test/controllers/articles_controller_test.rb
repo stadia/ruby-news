@@ -28,7 +28,8 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
     get articles_path
 
     assert_response :success
-    assert_select "aside.recent-blog-posts-sidebar + aside.tags-sidebar"
+    assert_select "aside.recent-blog-posts-sidebar + div.hidden.lg\\:block > aside.tags-sidebar"
+    assert_select ".hidden aside.recent-blog-posts-sidebar", count: 0
     assert_select "aside.recent-blog-posts-sidebar a[href=?]",
                   user_profile_blog_post_path(username: users(:john).username, slug: posts(:blog_published)), text: /발행된 긴 글/
   end
@@ -37,7 +38,8 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
     get others_path
 
     assert_response :success
-    assert_select "aside.recent-blog-posts-sidebar + aside.tags-sidebar"
+    assert_select "aside.recent-blog-posts-sidebar + div.hidden.lg\\:block > aside.tags-sidebar"
+    assert_select ".hidden aside.recent-blog-posts-sidebar", count: 0
     assert_select "aside.recent-blog-posts-sidebar a[href=?]",
                   user_profile_blog_post_path(username: users(:john).username, slug: posts(:blog_published)), text: /발행된 긴 글/
   end
