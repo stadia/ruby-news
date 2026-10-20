@@ -174,8 +174,8 @@ class ContentService < OperationService
 
   #: (String url) -> String?
   def mcp_fetch_html(url)
-    # Scrapling은 리다이렉트를 검사 없이 따라가므로, 앱에서 먼저 검사하며 따라간 최종 URL만 넘긴다.
-    # shortcut: Scrapling이 다른 응답(UA별 리다이렉트, DNS 리바인딩)을 받으면 못 막는다. Scrapling 파드 egress 차단으로 보완한다.
+    # 앱에서 리다이렉트를 검사하며 따라간 최종 URL만 넘기고, Scrapling에서는 더 따라가지 않는다.
+    # shortcut: Scrapling의 DNS 리바인딩은 앱에서 못 막는다. Scrapling 파드 egress 차단으로 보완한다.
     fetched = SafeHttp.get_following_redirects(url)
     response = fetched.response
     url = fetched.url
@@ -184,13 +184,14 @@ class ContentService < OperationService
     return nil if response.status.between?(300, 399)
 
     client = MCPClient.connect(ENV.fetch("SCRAPLING_URL") { "http://localhost::8000/mcp" })
-    result = client.call_tool("fetch", { url: })&.[]("structuredContent")
+    result = client.call_tool("make_request", { url:, extraction_type: "html", follow_redirects: false })&.[]("structuredContent")
     logger.debug result
     raise TransientFetchError, "Scrapling returned no structuredContent for #{url}" unless result.is_a?(Hash)
 
     # Scrapling의 status는 브라우저가 받은 원 서버 응답이라 직접 요청과 같은 기준으로 나눈다.
     status = result["status"]
     raise TransientFetchError, "Scrapling returned status #{status.inspect}" unless status.is_a?(Integer)
+    raise TransientFetchError, "Scrapling returned an unchecked redirect: HTTP #{status}" if status.between?(300, 399)
     return nil unless usable_status?(status)
 
     # 200인데 본문이 비면 Scrapling 쪽 렌더 실패로 보고 일시 실패로 둔다.
