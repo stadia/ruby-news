@@ -184,13 +184,14 @@ class ContentService < OperationService
     return nil if response.status.between?(300, 399)
 
     client = MCPClient.connect(ENV.fetch("SCRAPLING_URL") { "http://localhost::8000/mcp" })
-    result = client.call_tool("fetch", { url: })&.[]("structuredContent")
+    result = client.call_tool("browser_fetch_once", { url:, extraction_type: "html" })&.[]("structuredContent")
     logger.debug result
     raise TransientFetchError, "Scrapling returned no structuredContent for #{url}" unless result.is_a?(Hash)
 
     # Scrapling의 status는 브라우저가 받은 원 서버 응답이라 직접 요청과 같은 기준으로 나눈다.
     status = result["status"]
     raise TransientFetchError, "Scrapling returned status #{status.inspect}" unless status.is_a?(Integer)
+    raise TransientFetchError, "Scrapling returned an unchecked redirect: HTTP #{status}" if status.between?(300, 399)
     return nil unless usable_status?(status)
 
     # 200인데 본문이 비면 Scrapling 쪽 렌더 실패로 보고 일시 실패로 둔다.

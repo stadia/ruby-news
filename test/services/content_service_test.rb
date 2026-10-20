@@ -352,6 +352,7 @@ class ContentServiceTest < ActiveSupport::TestCase
   # Scrapling이 돌려주는 status는 브라우저가 받은 원 서버 응답이라 직접 요청과 같은 기준으로 나눈다.
   # structuredContent가 없거나 본문이 비면 Scrapling 쪽 렌더 실패라 일시 실패로 본다.
   {
+    "status 302" => [ { "status" => 302, "content" => [] }, :fetch_failed ],
     "status 404" => [ { "status" => 404, "content" => [ "<html>Not Found</html>" ] }, :no_content ],
     "status 403" => [ { "status" => 403, "content" => [ "<html>Forbidden</html>" ] }, :fetch_failed ],
     "status 503" => [ { "status" => 503, "content" => [] }, :fetch_failed ],
@@ -569,16 +570,19 @@ class ContentServiceTest < ActiveSupport::TestCase
     ENV.delete("SCRAPLING_URL")
   end
 
-  test "mcp_fetch_html은 첫 번째 content 항목을 반환한다" do
+  test "mcp_fetch_html은 브라우저로 HTML을 렌더링하고 첫 번째 content 항목을 반환한다" do
     service = ContentService.new
-    client = Object.new
-    client.define_singleton_method(:call_tool) { |*, **| { "structuredContent" => { "status" => 200, "content" => [ "<html>ok</html>" ] } } }
+    client = Minitest::Mock.new
+    client.expect(:call_tool,
+                  { "structuredContent" => { "status" => 200, "content" => [ "<html>ok</html>", "ignored" ] } },
+                  [ "browser_fetch_once", { url: "https://example.com", extraction_type: "html" } ])
 
     SafeHttp.stub(:fetch, ->(*) { MockResponse.new(status: 200) }) do
       MCPClient.stub(:connect, client) do
         assert_equal "<html>ok</html>", service.send(:mcp_fetch_html, "https://example.com")
       end
     end
+    client.verify
   end
 
   test "format_transcript는 세그먼트가 없으면 nil을 반환한다" do
