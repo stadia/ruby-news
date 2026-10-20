@@ -570,12 +570,12 @@ class ContentServiceTest < ActiveSupport::TestCase
     ENV.delete("SCRAPLING_URL")
   end
 
-  test "mcp_fetch_html은 make_request로 HTML을 요청하고 첫 번째 content 항목을 반환한다" do
+  test "mcp_fetch_html은 브라우저로 HTML을 렌더링하고 첫 번째 content 항목을 반환한다" do
     service = ContentService.new
     client = Minitest::Mock.new
     client.expect(:call_tool,
                   { "structuredContent" => { "status" => 200, "content" => [ "<html>ok</html>", "ignored" ] } },
-                  [ "make_request", { url: "https://example.com", extraction_type: "html", follow_redirects: false } ])
+                  [ "browser_fetch_once", { url: "https://example.com", extraction_type: "html" } ])
 
     SafeHttp.stub(:fetch, ->(*) { MockResponse.new(status: 200) }) do
       MCPClient.stub(:connect, client) do
