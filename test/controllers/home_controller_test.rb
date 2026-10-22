@@ -34,6 +34,16 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
                   text: "존 도"
   end
 
+  test "GET root shows blog posts and comments before latest news on mobile, tags only on desktop" do
+    get root_path
+
+    assert_response :success
+    assert_select ".lg\\:hidden > aside.recent-blog-posts-sidebar + aside.recent-comments-sidebar"
+    assert_select ".lg\\:hidden aside.tags-sidebar", count: 0
+    assert_select ".hidden.lg\\:block aside.recent-blog-posts-sidebar + aside.recent-comments-sidebar + aside.tags-sidebar"
+    assert_select "aside.tags-sidebar", count: 1
+  end
+
   test "GET root hides the blog sidebar when no eligible blogs remain" do
     posts(:blog_published).update_columns(user_id: nil)
 
@@ -50,7 +60,9 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     queries = capture_queries { get root_path }
 
     assert_response :success
-    assert_select "aside.recent-blog-posts-sidebar .group", count: 3
+    assert_select ".hidden.lg\\:block aside.recent-blog-posts-sidebar .group", count: 3
+    assert_select ".lg\\:hidden aside.recent-blog-posts-sidebar .group", count: 1
+    assert_select ".lg\\:hidden aside.recent-comments-sidebar .space-y-3 > *", count: 1
     assert_equal 1, queries.grep(/FROM "posts".*"posts"\."status" =/).size
     assert_operator queries.grep(/FROM "users" WHERE "users"\."id" =/).size, :<=, 1
     assert_empty queries.grep(/FROM "active_storage_blobs" WHERE "active_storage_blobs"\."id" =/)

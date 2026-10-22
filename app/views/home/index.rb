@@ -32,8 +32,8 @@ class Views::Home::Index < Views::Base
           )
         end
 
-        div(class: "lg:hidden mb-6") do
-          render Components::TagsSidebar.new(tags: @sidebar_tags)
+        div(class: "lg:hidden mb-6 space-y-6") do
+          render_activity_sidebars(limit: 1)
         end
 
         section do
@@ -61,19 +61,22 @@ class Views::Home::Index < Views::Base
         end
       end
 
-      div(class: "w-full lg:w-72 shrink-0 order-last lg:order-0") do
-        div(class: "space-y-6") do
-          render Components::RecentBlogPostsSidebar.new(posts: @recent_blog_posts)
-          render Components::RecentCommentsSidebar.new(recent_comments: @recent_comments)
-          div(class: "hidden lg:block") do
-            render Components::TagsSidebar.new(tags: @sidebar_tags)
-          end
-        end
+      div(class: "hidden lg:block w-72 shrink-0 space-y-6") do
+        render_activity_sidebars
+        render Components::TagsSidebar.new(tags: @sidebar_tags)
       end
     end
   end
 
   private
+
+  # to_a로 relation을 한 번만 로드해 모바일·데스크톱 블록이 같은 결과를 나눠 쓴다.
+  def render_activity_sidebars(limit: nil)
+    posts = @recent_blog_posts.to_a
+    comments = @recent_comments.to_a
+    render Components::RecentBlogPostsSidebar.new(posts: limit ? posts.first(limit) : posts)
+    render Components::RecentCommentsSidebar.new(recent_comments: limit ? comments.first(limit) : comments)
+  end
 
   def render_item_list_schema
     render Components::StructuredData::ItemList.new(
