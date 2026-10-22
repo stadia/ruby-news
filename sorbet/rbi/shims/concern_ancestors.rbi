@@ -138,6 +138,17 @@ module RateLimiting
   requires_ancestor { ApplicationController }
 end
 
+module ArticleViewTracking
+  extend T::Helpers
+
+  requires_ancestor { ApplicationController }
+
+  class << self
+    sig { params(base: T.untyped, block: T.nilable(T.proc.bind(T.class_of(ApplicationController)).void)).returns(T.untyped) }
+    def included(base = T.unsafe(nil), &block); end
+  end
+end
+
 module LocaleSwitcher
   extend T::Helpers
 

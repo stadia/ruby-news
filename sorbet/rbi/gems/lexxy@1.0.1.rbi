@@ -6,9 +6,7 @@
 
 
 # pkg:gem/lexxy#lib/action_text/attachables/remote_video.rb:1
-module ActionText
-  extend ::ActiveSupport::Autoload
-end
+module ActionText; end
 
 module ActionText::Attachable
   extend ::Lexxy::Attachable
@@ -17,9 +15,7 @@ module ActionText::Attachable
 end
 
 # pkg:gem/lexxy#lib/action_text/attachables/remote_video.rb:2
-module ActionText::Attachables
-  extend ::ActiveSupport::Autoload
-end
+module ActionText::Attachables; end
 
 # pkg:gem/lexxy#lib/action_text/attachables/remote_video.rb:3
 class ActionText::Attachables::RemoteVideo
@@ -69,9 +65,7 @@ end
 module ActionText::TagHelper; end
 
 # pkg:gem/lexxy#lib/active_storage/blob_with_preview_url.rb:1
-module ActiveStorage
-  extend ::ActiveSupport::Autoload
-end
+module ActiveStorage; end
 
 # pkg:gem/lexxy#lib/active_storage/blob_with_preview_url.rb:2
 module ActiveStorage::BlobWithPreviewUrl

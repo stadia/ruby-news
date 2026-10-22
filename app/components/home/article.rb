@@ -33,7 +33,7 @@ class Components::Home::Article < Components::Base
   def header_section
     div(class: "mb-4") do
       h3(class: "text-xl font-bold text-content mb-2 leading-tight hover:text-link-hover transition-colors duration-200") do
-        link_to(article.display_title, article_path(article), class: "after:absolute after:inset-0 after:content-['']")
+        link_to(article.display_title, article_path(article), class: "after:absolute after:inset-0 after:content-['']", data: { turbo_prefetch: false })
       end
       p(class: "text-lg font-medium text-content-secondary wrap-break-word") { article.title }
     end

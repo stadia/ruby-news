@@ -31,7 +31,7 @@ class Components::Articles::Show::SimilarArticles < Components::Base
 
   def render_card(article)
     div(class: "group bg-surface-muted rounded-lg border border-border-muted hover:border-border-strong hover:shadow-sm transition-all duration-200 overflow-hidden") do
-      link_to(article_path(article), class: "block p-4 lg:p-6") do
+      link_to(article_path(article), class: "block p-4 lg:p-6", data: { turbo_prefetch: false }) do
         render RubyUI::Heading.new(
           level: 3,
           class: "font-semibold text-content group-hover:text-link-hover transition-colors duration-200 mb-3 line-clamp-2"

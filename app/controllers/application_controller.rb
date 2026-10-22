@@ -7,6 +7,9 @@ require "schema_dot_org/web_site"
 class ApplicationController < ActionController::Base
   include LocaleSwitcher
 
+  # 방문은 article 조회 이벤트가 발생할 때만 생성한다.
+  skip_before_action :track_ahoy_visit
+
   before_action :authenticate_user!
   allow_browser versions: { ie: false }
   # 로컬로 뽑은 건 후행 `#:` 타입 단언이 붙을 대입문이 필요해서다(인라인

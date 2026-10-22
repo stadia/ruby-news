@@ -746,6 +746,19 @@ module Pagy::I18n::P11n::Polish
   end
 end
 
+# pkg:gem/pagy#lib/pagy/modules/i18n/p11n/romanian.rb:6
+module Pagy::I18n::P11n::Romanian
+  private
+
+  # pkg:gem/pagy#lib/pagy/modules/i18n/p11n/romanian.rb:9
+  def plural_for(n = T.unsafe(nil)); end
+
+  class << self
+    # pkg:gem/pagy#lib/pagy/modules/i18n/p11n/romanian.rb:9
+    def plural_for(n = T.unsafe(nil)); end
+  end
+end
+
 # pkg:gem/pagy#lib/pagy/modules/i18n/p11n/west_slavic.rb:6
 module Pagy::I18n::P11n::WestSlavic
   private
@@ -862,10 +875,10 @@ module Pagy::Keyset::Adapters; end
 #
 # pkg:gem/pagy#lib/pagy/classes/keyset/adapters/active_record.rb:7
 module Pagy::Keyset::Adapters::ActiveRecord
-  # pkg:gem/pagy#lib/pagy/classes/keyset/adapters/active_record.rb:38
+  # pkg:gem/pagy#lib/pagy/classes/keyset/adapters/active_record.rb:39
   def apply_where(predicate, arguments); end
 
-  # pkg:gem/pagy#lib/pagy/classes/keyset/adapters/active_record.rb:32
+  # pkg:gem/pagy#lib/pagy/classes/keyset/adapters/active_record.rb:33
   def ensure_select; end
 
   # pkg:gem/pagy#lib/pagy/classes/keyset/adapters/active_record.rb:8
@@ -877,11 +890,11 @@ module Pagy::Keyset::Adapters::ActiveRecord
   # pkg:gem/pagy#lib/pagy/classes/keyset/adapters/active_record.rb:18
   def quoted_identifiers(table); end
 
-  # pkg:gem/pagy#lib/pagy/classes/keyset/adapters/active_record.rb:23
+  # pkg:gem/pagy#lib/pagy/classes/keyset/adapters/active_record.rb:24
   def typecast(attributes); end
 
   class << self
-    # pkg:gem/pagy#lib/pagy/classes/keyset/adapters/active_record.rb:42
+    # pkg:gem/pagy#lib/pagy/classes/keyset/adapters/active_record.rb:43
     def included(including); end
   end
 end
@@ -1174,53 +1187,53 @@ class Pagy::Offset < ::Pagy
   include ::Pagy::NumericHelperLoader
   include ::Pagy::NumericHelpers
 
-  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:18
+  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:19
   def initialize(**); end
 
-  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:47
+  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:48
   def assign_last; end
 
-  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:36
+  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:37
   def count; end
 
-  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:36
+  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:37
   def from; end
 
-  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:36
+  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:37
   def in; end
 
-  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:36
+  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:37
   def last; end
 
-  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:36
+  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:37
   def next; end
 
-  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:36
+  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:37
   def offset; end
 
-  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:37
+  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:38
   def pages; end
 
-  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:36
+  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:37
   def previous; end
 
-  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:39
+  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:40
   def records(collection); end
 
-  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:36
+  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:37
   def to; end
 
   protected
 
   # Called by false in_range?
   #
-  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:56
+  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:57
   def assign_empty_page_variables; end
 
-  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:51
+  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:52
   def assign_offset; end
 
-  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:45
+  # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:46
   def offset?; end
 end
 
@@ -1271,6 +1284,9 @@ end
 
 # pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:9
 Pagy::Offset::DEFAULT = T.let(T.unsafe(nil), Hash)
+
+# pkg:gem/pagy#lib/pagy/classes/offset/offset.rb:10
+Pagy::Offset::MAX_OFFSET = T.let(T.unsafe(nil), Integer)
 
 # pkg:gem/pagy#lib/pagy/toolbox/paginators/offset.rb:6
 module Pagy::OffsetPaginator

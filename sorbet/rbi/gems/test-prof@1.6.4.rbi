@@ -38,7 +38,7 @@ class Minitest::TestProf::BaseReporter < ::Minitest::AbstractReporter
   def prerecord(group, example); end
 
   # pkg:gem/test-prof#lib/minitest/base_reporter.rb:27
-  def record(*_arg0); end
+  def record(*); end
 
   # pkg:gem/test-prof#lib/minitest/base_reporter.rb:33
   def report; end
@@ -61,55 +61,32 @@ class Minitest::TestProf::BaseReporter < ::Minitest::AbstractReporter
   def location_without_line_number(group, example = T.unsafe(nil)); end
 end
 
-# pkg:gem/test-prof#lib/minitest/event_prof_formatter.rb:8
-class Minitest::TestProf::EventProfFormatter
-  # pkg:gem/test-prof#lib/minitest/event_prof_formatter.rb:12
-  def initialize(profilers); end
-
-  # pkg:gem/test-prof#lib/minitest/event_prof_formatter.rb:17
-  def prepare_results; end
-
-  private
-
-  # pkg:gem/test-prof#lib/minitest/event_prof_formatter.rb:61
-  def by_examples(profiler); end
-
-  # pkg:gem/test-prof#lib/minitest/event_prof_formatter.rb:43
-  def by_groups(profiler); end
-
-  # pkg:gem/test-prof#lib/minitest/event_prof_formatter.rb:82
-  def time_percentage(time, total_time); end
-
-  # pkg:gem/test-prof#lib/minitest/event_prof_formatter.rb:28
-  def total_results(profiler); end
-end
-
-# pkg:gem/test-prof#lib/test_prof/event_prof/minitest.rb:8
+# pkg:gem/test-prof#lib/test_prof/event_prof/minitest.rb:7
 class Minitest::TestProf::EventProfReporter < ::Minitest::TestProf::BaseReporter
-  # pkg:gem/test-prof#lib/test_prof/event_prof/minitest.rb:9
+  # pkg:gem/test-prof#lib/test_prof/event_prof/minitest.rb:8
   def initialize(io = T.unsafe(nil), options = T.unsafe(nil)); end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof/minitest.rb:25
+  # pkg:gem/test-prof#lib/test_prof/event_prof/minitest.rb:23
   def before_test(test); end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof/minitest.rb:20
+  # pkg:gem/test-prof#lib/test_prof/event_prof/minitest.rb:18
   def prerecord(group, example); end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof/minitest.rb:29
-  def record(*_arg0); end
+  # pkg:gem/test-prof#lib/test_prof/event_prof/minitest.rb:27
+  def record(*); end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof/minitest.rb:33
+  # pkg:gem/test-prof#lib/test_prof/event_prof/minitest.rb:31
   def report; end
 
   private
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof/minitest.rb:55
+  # pkg:gem/test-prof#lib/test_prof/event_prof/minitest.rb:52
   def change_current_group(group, example); end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof/minitest.rb:64
+  # pkg:gem/test-prof#lib/test_prof/event_prof/minitest.rb:61
   def configure_profiler(options); end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof/minitest.rb:41
+  # pkg:gem/test-prof#lib/test_prof/event_prof/minitest.rb:38
   def track_current_example(group, example); end
 end
 
@@ -188,7 +165,6 @@ module Process
   extend ::SQLite3::ForkSafety::CoreExt
   extend ::SemanticLogger::CoreExt::Process
   extend ::ActiveSupport::ForkTracker::CoreExt
-  extend ::Bundler::ConnectionPool::ForkTracker
 
   class << self
     # pkg:gem/test-prof#lib/test_prof/core.rb:17
@@ -836,16 +812,16 @@ module TestProf::EventProf
   class << self
     # Returns new configured instance of profilers group
     #
-    # pkg:gem/test-prof#lib/test_prof/event_prof.rb:78
+    # pkg:gem/test-prof#lib/test_prof/event_prof.rb:89
     def build(event = T.unsafe(nil)); end
 
-    # pkg:gem/test-prof#lib/test_prof/event_prof.rb:69
+    # pkg:gem/test-prof#lib/test_prof/event_prof.rb:80
     def config; end
 
-    # pkg:gem/test-prof#lib/test_prof/event_prof.rb:73
+    # pkg:gem/test-prof#lib/test_prof/event_prof.rb:84
     def configure; end
 
-    # pkg:gem/test-prof#lib/test_prof/event_prof.rb:88
+    # pkg:gem/test-prof#lib/test_prof/event_prof.rb:99
     def instrumenter; end
 
     # Instrument specified module methods.
@@ -855,61 +831,70 @@ module TestProf::EventProf
     #
     #   TestProf::EventProf.monitor(MyModule, "my_module.call", :call)
     #
-    # pkg:gem/test-prof#lib/test_prof/event_prof.rb:98
+    # pkg:gem/test-prof#lib/test_prof/event_prof.rb:109
     def monitor(mod, event, *mids, **kwargs); end
   end
 end
 
 # EventProf configuration
 #
-# pkg:gem/test-prof#lib/test_prof/event_prof.rb:30
+# pkg:gem/test-prof#lib/test_prof/event_prof.rb:33
 class TestProf::EventProf::Configuration
-  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:39
+  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:42
   def initialize; end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:36
+  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:39
   def event; end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:36
+  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:39
   def event=(_arg0); end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:36
+  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:39
+  def format; end
+
+  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:39
+  def format=(_arg0); end
+
+  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:39
   def instrumenter; end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:36
+  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:39
   def instrumenter=(_arg0); end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:36
+  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:39
   def per_example; end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:36
+  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:39
   def per_example=(_arg0); end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:54
+  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:58
   def per_example?; end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:36
+  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:62
+  def printer; end
+
+  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:39
   def rank_by; end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:36
+  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:39
   def rank_by=(_arg0); end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:58
+  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:69
   def resolve_instrumenter; end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:50
+  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:54
   def stamp?; end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:36
+  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:39
   def top_count; end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:36
+  # pkg:gem/test-prof#lib/test_prof/event_prof.rb:39
   def top_count=(_arg0); end
 end
 
 # Map of supported instrumenters
 #
-# pkg:gem/test-prof#lib/test_prof/event_prof.rb:32
+# pkg:gem/test-prof#lib/test_prof/event_prof.rb:35
 TestProf::EventProf::Configuration::INSTRUMENTERS = T.let(T.unsafe(nil), Hash)
 
 # Registers and activates custom events (which require patches).
@@ -958,13 +943,13 @@ class TestProf::EventProf::Instrumentations::ActiveSupport::Subscriber
   def block; end
 
   # pkg:gem/test-prof#lib/test_prof/event_prof/instrumentations/active_support.rb:22
-  def finish(*_arg0); end
+  def finish(*); end
 
   # pkg:gem/test-prof#lib/test_prof/event_prof/instrumentations/active_support.rb:18
-  def publish(_name, started_at, finished_at, *_arg3); end
+  def publish(_name, started_at, finished_at, *); end
 
   # pkg:gem/test-prof#lib/test_prof/event_prof/instrumentations/active_support.rb:14
-  def start(*_arg0); end
+  def start(*); end
 
   # pkg:gem/test-prof#lib/test_prof/event_prof/instrumentations/active_support.rb:8
   def started_at; end
@@ -1002,6 +987,66 @@ class TestProf::EventProf::Monitor::TopLevelTracker < ::TestProf::EventProf::Mon
 
   # pkg:gem/test-prof#lib/test_prof/event_prof/monitor.rb:28
   def track; end
+end
+
+# pkg:gem/test-prof#lib/test_prof/event_prof/printers/base.rb:5
+module TestProf::EventProf::Printers; end
+
+# pkg:gem/test-prof#lib/test_prof/event_prof/printers/base.rb:6
+module TestProf::EventProf::Printers::Base
+  include ::TestProf::Logging
+
+  private
+
+  # pkg:gem/test-prof#lib/test_prof/event_prof/printers/base.rb:15
+  def describe_example(id); end
+
+  # pkg:gem/test-prof#lib/test_prof/event_prof/printers/base.rb:11
+  def describe_group(id); end
+
+  # pkg:gem/test-prof#lib/test_prof/event_prof/printers/base.rb:19
+  def locate(id); end
+
+  # pkg:gem/test-prof#lib/test_prof/event_prof/printers/base.rb:23
+  def time_percentage(time, total_time); end
+end
+
+# pkg:gem/test-prof#lib/test_prof/event_prof/printers/json.rb:9
+module TestProf::EventProf::Printers::Json
+  extend ::TestProf::Logging
+  extend ::TestProf::EventProf::Printers::Base
+
+  class << self
+    # pkg:gem/test-prof#lib/test_prof/event_prof/printers/json.rb:15
+    def dump(profilers); end
+
+    private
+
+    # pkg:gem/test-prof#lib/test_prof/event_prof/printers/json.rb:58
+    def convert_example(example); end
+
+    # pkg:gem/test-prof#lib/test_prof/event_prof/printers/json.rb:46
+    def convert_group(group); end
+
+    # pkg:gem/test-prof#lib/test_prof/event_prof/printers/json.rb:27
+    def convert_results(profiler); end
+  end
+end
+
+# pkg:gem/test-prof#lib/test_prof/event_prof/printers/simple.rb:10
+module TestProf::EventProf::Printers::Simple
+  extend ::TestProf::Logging
+  extend ::TestProf::EventProf::Printers::Base
+
+  class << self
+    # pkg:gem/test-prof#lib/test_prof/event_prof/printers/simple.rb:17
+    def dump(profilers); end
+
+    private
+
+    # pkg:gem/test-prof#lib/test_prof/event_prof/printers/simple.rb:23
+    def dump_profiler(profiler); end
+  end
 end
 
 # pkg:gem/test-prof#lib/test_prof/event_prof/profiler.rb:5
@@ -1104,39 +1149,33 @@ class TestProf::EventProf::ProfilersGroup
   def profilers; end
 end
 
-# pkg:gem/test-prof#lib/test_prof/event_prof/rspec.rb:8
+# pkg:gem/test-prof#lib/test_prof/event_prof/rspec.rb:5
 class TestProf::EventProf::RSpecListener
   include ::TestProf::Logging
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof/rspec.rb:21
+  # pkg:gem/test-prof#lib/test_prof/event_prof/rspec.rb:15
   def initialize; end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof/rspec.rb:41
+  # pkg:gem/test-prof#lib/test_prof/event_prof/rspec.rb:35
   def example_finished(notification); end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof/rspec.rb:32
+  # pkg:gem/test-prof#lib/test_prof/event_prof/rspec.rb:26
   def example_group_finished(notification); end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof/rspec.rb:27
+  # pkg:gem/test-prof#lib/test_prof/event_prof/rspec.rb:21
   def example_group_started(notification); end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof/rspec.rb:37
+  # pkg:gem/test-prof#lib/test_prof/event_prof/rspec.rb:31
   def example_started(notification); end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof/rspec.rb:45
+  # pkg:gem/test-prof#lib/test_prof/event_prof/rspec.rb:39
   def print; end
 
-  # pkg:gem/test-prof#lib/test_prof/event_prof/rspec.rb:49
-  def report(profiler); end
-
-  # pkg:gem/test-prof#lib/test_prof/event_prof/rspec.rb:101
+  # pkg:gem/test-prof#lib/test_prof/event_prof/rspec.rb:47
   def stamp!(profiler); end
-
-  # pkg:gem/test-prof#lib/test_prof/event_prof/rspec.rb:134
-  def time_percentage(time, total_time); end
 end
 
-# pkg:gem/test-prof#lib/test_prof/event_prof/rspec.rb:14
+# pkg:gem/test-prof#lib/test_prof/event_prof/rspec.rb:8
 TestProf::EventProf::RSpecListener::NOTIFICATIONS = T.let(T.unsafe(nil), Array)
 
 # FactoryAllStub inject into FactoryBot to make
@@ -1272,7 +1311,7 @@ end
 # pkg:gem/test-prof#lib/test_prof/factory_doctor/fabrication_patch.rb:6
 module TestProf::FactoryDoctor::FabricationPatch
   # pkg:gem/test-prof#lib/test_prof/factory_doctor/fabrication_patch.rb:7
-  def create(*_arg0); end
+  def create(*); end
 end
 
 # Wrap #run method with FactoryDoctor tracking
@@ -1521,7 +1560,7 @@ module TestProf::FactoryProf::Printers::Flamegraph
     def convert_stacks(result); end
 
     # pkg:gem/test-prof#lib/test_prof/factory_prof/printers/flamegraph.rb:14
-    def dump(result, **_arg1); end
+    def dump(result, **); end
   end
 end
 
@@ -1540,7 +1579,7 @@ module TestProf::FactoryProf::Printers::Json
     def convert_stats(result, start_time); end
 
     # pkg:gem/test-prof#lib/test_prof/factory_prof/printers/json.rb:12
-    def dump(result, start_time:, **_arg2); end
+    def dump(result, start_time:, **); end
   end
 end
 
@@ -1552,7 +1591,7 @@ module TestProf::FactoryProf::Printers::NateHeckler
 
   class << self
     # pkg:gem/test-prof#lib/test_prof/factory_prof/printers/nate_heckler.rb:13
-    def dump(result, start_time:, **_arg2); end
+    def dump(result, start_time:, **); end
   end
 end
 
@@ -2108,6 +2147,14 @@ class TestProf::RSpecDissect::Collector
 
   # pkg:gem/test-prof#lib/test_prof/rspec_dissect/collector.rb:13
   def top_count; end
+
+  private
+
+  # Follow the logger's color setting, so that a report written to a file
+  # or a pipe has no escape sequences in it
+  #
+  # pkg:gem/test-prof#lib/test_prof/rspec_dissect/collector.rb:61
+  def bold(str); end
 end
 
 # RSpecDisect configuration
@@ -2145,7 +2192,7 @@ end
 # pkg:gem/test-prof#lib/test_prof/rspec_dissect.rb:13
 module TestProf::RSpecDissect::ExampleInstrumentation
   # pkg:gem/test-prof#lib/test_prof/rspec_dissect.rb:14
-  def run_before_example(*_arg0); end
+  def run_before_example(*); end
 end
 
 # pkg:gem/test-prof#lib/test_prof/rspec_dissect/rspec.rb:9
@@ -2182,7 +2229,7 @@ TestProf::RSpecDissect::Listener::NOTIFICATIONS = T.let(T.unsafe(nil), Array)
 # pkg:gem/test-prof#lib/test_prof/rspec_dissect.rb:19
 module TestProf::RSpecDissect::MemoizedInstrumentation
   # pkg:gem/test-prof#lib/test_prof/rspec_dissect.rb:20
-  def fetch_or_store(id, *_arg1); end
+  def fetch_or_store(id, *); end
 end
 
 # pkg:gem/test-prof#lib/test_prof/rspec_dissect.rb:10
@@ -2886,25 +2933,25 @@ class TestProf::TPSProf::Profiler
   def groups; end
 
   # pkg:gem/test-prof#lib/test_prof/tps_prof/profiler.rb:14
-  def max_examples_count(*_arg0, **_arg1, &_arg2); end
+  def max_examples_count(*, **, &); end
 
   # pkg:gem/test-prof#lib/test_prof/tps_prof/profiler.rb:14
-  def max_group_time(*_arg0, **_arg1, &_arg2); end
+  def max_group_time(*, **, &); end
 
   # pkg:gem/test-prof#lib/test_prof/tps_prof/profiler.rb:14
-  def min_examples_count(*_arg0, **_arg1, &_arg2); end
+  def min_examples_count(*, **, &); end
 
   # pkg:gem/test-prof#lib/test_prof/tps_prof/profiler.rb:14
-  def min_group_time(*_arg0, **_arg1, &_arg2); end
+  def min_group_time(*, **, &); end
 
   # pkg:gem/test-prof#lib/test_prof/tps_prof/profiler.rb:14
-  def min_target_tps(*_arg0, **_arg1, &_arg2); end
+  def min_target_tps(*, **, &); end
 
   # pkg:gem/test-prof#lib/test_prof/tps_prof/profiler.rb:14
-  def min_tps(*_arg0, **_arg1, &_arg2); end
+  def min_tps(*, **, &); end
 
   # pkg:gem/test-prof#lib/test_prof/tps_prof/profiler.rb:14
-  def mode(*_arg0, **_arg1, &_arg2); end
+  def mode(*, **, &); end
 
   # pkg:gem/test-prof#lib/test_prof/tps_prof/profiler.rb:11
   def top_count; end

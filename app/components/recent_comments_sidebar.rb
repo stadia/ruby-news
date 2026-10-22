@@ -55,7 +55,7 @@ class Components::RecentCommentsSidebar < Components::Base
           plain view_context.time_ago_in_words(comment.created_at)
         end
         if comment.article.present?
-          link_to(article_path(comment.article), class: "text-link hover:text-link-hover flex items-center gap-1 transition-colors") do
+          link_to(article_path(comment.article), class: "text-link hover:text-link-hover flex items-center gap-1 transition-colors", data: { turbo_prefetch: false }) do
             Hero::ArrowTopRightOnSquare(variant: :outline, class: "w-3 h-3")
             plain t("recent_comments_sidebar.view_article")
           end

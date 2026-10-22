@@ -192,7 +192,7 @@ class Components::Posts::PostCard < Components::Base
 
         div(class: "space-y-1") do
           h3(class: "text-sm font-semibold text-content leading-snug") do
-            link_to(article.display_title.presence || t("posts.post_card.view_article"), article_path(article), class: "hover:text-link-hover", data: { turbo_frame: "_top" })
+            link_to(article.display_title.presence || t("posts.post_card.view_article"), article_path(article), class: "hover:text-link-hover", data: { turbo_frame: "_top", turbo_prefetch: false })
           end
 
           p(class: "text-xs text-content-secondary wrap-break-word") { article.title }

@@ -86,7 +86,7 @@ class Components::Home::Feature < Components::Base
       attrs[:sizes] = "(min-width: 1024px) 66vw, 100vw"
     end
 
-    link_to(article_path(article), class: "block overflow-hidden relative z-10") do
+    link_to(article_path(article), class: "block overflow-hidden relative z-10", data: { turbo_prefetch: false }) do
       image_tag(thumbnail_url, **attrs)
     end
   end
@@ -96,7 +96,7 @@ class Components::Home::Feature < Components::Base
 
     div(class: "mb-3") do
       h3(class: "#{heading_class} text-content hover:text-link-hover transition-colors duration-200") do
-        link_to(article.display_title, article_path(article), class: "after:absolute after:inset-0 after:content-['']")
+        link_to(article.display_title, article_path(article), class: "after:absolute after:inset-0 after:content-['']", data: { turbo_prefetch: false })
       end
       if size == :large
         p(class: "text-base text-content-secondary wrap-break-word") { article.title }

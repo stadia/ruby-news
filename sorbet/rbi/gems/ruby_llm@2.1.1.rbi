@@ -1385,55 +1385,55 @@ module RubyLLM::ActiveRecord::ChatMethods
 
   private
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1052
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1056
   def assign_supported_attribute(attributes, name, value); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:857
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:861
   def attachment_association?(message_class); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1008
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1012
   def blank_placeholder?; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:861
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:865
   def build_llm_chat; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:970
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:974
   def cache_boundary_attributes(cache_until_here); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1098
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1102
   def cancellation_poll_due?; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:811
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:815
   def cleanup_after_failure(error); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:817
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:821
   def cleanup_failed_messages(reason:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:822
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:826
   def cleanup_orphaned_tool_results; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1093
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1097
   def clear_cancellation_request; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:927
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:931
   def clear_persisted_system_instructions; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1072
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1076
   def consume_persisted_cancellation_request; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:842
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:846
   def eager_load_messages; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:790
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:794
   def find_or_create_model(model_info); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:778
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:782
   def find_registered_model; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1064
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1068
   def find_tool_call(tool_call_id); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:920
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:924
   def install_persistence_callbacks(chat); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:743
@@ -1442,25 +1442,25 @@ module RubyLLM::ActiveRecord::ChatMethods
   # An empty store would otherwise hold only this chat's model on the next
   # boot, since the registry reads whatever the store returns.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:784
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:788
   def load_model_registry_into_store; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1032
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1036
   def message_attributes(message); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1015
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1019
   def persist_message_completion(message); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1001
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1005
   def persist_new_message; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:956
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:960
   def persist_system_instruction(instructions, append:, cache_until_here:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:891
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:895
   def persist_tool_call_input(tool_call, input); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1056
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1060
   def persist_tool_calls(tool_calls, message_record: T.unsafe(nil)); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:735
@@ -1469,49 +1469,49 @@ module RubyLLM::ActiveRecord::ChatMethods
   # Jobs and requests run with the query cache on, which would replay the
   # first poll's answer for the rest of the run.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1087
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1091
   def persisted_cancellation_request?; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:896
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:900
   def persisted_tool_call_approval(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:886
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:890
   def persisted_tool_call_input(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:995
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:999
   def reapply_runtime_instructions(chat); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:876
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:880
   def record_tool_call_decision(tool_call, decision); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:933
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:937
   def replace_persisted_system_instructions(instructions, cache_until_here:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:754
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:758
   def resolve_model; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:766
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:770
   def resolve_model_info; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:981
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:985
   def store_unpersisted_instruction(instructions, append:, cache_until_here:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:906
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:910
   def sync_messages(chat = T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1046
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1050
   def tool_result_attributes(tool_call, message); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:977
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:981
   def unpersisted_instructions; end
 
   # Rewriting the same instructions every turn would move the system row
   # behind the user messages and rebroadcast it each time.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:946
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:950
   def update_persisted_system_instruction(record, instructions, cache_until_here:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:750
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:754
   def usage_records_by_entry; end
 end
 
@@ -4622,52 +4622,52 @@ class RubyLLM::Chat
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1188
   def add_callback(name, &block); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1634
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1638
   def add_tool_result_message(tool_call, result); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1757
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1761
   def apply_tool_choice(choice); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1580
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1584
   def approval_pending?(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1856
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1860
   def awaiting_approval_names; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1835
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1839
   def blank_response?(message); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1174
   def build_schema_payload(schema, schema_def, strict); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1729
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1733
   def cancel_task(task); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1716
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1720
   def cancel_tasks; end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1138
   def coerce_message(message_or_attributes); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1566
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1570
   def deny_tool_calls(tool_calls); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1473
   def discard_missing_uploads(error); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1520
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1524
   def execute_pending_tool_calls(response); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1642
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1646
   def execute_tool(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1623
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1627
   def execute_tool_with_callbacks(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1617
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1621
   def execute_tools_concurrently(tool_calls, &on_result); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1559
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1563
   def execution_decision(tool_call); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1162
@@ -4685,7 +4685,7 @@ class RubyLLM::Chat
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1351
   def finish_fallback(fallback, response: T.unsafe(nil), fallback_error: T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1810
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1814
   def forced_tool_choice?; end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1125
@@ -4697,43 +4697,43 @@ class RubyLLM::Chat
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1269
   def generate_with_fallbacks(&block); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1607
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1611
   def handle_concurrent_tool_calls(tool_calls); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1596
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1600
   def handle_sequential_tool_calls(tool_calls); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1818
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1822
   def hidden_from_model?(tool); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1703
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1707
   def input_pending?(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1846
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1850
   def inspect_attributes; end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1229
   def instrumentation_payload(streaming:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1682
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1686
   def invoke_tool(tool, tool_call, arguments); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1814
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1818
   def last_non_system_message; end
 
   # A blank response answers nothing, so it never hides the round before
   # it, as the placeholder of a process that died after a tool finished.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1829
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1833
   def latest_response(list); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1483
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1487
   def link_completion_usage(response, usage_start); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1129
   def message_list(new_messages); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1784
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1788
   def normalize_calls(calls); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1114
@@ -4742,25 +4742,25 @@ class RubyLLM::Chat
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1152
   def normalize_schema_payload(raw_schema); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1795
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1799
   def normalize_tool_choice(choice); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1772
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1776
   def normalize_tool_concurrency(concurrency); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1549
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1553
   def partition_pending_tool_calls(pending); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1693
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1697
   def pause_tool_call(tool_call, state); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1698
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1702
   def paused?(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1841
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1845
   def pending_tool_calls(response); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1822
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1826
   def pending_tool_response; end
 
   # Preprocessing builds a per-request view of the conversation: the
@@ -4771,7 +4771,7 @@ class RubyLLM::Chat
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1366
   def preprocessed_messages(list = T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1676
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1680
   def progress_listener(tool_call); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1452
@@ -4789,16 +4789,16 @@ class RubyLLM::Chat
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1221
   def record_generated_message(result, usage_start, streaming: T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1487
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1491
   def record_out_of_band_usage(response); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1574
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1578
   def record_tool_call_decision(tool_call, decision); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1739
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1743
   def record_tool_call_input(tool_call, input); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1477
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1481
   def record_usage_entry(entry); end
 
   # A provider-executed call is closed with the refusal its provider
@@ -4826,34 +4826,34 @@ class RubyLLM::Chat
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1110
   def resolved_thinking; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1536
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1540
   def respond_to_tool_approvals(tool_calls); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1503
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1507
   def run_callbacks(name, *args); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1183
   def sanitize_schema_name(name); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1744
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1748
   def settle_input(request); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1312
   def switch_to_fallback_model(fallback); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1711
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1715
   def task_for(tool_call, state); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1589
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1593
   def tool_call_approval(tool, tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1735
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1739
   def tool_call_input(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1802
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1806
   def tool_name_for_choice_class(tool_class); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1707
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1711
   def unanswered?(state); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1403
@@ -4871,7 +4871,7 @@ class RubyLLM::Chat
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1323
   def with_resolved_model(model); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1507
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1511
   def wrap_streaming_block(stream_tracker: T.unsafe(nil), &block); end
 end
 
@@ -8786,8 +8786,10 @@ RubyLLM::MCP::Apps::VISIBILITY = T.let(T.unsafe(nil), Array)
 # 2026-07-28 revision and falls back to the initialize handshake for
 # servers that predate it, declaring only its extensions so those
 # servers never call back. A server that rejects 2026-07-28 while
-# listing it gets the request once more; one that answers the handshake
-# with a revision missing from LEGACY_VERSIONS is disconnected.
+# listing it gets the request once more; one that rejects it while
+# listing a revision from LEGACY_VERSIONS, or without listing any,
+# gets the handshake instead; one that answers the handshake with a
+# revision missing from LEGACY_VERSIONS is disconnected.
 #
 # Servers that predate 2026-07-28 may announce that their tools,
 # prompts, or resources changed on the stream of any request. Those
@@ -8799,15 +8801,15 @@ RubyLLM::MCP::Apps::VISIBILITY = T.let(T.unsafe(nil), Array)
 # acknowledged once a ping confirms the session, starting a new one if
 # it ended.
 #
-# pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:21
+# pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:23
 class RubyLLM::MCP::Client
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:45
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:47
   def initialize(transport, capabilities: T.unsafe(nil), &on_change); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:90
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:92
   def close; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:65
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:67
   def list(method, key); end
 
   # Subscribes to +changes+, a subscriptions/listen filter, and yields
@@ -8815,92 +8817,98 @@ class RubyLLM::MCP::Client
   # acknowledgment. Returns when the server ends the subscription and
   # raises Error when it refuses one or the stream breaks.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:79
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:81
   def listen(changes, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:86
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:88
   def modern?; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:57
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:59
   def request(method, params = T.unsafe(nil), headers: T.unsafe(nil), &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:53
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:55
   def server; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:43
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:45
   def version; end
 
   private
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:183
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:185
   def answer(response); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:126
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:128
   def call(method, params = T.unsafe(nil), timeout: T.unsafe(nil), headers: T.unsafe(nil), retried: T.unsafe(nil), &on_notification); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:179
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:181
   def cancel(request); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:175
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:177
   def cancels?(notification, request); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:208
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:221
   def client_info; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:101
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:103
   def discover; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:135
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:137
   def exchange(request, timeout:, headers:, &on_notification); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:109
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:111
   def handshake; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:161
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:163
   def listen_to_session(changes, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:195
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:208
   def message(method, params = T.unsafe(nil), id: T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:200
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:213
   def meta; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:190
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:192
   def offers_version?(error); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:147
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:196
+  def predates_revision?(error); end
+
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:149
   def subscribe(changes); end
+
+  # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:203
+  def supported_versions(error); end
 
   class << self
     # The answer to a request the server sends: RubyLLM only answers pings.
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:35
+    # pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:37
     def reply(request); end
   end
 end
 
-# pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:28
+# pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:30
 RubyLLM::MCP::Client::ACKNOWLEDGED = T.let(T.unsafe(nil), String)
 
-# pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:29
+# pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:31
 RubyLLM::MCP::Client::CHANGES = T.let(T.unsafe(nil), Array)
 
-# pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:27
+# pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:29
 RubyLLM::MCP::Client::DISCOVERY_TIMEOUT = T.let(T.unsafe(nil), Integer)
 
-# pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:23
+# pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:25
 RubyLLM::MCP::Client::LEGACY_VERSIONS = T.let(T.unsafe(nil), Array)
 
-# pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:26
+# pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:28
 RubyLLM::MCP::Client::METHOD_NOT_FOUND = T.let(T.unsafe(nil), Integer)
 
-# pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:25
+# pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:27
 RubyLLM::MCP::Client::MODERN_ERRORS = T.let(T.unsafe(nil), Array)
 
-# pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:24
+# pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:26
 RubyLLM::MCP::Client::UNSUPPORTED_VERSION = T.let(T.unsafe(nil), Integer)
 
-# pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:22
+# pkg:gem/ruby_llm#lib/ruby_llm/mcp/client.rb:24
 RubyLLM::MCP::Client::VERSION = T.let(T.unsafe(nil), String)
 
 # The MCP servers connected to a chat, readable by name.
@@ -13428,16 +13436,19 @@ class RubyLLM::Protocol
   # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:672
   def apply_tool_search(payload); end
 
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:761
+  def attachment_uploads(messages, scope); end
+
   # Providers reject audio whose filename carries no extension, which a URL
   # or an IO often has none of, so the detected format supplies one.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:808
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:812
   def audio_file_name(attachment); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:700
   def auto_upload_large_files?; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:797
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:801
   def build_audio_file_part(audio_file); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:620
@@ -13454,7 +13465,7 @@ class RubyLLM::Protocol
   # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:601
   def current_model?(model_id); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:773
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:777
   def default_large_file_upload_threshold; end
 
   # A thinking signature or a provider-shaped content block belongs to the
@@ -13474,7 +13485,7 @@ class RubyLLM::Protocol
   # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:755
   def missing_uploads(messages, error, scope); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:764
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:768
   def names_file?(error, id); end
 
   # A thinking signature can be another provider's opaque blob, and a
@@ -13484,13 +13495,13 @@ class RubyLLM::Protocol
   # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:639
   def own_signature(message); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:825
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:829
   def parse_completion_response(response); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:616
   def portable_raw_content(_message); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:814
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:818
   def post_count_tokens(payload); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:708
@@ -13505,10 +13516,10 @@ class RubyLLM::Protocol
   # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:632
   def producing_entry(message); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:777
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:781
   def provider_file_attachable?(_attachment); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:781
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:785
   def provider_file_upload_options(_attachment); end
 
   # Uploads are memoized per provider on the attachment itself, so a chat
@@ -13539,19 +13550,19 @@ class RubyLLM::Protocol
   # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:704
   def supports_provider_file_references?; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:818
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:822
   def sync_response(payload, additional_headers = T.unsafe(nil)); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:676
   def track_usage(operation, on_finish: T.unsafe(nil), model_id: T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:768
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:772
   def upload_large_attachment?(attachment); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:791
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:795
   def validate_animate_inputs!(with:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:785
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocol.rb:789
   def validate_paint_inputs!(with:, mask:); end
 
   # Another model of this provider gets the raw content any of its models
@@ -15848,6 +15859,16 @@ module RubyLLM::Protocols::ChatCompletions::EmbeddingBatches
 
   # pkg:gem/ruby_llm#lib/ruby_llm/protocols/chat_completions/embedding_batches.rb:29
   def parse_batch_completion_response(body); end
+
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/chat_completions/embedding_batches.rb:33
+  def parse_batch_result(line); end
+
+  # A row's index names the input its vector belongs to, so rows are put
+  # back in that order and positions that are not exactly 0...N fail the
+  # request rather than pairing vectors with the wrong texts.
+  #
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/chat_completions/embedding_batches.rb:48
+  def valid_embedding_positions?(rows); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/protocols/chat_completions/embedding_batches.rb:19
   def validate_batch_requests!(requests); end
@@ -23776,7 +23797,7 @@ module RubyLLM::Providers::Bedrock::Models
   # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:90
   def inference_profile_ids; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:209
+  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:208
   def inference_profile_only?(inference_types); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:143
@@ -23827,10 +23848,10 @@ module RubyLLM::Providers::Bedrock::Models
   # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:19
   def models_url; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:213
+  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:212
   def normalize_inference_profile_id(model_id, inference_types, region); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:255
+  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:254
   def normalize_modalities(modalities); end
 
   # A summary's converse block is metadata Bedrock fills in for some
@@ -23839,10 +23860,10 @@ module RubyLLM::Providers::Bedrock::Models
   # Converse accepts the model at all is the closest thing the listing
   # has to a tool-use flag.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:271
+  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:270
   def parse_capabilities(model_data); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:282
+  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:281
   def parse_context_window(model_data); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:81
@@ -23855,29 +23876,29 @@ module RubyLLM::Providers::Bedrock::Models
   # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:45
   def parse_mantle_models_response(response, slug); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:223
+  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:222
   def prefixed_with(model_id, prefix); end
 
   # Inference profile ids use geography prefixes, not region name
   # segments: ap-* regions are apac., GovCloud is us-gov.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:233
+  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:232
   def region_prefix(region); end
 
   # Countries with their own residency-preserving profiles come before
   # the broad geography, so Tokyo prefers jp. over apac. Some models
   # ship with only a global. profile, so that is the last resort.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:245
+  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:244
   def region_prefix_candidates(region); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:251
+  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:250
   def region_prefixed?(model_id); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:171
   def registered_model(model_id, models); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:197
+  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:198
   def registered_profile_candidate(model_id, models, region); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:185
@@ -23886,7 +23907,7 @@ module RubyLLM::Providers::Bedrock::Models
   # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:72
   def tag_mantle_endpoint(model); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:219
+  # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:218
   def with_region_prefix(model_id, region); end
 
   class << self
@@ -23900,7 +23921,7 @@ module RubyLLM::Providers::Bedrock::Models
     # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:90
     def inference_profile_ids; end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:209
+    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:208
     def inference_profile_only?(inference_types); end
 
     # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:143
@@ -23951,10 +23972,10 @@ module RubyLLM::Providers::Bedrock::Models
     # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:19
     def models_url; end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:213
+    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:212
     def normalize_inference_profile_id(model_id, inference_types, region); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:255
+    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:254
     def normalize_modalities(modalities); end
 
     # A summary's converse block is metadata Bedrock fills in for some
@@ -23963,10 +23984,10 @@ module RubyLLM::Providers::Bedrock::Models
     # Converse accepts the model at all is the closest thing the listing
     # has to a tool-use flag.
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:271
+    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:270
     def parse_capabilities(model_data); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:282
+    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:281
     def parse_context_window(model_data); end
 
     # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:81
@@ -23979,29 +24000,29 @@ module RubyLLM::Providers::Bedrock::Models
     # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:45
     def parse_mantle_models_response(response, slug); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:223
+    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:222
     def prefixed_with(model_id, prefix); end
 
     # Inference profile ids use geography prefixes, not region name
     # segments: ap-* regions are apac., GovCloud is us-gov.
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:233
+    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:232
     def region_prefix(region); end
 
     # Countries with their own residency-preserving profiles come before
     # the broad geography, so Tokyo prefers jp. over apac. Some models
     # ship with only a global. profile, so that is the last resort.
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:245
+    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:244
     def region_prefix_candidates(region); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:251
+    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:250
     def region_prefixed?(model_id); end
 
     # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:171
     def registered_model(model_id, models); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:197
+    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:198
     def registered_profile_candidate(model_id, models, region); end
 
     # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:185
@@ -24010,7 +24031,7 @@ module RubyLLM::Providers::Bedrock::Models
     # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:72
     def tag_mantle_endpoint(model); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:219
+    # pkg:gem/ruby_llm#lib/ruby_llm/providers/bedrock/models.rb:218
     def with_region_prefix(model_id, region); end
   end
 end
@@ -24722,6 +24743,13 @@ module RubyLLM::Providers::Mistral::ChatCompletions::Batches
   # pkg:gem/ruby_llm#lib/ruby_llm/providers/mistral/chat_completions/batches.rb:50
   def batch_url(id); end
 
+  # A row's index names the input its vector belongs to, so rows are put
+  # back in that order and positions that are not exactly 0...N fail the
+  # request rather than pairing vectors with the wrong inputs.
+  #
+  # pkg:gem/ruby_llm#lib/ruby_llm/providers/mistral/chat_completions/batches.rb:125
+  def embedding_positions?(rows); end
+
   # pkg:gem/ruby_llm#lib/ruby_llm/providers/mistral/chat_completions/batches.rb:65
   def mistral_batch_endpoint(requests); end
 
@@ -24737,7 +24765,7 @@ module RubyLLM::Providers::Mistral::ChatCompletions::Batches
   # pkg:gem/ruby_llm#lib/ruby_llm/providers/mistral/chat_completions/batches.rb:90
   def parse_batch_status(raw_status, completed:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/providers/mistral/chat_completions/batches.rb:111
+  # pkg:gem/ruby_llm#lib/ruby_llm/providers/mistral/chat_completions/batches.rb:115
   def parse_mistral_batch_body(body, shape:); end
 end
 

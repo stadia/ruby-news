@@ -4350,9 +4350,6 @@ Aws::ParamValidator::EXPECTED_GOT = T.let(T.unsafe(nil), String)
 # Most plugins are required explicitly from service clients
 # but users may reference them outside of client usage.
 # @api private
-# @api private
-# @api private
-# @api private
 #
 # pkg:gem/aws-sdk-core#lib/aws-sdk-core/plugins.rb:7
 module Aws::Plugins; end
@@ -5989,7 +5986,6 @@ class Aws::ProcessCredentials
 end
 
 # @api private
-# @api private
 #
 # pkg:gem/aws-sdk-core#lib/aws-sdk-core/query/handler.rb:5
 module Aws::Query; end
@@ -7080,30 +7076,6 @@ end
 # See {Errors} for more information.
 #
 # @!group service
-# WARNING ABOUT GENERATED CODE
-#
-# This file is generated. See the contributing guide for more information:
-# https://github.com/aws/aws-sdk-ruby/blob/version-3/CONTRIBUTING.md
-#
-# WARNING ABOUT GENERATED CODE
-# WARNING ABOUT GENERATED CODE
-#
-# This file is generated. See the contributing guide for more information:
-# https://github.com/aws/aws-sdk-ruby/blob/version-3/CONTRIBUTING.md
-#
-# WARNING ABOUT GENERATED CODE
-# WARNING ABOUT GENERATED CODE
-#
-# This file is generated. See the contributing guide for more information:
-# https://github.com/aws/aws-sdk-ruby/blob/version-3/CONTRIBUTING.md
-#
-# WARNING ABOUT GENERATED CODE
-# WARNING ABOUT GENERATED CODE
-#
-# This file is generated. See the contributing guide for more information:
-# https://github.com/aws/aws-sdk-ruby/blob/version-3/CONTRIBUTING.md
-#
-# WARNING ABOUT GENERATED CODE
 # WARNING ABOUT GENERATED CODE
 #
 # This file is generated. See the contributing guide for more information:
@@ -8500,30 +8472,6 @@ Aws::SSOCredentials::TOKEN_PROVIDER_REQUIRED_OPTS = T.let(T.unsafe(nil), Array)
 # See {Errors} for more information.
 #
 # @!group service
-# WARNING ABOUT GENERATED CODE
-#
-# This file is generated. See the contributing guide for more information:
-# https://github.com/aws/aws-sdk-ruby/blob/version-3/CONTRIBUTING.md
-#
-# WARNING ABOUT GENERATED CODE
-# WARNING ABOUT GENERATED CODE
-#
-# This file is generated. See the contributing guide for more information:
-# https://github.com/aws/aws-sdk-ruby/blob/version-3/CONTRIBUTING.md
-#
-# WARNING ABOUT GENERATED CODE
-# WARNING ABOUT GENERATED CODE
-#
-# This file is generated. See the contributing guide for more information:
-# https://github.com/aws/aws-sdk-ruby/blob/version-3/CONTRIBUTING.md
-#
-# WARNING ABOUT GENERATED CODE
-# WARNING ABOUT GENERATED CODE
-#
-# This file is generated. See the contributing guide for more information:
-# https://github.com/aws/aws-sdk-ruby/blob/version-3/CONTRIBUTING.md
-#
-# WARNING ABOUT GENERATED CODE
 # WARNING ABOUT GENERATED CODE
 #
 # This file is generated. See the contributing guide for more information:
@@ -11119,30 +11067,6 @@ Aws::SSOTokenProvider::SSO_REQUIRED_OPTS = T.let(T.unsafe(nil), Array)
 # See {Errors} for more information.
 #
 # @!group service
-# WARNING ABOUT GENERATED CODE
-#
-# This file is generated. See the contributing guide for more information:
-# https://github.com/aws/aws-sdk-ruby/blob/version-3/CONTRIBUTING.md
-#
-# WARNING ABOUT GENERATED CODE
-# WARNING ABOUT GENERATED CODE
-#
-# This file is generated. See the contributing guide for more information:
-# https://github.com/aws/aws-sdk-ruby/blob/version-3/CONTRIBUTING.md
-#
-# WARNING ABOUT GENERATED CODE
-# WARNING ABOUT GENERATED CODE
-#
-# This file is generated. See the contributing guide for more information:
-# https://github.com/aws/aws-sdk-ruby/blob/version-3/CONTRIBUTING.md
-#
-# WARNING ABOUT GENERATED CODE
-# WARNING ABOUT GENERATED CODE
-#
-# This file is generated. See the contributing guide for more information:
-# https://github.com/aws/aws-sdk-ruby/blob/version-3/CONTRIBUTING.md
-#
-# WARNING ABOUT GENERATED CODE
 # WARNING ABOUT GENERATED CODE
 #
 # This file is generated. See the contributing guide for more information:
@@ -16903,30 +16827,6 @@ end
 # https://github.com/aws/aws-sdk-ruby/blob/version-3/CONTRIBUTING.md
 #
 # WARNING ABOUT GENERATED CODE
-# WARNING ABOUT GENERATED CODE
-#
-# This file is generated. See the contributing guide for more information:
-# https://github.com/aws/aws-sdk-ruby/blob/version-3/CONTRIBUTING.md
-#
-# WARNING ABOUT GENERATED CODE
-# WARNING ABOUT GENERATED CODE
-#
-# This file is generated. See the contributing guide for more information:
-# https://github.com/aws/aws-sdk-ruby/blob/version-3/CONTRIBUTING.md
-#
-# WARNING ABOUT GENERATED CODE
-# WARNING ABOUT GENERATED CODE
-#
-# This file is generated. See the contributing guide for more information:
-# https://github.com/aws/aws-sdk-ruby/blob/version-3/CONTRIBUTING.md
-#
-# WARNING ABOUT GENERATED CODE
-# WARNING ABOUT GENERATED CODE
-#
-# This file is generated. See the contributing guide for more information:
-# https://github.com/aws/aws-sdk-ruby/blob/version-3/CONTRIBUTING.md
-#
-# WARNING ABOUT GENERATED CODE
 #
 # pkg:gem/aws-sdk-core#lib/aws-sdk-signin.rb:46
 module Aws::Signin; end
@@ -19464,7 +19364,6 @@ module Aws::Structure::Union
 end
 
 # @api private
-# @api private
 #
 # pkg:gem/aws-sdk-core#lib/aws-sdk-core/stubbing.rb:5
 module Aws::Stubbing; end
@@ -21705,7 +21604,6 @@ class Seahorse::Client::Configuration::DynamicDefault
 end
 
 # @api private
-# @api private
 #
 # pkg:gem/aws-sdk-core#lib/seahorse/client/h2/connection.rb:12
 module Seahorse::Client::H2; end
@@ -22471,8 +22369,6 @@ end
 
 # @deprecated Use Aws::Logging instead.
 # @api private
-# @deprecated Use Aws::Logging instead.
-# @api private
 #
 # pkg:gem/aws-sdk-core#lib/seahorse/client/logging/handler.rb:7
 module Seahorse::Client::Logging; end
@@ -22714,8 +22610,6 @@ end
 class Seahorse::Client::Logging::Handler < ::Seahorse::Client::Handler
   # @param [RequestContext] context
   # @return [Response]
-  # @param [RequestContext] context
-  # @return [Response]
   #
   # pkg:gem/aws-sdk-core#lib/seahorse/client/logging/handler.rb:12
   def call(context); end
@@ -22725,16 +22619,10 @@ class Seahorse::Client::Logging::Handler < ::Seahorse::Client::Handler
   # @param [Configuration] config
   # @param [Response] response
   # @return [String]
-  # @param [Configuration] config
-  # @param [Response] response
-  # @return [String]
   #
   # pkg:gem/aws-sdk-core#lib/seahorse/client/logging/handler.rb:32
   def format(config, response); end
 
-  # @param [Configuration] config
-  # @param [Response] response
-  # @return [void]
   # @param [Configuration] config
   # @param [Response] response
   # @return [void]
@@ -22754,8 +22642,6 @@ class Seahorse::Client::ManagedFile < ::File
   def open?; end
 end
 
-# @api private
-# @api private
 # @api private
 #
 # pkg:gem/aws-sdk-core#lib/seahorse/client/net_http/patches.rb:8
@@ -23480,7 +23366,7 @@ class Seahorse::Client::Plugins::ReadCallbackIO
   def read(*args); end
 
   # pkg:gem/aws-sdk-core#lib/seahorse/client/plugins/request_callback.rb:13
-  def size(*_arg0, **_arg1, &_arg2); end
+  def size(*, **, &); end
 
   private
 

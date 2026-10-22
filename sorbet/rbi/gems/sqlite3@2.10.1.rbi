@@ -10,7 +10,6 @@ module Process
   extend ::SQLite3::ForkSafety::CoreExt
   extend ::SemanticLogger::CoreExt::Process
   extend ::ActiveSupport::ForkTracker::CoreExt
-  extend ::Bundler::ConnectionPool::ForkTracker
 end
 
 # pkg:gem/sqlite3#lib/sqlite3.rb:4
@@ -567,7 +566,7 @@ class SQLite3::Database
   # Given a statement, return a result set.
   # This is not intended for general consumption
   #
-  # pkg:gem/sqlite3#lib/sqlite3/database.rb:790
+  # pkg:gem/sqlite3#lib/sqlite3/database.rb:780
   def build_result_set(stmt); end
 
   # pkg:gem/sqlite3#lib/sqlite3.rb:4
@@ -578,7 +577,7 @@ class SQLite3::Database
   # This is an alternative to #busy_timeout, which holds the GVL
   # while SQLite sleeps and retries.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/database.rb:693
+  # pkg:gem/sqlite3#lib/sqlite3/database.rb:683
   def busy_handler_timeout=(milliseconds); end
 
   # pkg:gem/sqlite3#lib/sqlite3/database.rb:385
@@ -607,7 +606,7 @@ class SQLite3::Database
   # to allow it to be used in idioms like
   # <tt>abort? and rollback or commit</tt>.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/database.rb:669
+  # pkg:gem/sqlite3#lib/sqlite3/database.rb:659
   def commit; end
 
   # pkg:gem/sqlite3#lib/sqlite3.rb:4
@@ -746,7 +745,7 @@ class SQLite3::Database
   # already provide a suitable +clone+.
   # The functions arity is the arity of the +step+ method.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/database.rb:592
+  # pkg:gem/sqlite3#lib/sqlite3/database.rb:611
   def define_aggregator(name, aggregator); end
 
   # pkg:gem/sqlite3#lib/sqlite3.rb:4
@@ -754,6 +753,9 @@ class SQLite3::Database
 
   # pkg:gem/sqlite3#lib/sqlite3.rb:4
   def define_function_with_flags(_arg0, _arg1); end
+
+  # pkg:gem/sqlite3#lib/sqlite3.rb:4
+  def deserialize(*_arg0); end
 
   # pkg:gem/sqlite3#lib/sqlite3.rb:4
   def enable_load_extension(_arg0); end
@@ -861,7 +863,7 @@ class SQLite3::Database
   # pkg:gem/sqlite3#lib/sqlite3/database.rb:376
   def get_first_value(sql, *bind_vars); end
 
-  # pkg:gem/sqlite3#lib/sqlite3/database.rb:738
+  # pkg:gem/sqlite3#lib/sqlite3/database.rb:728
   def initialize_extensions(extensions); end
 
   # pkg:gem/sqlite3#lib/sqlite3.rb:4
@@ -891,7 +893,7 @@ class SQLite3::Database
   #
   #   db.load_extension(SQLean::VSV)
   #
-  # pkg:gem/sqlite3#lib/sqlite3/database.rb:729
+  # pkg:gem/sqlite3#lib/sqlite3/database.rb:719
   def load_extension(extension_specifier); end
 
   # Returns a Statement object representing the given SQL. This does not
@@ -920,7 +922,7 @@ class SQLite3::Database
   # Returns +true+ if the database has been open in readonly mode
   # A helper to check before performing any operation
   #
-  # pkg:gem/sqlite3#lib/sqlite3/database.rb:685
+  # pkg:gem/sqlite3#lib/sqlite3/database.rb:675
   def readonly?; end
 
   # A boolean that indicates whether rows in result sets should be returned
@@ -940,8 +942,11 @@ class SQLite3::Database
   # to allow it to be used in idioms like
   # <tt>abort? and rollback or commit</tt>.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/database.rb:678
+  # pkg:gem/sqlite3#lib/sqlite3/database.rb:668
   def rollback; end
+
+  # pkg:gem/sqlite3#lib/sqlite3.rb:4
+  def serialize(*_arg0); end
 
   # pkg:gem/sqlite3#lib/sqlite3.rb:4
   def statement_timeout=(_arg0); end
@@ -971,7 +976,7 @@ class SQLite3::Database
   # transaction explicitly, either by calling #commit, or by calling
   # #rollback.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/database.rb:646
+  # pkg:gem/sqlite3#lib/sqlite3/database.rb:636
   def transaction(mode = T.unsafe(nil)); end
 
   # pkg:gem/sqlite3#lib/sqlite3.rb:4
@@ -1020,6 +1025,24 @@ class SQLite3::Database
   end
 end
 
+# The "handler" that #define_aggregator hands to define_aggregator2, which
+# only needs something that responds to +new+ (a fresh aggregator for each
+# aggregate invocation) and +arity+.
+#
+# pkg:gem/sqlite3#lib/sqlite3/database.rb:585
+class SQLite3::Database::AggregatorFactory
+  # pkg:gem/sqlite3#lib/sqlite3/database.rb:586
+  def initialize(template); end
+
+  # this is what sqlite3_obj_method_arity did before
+  #
+  # pkg:gem/sqlite3#lib/sqlite3/database.rb:595
+  def arity; end
+
+  # pkg:gem/sqlite3#lib/sqlite3/database.rb:590
+  def new; end
+end
+
 # A helper class for dealing with custom functions (see #create_function,
 # #create_aggregate, and #create_aggregate_handler). It encapsulates the
 # opaque function object that represents the current invocation. It also
@@ -1029,32 +1052,32 @@ end
 # This class will almost _always_ be instantiated indirectly, by working
 # with the create methods mentioned above.
 #
-# pkg:gem/sqlite3#lib/sqlite3/database.rb:762
+# pkg:gem/sqlite3#lib/sqlite3/database.rb:752
 class SQLite3::Database::FunctionProxy
   # Create a new FunctionProxy that encapsulates the given +func+ object.
   # If context is non-nil, the functions context will be set to that. If
   # it is non-nil, it must quack like a Hash. If it is nil, then none of
   # the context functions will be available.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/database.rb:769
+  # pkg:gem/sqlite3#lib/sqlite3/database.rb:759
   def initialize; end
 
   # Returns the value with the given key from the context. This is only
   # available to aggregate functions.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/database.rb:776
+  # pkg:gem/sqlite3#lib/sqlite3/database.rb:766
   def [](key); end
 
   # Sets the value with the given key in the context. This is only
   # available to aggregate functions.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/database.rb:782
+  # pkg:gem/sqlite3#lib/sqlite3/database.rb:772
   def []=(key, value); end
 
-  # pkg:gem/sqlite3#lib/sqlite3/database.rb:763
+  # pkg:gem/sqlite3#lib/sqlite3/database.rb:753
   def result; end
 
-  # pkg:gem/sqlite3#lib/sqlite3/database.rb:763
+  # pkg:gem/sqlite3#lib/sqlite3/database.rb:753
   def result=(_arg0); end
 end
 
@@ -1121,9 +1144,9 @@ class SQLite3::FormatException < ::SQLite3::Exception; end
 # pkg:gem/sqlite3#lib/sqlite3/errors.rb:61
 class SQLite3::FullException < ::SQLite3::Exception; end
 
-# pkg:gem/sqlite3#lib/sqlite3/resultset.rb:93
+# pkg:gem/sqlite3#lib/sqlite3/resultset.rb:99
 class SQLite3::HashResultSet < ::SQLite3::ResultSet
-  # pkg:gem/sqlite3#lib/sqlite3/resultset.rb:94
+  # pkg:gem/sqlite3#lib/sqlite3/resultset.rb:100
   def next; end
 end
 
@@ -1621,29 +1644,31 @@ class SQLite3::ResultSet
   # <em>Use with caution!</em> Closing a result set will automatically
   # close any other result sets that were spawned from the same statement.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/resultset.rb:65
+  # pkg:gem/sqlite3#lib/sqlite3/resultset.rb:71
   def close; end
 
   # Queries whether the underlying statement has been closed or not.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/resultset.rb:70
+  # pkg:gem/sqlite3#lib/sqlite3/resultset.rb:76
   def closed?; end
 
   # Returns the names of the columns returned by this result set.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/resultset.rb:80
+  # pkg:gem/sqlite3#lib/sqlite3/resultset.rb:86
   def columns; end
 
-  # Required by the Enumerable mixin. Provides an internal iterator over the
-  # rows of the result set.
+  # With a block given, iterates over the rows of the result set, passing each
+  # to the block. Returns self.
+  # With no block given, returns a new Enumerator.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/resultset.rb:48
+  # pkg:gem/sqlite3#lib/sqlite3/resultset.rb:49
   def each; end
 
-  # Provides an internal iterator over the rows of the result set where
-  # each row is yielded as a hash.
+  # With a block given, iterates over the rows of the result set, passing each
+  # to the block as a hash. Returns self.
+  # With no block given, returns a new Enumerator.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/resultset.rb:56
+  # pkg:gem/sqlite3#lib/sqlite3/resultset.rb:60
   def each_hash; end
 
   # Query whether the cursor has reached the end of the result set or not.
@@ -1668,7 +1693,7 @@ class SQLite3::ResultSet
 
   # Return the next row as a hash
   #
-  # pkg:gem/sqlite3#lib/sqlite3/resultset.rb:85
+  # pkg:gem/sqlite3#lib/sqlite3/resultset.rb:91
   def next_hash; end
 
   # Reset the cursor, so that a result set which has reached end-of-file
@@ -1679,7 +1704,7 @@ class SQLite3::ResultSet
 
   # Returns the types of the columns returned by this result set.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/resultset.rb:75
+  # pkg:gem/sqlite3#lib/sqlite3/resultset.rb:81
   def types; end
 end
 
@@ -1716,7 +1741,7 @@ class SQLite3::Statement
   # Returns true if the statement is currently active, meaning it has an
   # open result set.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/statement.rb:111
+  # pkg:gem/sqlite3#lib/sqlite3/statement.rb:129
   def active?; end
 
   # pkg:gem/sqlite3#lib/sqlite3.rb:4
@@ -1731,6 +1756,24 @@ class SQLite3::Statement
   # See Database#execute for a description of the valid placeholder
   # syntaxes.
   #
+  # Type mapping from Ruby to SQLite3:
+  # - +nil+                            → NULL
+  # - Integer                          → INTEGER (or REAL when outside the signed int64 range)
+  # - Float                            → REAL
+  # - SQLite3::Blob                    → BLOB
+  # - String with Encoding::ASCII_8BIT
+  #   (a.k.a. BINARY)                  → BLOB
+  # - String with Encoding::UTF_16LE
+  #   or Encoding::UTF_16BE            → TEXT (bound as UTF-16)
+  # - String (all other encodings)     → TEXT (re-encoded to UTF-8 if needed)
+  # - Any other type                   → raises RuntimeError
+  #
+  # Note: a String with Encoding::ASCII_8BIT (BINARY) is always bound as a
+  # BLOB, even when its bytes are all valid ASCII. If you want such a string
+  # compared or stored as TEXT, re-encode it before binding:
+  #
+  #   stmt.bind_params(my_binary_str.encode(Encoding::UTF_8))
+  #
   # Example:
   #
   #   stmt = db.prepare( "select * from table where a=? and b=?" )
@@ -1739,7 +1782,7 @@ class SQLite3::Statement
   # See also #execute, #bind_param, Statement#bind_param, and
   # Statement#bind_params.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/statement.rb:52
+  # pkg:gem/sqlite3#lib/sqlite3/statement.rb:70
   def bind_params(*bind_vars); end
 
   # pkg:gem/sqlite3#lib/sqlite3.rb:4
@@ -1760,17 +1803,17 @@ class SQLite3::Statement
   # pkg:gem/sqlite3#lib/sqlite3.rb:4
   def column_name(_arg0); end
 
-  # Return an array of the column names for this statement. Note that this
-  # may execute the statement in order to obtain the metadata; this makes it
-  # a (potentially) expensive operation.
+  # Return a frozen array of the column names for this statement, as frozen
+  # UTF-8 strings. Note that this may execute the statement in order to
+  # obtain the metadata; this makes it a (potentially) expensive operation.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/statement.rb:118
+  # pkg:gem/sqlite3#lib/sqlite3/statement.rb:136
   def columns; end
 
   # pkg:gem/sqlite3#lib/sqlite3.rb:4
   def done?; end
 
-  # pkg:gem/sqlite3#lib/sqlite3/statement.rb:123
+  # pkg:gem/sqlite3#lib/sqlite3/statement.rb:141
   def each; end
 
   # Execute the statement. This creates a new ResultSet object for the
@@ -1788,7 +1831,7 @@ class SQLite3::Statement
   #
   # See also #bind_params, #execute!.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/statement.rb:78
+  # pkg:gem/sqlite3#lib/sqlite3/statement.rb:96
   def execute(*bind_vars); end
 
   # Execute the statement. If no block was given, this returns an array of
@@ -1806,7 +1849,7 @@ class SQLite3::Statement
   #
   # See also #bind_params, #execute.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/statement.rb:104
+  # pkg:gem/sqlite3#lib/sqlite3/statement.rb:122
   def execute!(*bind_vars, &block); end
 
   # pkg:gem/sqlite3#lib/sqlite3.rb:4
@@ -1818,7 +1861,7 @@ class SQLite3::Statement
   # Performs a sanity check to ensure that the statement is not
   # closed. If it is, an exception is raised.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/statement.rb:142
+  # pkg:gem/sqlite3#lib/sqlite3/statement.rb:162
   def must_be_open!; end
 
   # pkg:gem/sqlite3#lib/sqlite3.rb:4
@@ -1857,26 +1900,31 @@ class SQLite3::Statement
   #   - +filter_hits+: the number of times that a join step was bypassed
   # because a Bloom filter returned not-found
   #
-  # pkg:gem/sqlite3#lib/sqlite3/statement.rb:167
+  # pkg:gem/sqlite3#lib/sqlite3/statement.rb:187
   def stat(key = T.unsafe(nil)); end
 
   # pkg:gem/sqlite3#lib/sqlite3.rb:4
   def step; end
 
-  # Return an array of the data types for each column in this statement. Note
-  # that this may execute the statement in order to obtain the metadata; this
-  # makes it a (potentially) expensive operation.
+  # Return a frozen array of the declared types of the columns in this
+  # statement, as frozen UTF-8 strings with ASCII letters downcased. A column
+  # with no declared type, such as an expression, has a +nil+ type. Note that
+  # this may execute the statement in order to obtain the metadata; this makes
+  # it a (potentially) expensive operation.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/statement.rb:134
+  # pkg:gem/sqlite3#lib/sqlite3/statement.rb:154
   def types; end
 
   private
+
+  # pkg:gem/sqlite3#lib/sqlite3.rb:4
+  def column_decltype_downcased(_arg0); end
 
   # A convenience method for obtaining the metadata about the query. Note
   # that this will actually execute the SQL, which means it can be a
   # (potentially) expensive operation.
   #
-  # pkg:gem/sqlite3#lib/sqlite3/statement.rb:180
+  # pkg:gem/sqlite3#lib/sqlite3/statement.rb:200
   def get_metadata; end
 
   # pkg:gem/sqlite3#lib/sqlite3.rb:4

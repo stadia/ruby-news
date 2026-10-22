@@ -46,16 +46,16 @@ end
 # pkg:gem/resend#lib/resend/version.rb:3
 module Resend
   class << self
-    # pkg:gem/resend#lib/resend.rb:53
+    # pkg:gem/resend#lib/resend.rb:60
     def api_key; end
 
-    # pkg:gem/resend#lib/resend.rb:53
+    # pkg:gem/resend#lib/resend.rb:60
     def api_key=(_arg0); end
 
-    # pkg:gem/resend#lib/resend.rb:59
+    # pkg:gem/resend#lib/resend.rb:66
     def config; end
 
-    # pkg:gem/resend#lib/resend.rb:55
+    # pkg:gem/resend#lib/resend.rb:62
     def configure; end
   end
 end
@@ -194,7 +194,7 @@ end
 
 # @deprecated Use Segments instead
 #
-# pkg:gem/resend#lib/resend.rb:63
+# pkg:gem/resend#lib/resend.rb:70
 Resend::Audiences = Resend::Segments
 
 # automations api wrapper
@@ -1124,6 +1124,708 @@ module Resend::Events
     #
     # pkg:gem/resend#lib/resend/events.rb:20
     def update(params = T.unsafe(nil)); end
+  end
+end
+
+# Inboxes api wrapper
+#
+# An inbox sends and receives email at an address on one of your domains.
+#
+# @example Create an inbox
+#   Resend::Inboxes.create(email_address: "support@acme.com", name: "Customer Support")
+#
+# @example Retrieve an inbox by ID or email address
+#   Resend::Inboxes.get("support@acme.com")
+#
+# pkg:gem/resend#lib/resend/inboxes.rb:13
+module Resend::Inboxes
+  class << self
+    # Create an inbox
+    #
+    # The domain must belong to the team. Without `forwarding`, the domain must have receiving
+    # enabled, with DKIM and SPF verified and the inbound MX record verified or pending. With
+    # `forwarding` set to `true`, the domain only needs DKIM and SPF verified for sending, and
+    # Resend generates a `receiving_address` on the team inbound domain. A team that has reached
+    # the inbox limit of its plan gets a 403 validation_error. A blocked account gets a 451.
+    #
+    # @param params [Hash] the inbox parameters
+    # @option params [String] :email_address the inbox email address on one of your domains (required)
+    # @option params [String] :name internal name for the inbox, max 64 characters.
+    #   Recipients do not see it. Defaults to `email_address`
+    # @option params [String] :from_name the name recipients see when mail is sent from this inbox,
+    #   max 78 characters. An empty string leaves it unset
+    # @option params [Boolean] :forwarding when true, Resend provisions a receiving address so you can
+    #   receive mail without adding an MX record. Defaults to false
+    #
+    # @return [Hash] the created inbox `object` and `id`
+    #
+    # https://resend.com/docs/api-reference/inboxes/create-inbox
+    #
+    # pkg:gem/resend#lib/resend/inboxes.rb:35
+    def create(params = T.unsafe(nil)); end
+
+    # Retrieve a single inbox
+    #
+    # @param inbox_id [String] the inbox ID or the inbox email address, such as `support@acme.com`.
+    #   An email address matches without case
+    #
+    # https://resend.com/docs/api-reference/inboxes/get-inbox
+    #
+    # pkg:gem/resend#lib/resend/inboxes.rb:61
+    def get(inbox_id = T.unsafe(nil)); end
+
+    # Retrieve a list of inboxes, newest first
+    #
+    # The list items carry fewer fields than a single inbox. Retrieve an inbox to get all its fields.
+    # The `after` and `before` cursors take an inbox ID.
+    #
+    # @param params [Hash] the pagination parameters
+    # @option params [Integer] :limit the maximum number of results to return
+    # @option params [String] :after the cursor for pagination
+    # @option params [String] :before the cursor for pagination
+    #
+    # https://resend.com/docs/api-reference/inboxes/list-inboxes
+    #
+    # pkg:gem/resend#lib/resend/inboxes.rb:50
+    def list(params = T.unsafe(nil)); end
+
+    # The path of an inbox. The API takes the inbox ID or the inbox email address, and an address
+    # must be percent-encoded to fit in the path.
+    #
+    # @api private
+    #
+    # pkg:gem/resend#lib/resend/inboxes.rb:98
+    def path(inbox_id); end
+
+    # Remove an existing inbox
+    #
+    # @param inbox_id [String] the inbox ID or the inbox email address
+    #
+    # https://resend.com/docs/api-reference/inboxes/delete-inbox
+    #
+    # pkg:gem/resend#lib/resend/inboxes.rb:90
+    def remove(inbox_id = T.unsafe(nil)); end
+
+    # Update an existing inbox
+    #
+    # At least one of `name` or `from_name` is required.
+    #
+    # @param params [Hash] the update parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String] :name new internal name for the inbox, between 1 and 64 characters
+    # @option params [String] :from_name the name recipients see when mail is sent from this inbox,
+    #   max 78 characters. An empty string removes it
+    #
+    # @return [Hash] the updated inbox `object` and `id`
+    #
+    # https://resend.com/docs/api-reference/inboxes/update-inbox
+    #
+    # pkg:gem/resend#lib/resend/inboxes.rb:78
+    def update(params = T.unsafe(nil)); end
+  end
+end
+
+# Inbox Agent api wrapper
+#
+# pkg:gem/resend#lib/resend/inboxes/agent.rb:6
+module Resend::Inboxes::Agent
+  class << self
+    # Retrieve the agent settings for an inbox
+    #
+    # An inbox without a configured agent returns empty settings: `instructions` and `tone`
+    # are nil and `actions` is an empty array.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    #
+    # https://resend.com/docs/api-reference/inboxes/get-agent
+    #
+    # pkg:gem/resend#lib/resend/inboxes/agent.rb:17
+    def get(params = T.unsafe(nil)); end
+
+    # Update the agent settings for an inbox
+    #
+    # The agent is created when the inbox has none. Omitted fields keep their current value.
+    # At least one of `instructions`, `tone`, or `actions` must be provided.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String, nil] :instructions instructions the agent follows when it handles
+    #   the threads of the inbox, max 4000 characters. Send nil to clear the instructions
+    # @option params [String, nil] :tone the tone the agent writes in. One of `concise_professional`,
+    #   `concise_casual`, `expanded_professional`, or `expanded_casual`. Send nil to clear the tone
+    # @option params [Array<String>] :actions the actions the agent can take. Replaces the whole set.
+    #   Duplicates are removed. Send an empty array to disable all actions. One or more of
+    #   `draft_reply`, `forward_thread`, `add_labels`, `assign_thread`, `mark_as_spam`, `archive`,
+    #   `move_to_trash`
+    #
+    # https://resend.com/docs/api-reference/inboxes/update-agent
+    #
+    # pkg:gem/resend#lib/resend/inboxes/agent.rb:40
+    def update(params = T.unsafe(nil)); end
+  end
+end
+
+# Inbox Drafts api wrapper
+#
+# pkg:gem/resend#lib/resend/inboxes/drafts.rb:6
+module Resend::Inboxes::Drafts
+  class << self
+    # Create a draft
+    #
+    # Creates an unsent draft on the inbox. Omit `thread_id` and `reply_to_email_id` for a draft
+    # that starts a new thread. Pass both together for a reply draft in an existing thread. A reply
+    # draft without `to` is addressed to the sender of the email it replies to, or to its Reply-To
+    # when set. For an email the inbox sent, it defaults to that email's `to` recipients. Send
+    # `to: []` to leave it empty. At least one of `to`, `cc`, `bcc`, `subject`, `text`, `html` or
+    # `attachments` must be non-empty. The combined recipients of `to`, `cc` and `bcc` cannot exceed
+    # 50. Only one unsent reply draft can target an email, so a reply draft request for an email
+    # that already has one returns the ID of the existing draft. That request ignores every other
+    # field, except `attachments`, which replaces the attachments of the existing draft when sent.
+    # A reply draft created without `subject` stores an empty subject and gets no `Re:` prefix,
+    # so set one before you send it.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String, Array<String>] :to the recipients. Each value can include a friendly
+    #   name, for example `Ada Lovelace <ada@example.org>`
+    # @option params [String, Array<String>] :cc the CC recipients
+    # @option params [String, Array<String>] :bcc the BCC recipients
+    # @option params [String] :subject the subject, max 2000 characters
+    # @option params [String] :html the HTML body
+    # @option params [String] :text the plain text body
+    # @option params [String] :thread_id the thread ID to reply in. Must be sent with `reply_to_email_id`
+    # @option params [String] :reply_to_email_id the email ID to reply to. Must be sent with `thread_id`
+    # @option params [Array<Hash>] :attachments files to store on the draft. Each one needs `content`,
+    #   `filename` and `content_type`. A `path` or `content_id` returns a 422. The files on a draft can
+    #   total at most 25 MB. An empty file or a blocked file type returns a 422
+    # @param options [Hash] additional options for the request
+    # @option options [String] :idempotency_key a unique key for the request, so the draft is created
+    #   only once. 1 to 256 characters. A retry with the same key within 24 hours replays the first
+    #   successful (2xx) response, with the `idempotent-replayed: true` header. A failed request is
+    #   not stored, so you can retry it with the same key. Reusing the key with a different body, or
+    #   while the first request is still running, returns a 409
+    #
+    # @return [Hash] the draft `object` and `id`
+    #
+    # https://resend.com/docs/api-reference/inboxes/create-draft
+    #
+    # pkg:gem/resend#lib/resend/inboxes/drafts.rb:65
+    def create(params = T.unsafe(nil), options: T.unsafe(nil)); end
+
+    # Retrieve a single draft
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String] :draft_id the draft ID (required)
+    #
+    # https://resend.com/docs/api-reference/inboxes/get-draft
+    #
+    # pkg:gem/resend#lib/resend/inboxes/drafts.rb:78
+    def get(params = T.unsafe(nil)); end
+
+    # Retrieve a list of drafts, most recently updated first
+    #
+    # Returns the unsent drafts on the inbox. The `after` and `before` cursors take a draft ID from
+    # the current page. A cursor that is not an unsent draft on this inbox returns a 404.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [Integer] :limit the maximum number of results to return
+    # @option params [String] :after the cursor for pagination
+    # @option params [String] :before the cursor for pagination
+    #
+    # https://resend.com/docs/api-reference/inboxes/list-drafts
+    #
+    # pkg:gem/resend#lib/resend/inboxes/drafts.rb:20
+    def list(params = T.unsafe(nil)); end
+
+    # Remove an existing draft
+    #
+    # Discards an unsent draft. A draft that was already sent, or that changed during the request,
+    # returns a 409.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String] :draft_id the draft ID (required)
+    #
+    # https://resend.com/docs/api-reference/inboxes/delete-draft
+    #
+    # pkg:gem/resend#lib/resend/inboxes/drafts.rb:122
+    def remove(params = T.unsafe(nil)); end
+
+    # Send a draft
+    #
+    # Sends the draft from the inbox address. A reply draft is sent in its thread. A draft without
+    # a thread starts a new thread. The draft must have at least one `to` recipient, a non-empty
+    # `subject`, and `html` or `text`, or the request returns a 422. A draft that was already sent
+    # returns a 409. The request body is optional and takes only `headers`.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String] :draft_id the draft ID (required)
+    # @option params [Hash{String => String}] :headers custom headers to add to the email. The
+    #   `In-Reply-To`, `References` and `Reply-To` headers are set by Resend and cannot be set here.
+    #   Sending one of them, in any letter case, returns a 422. Header names cannot be empty, and
+    #   names and values cannot contain line breaks or null characters, or the request returns a 422
+    # @param options [Hash] additional options for the request
+    # @option options [String] :idempotency_key a unique key for the request, so the draft is sent
+    #   only once. 1 to 256 characters. A retry with the same key within 24 hours replays the first
+    #   successful (2xx) response, with the `idempotent-replayed: true` header. A failed request is
+    #   not stored, so you can retry it with the same key. Reusing the key with a different body, or
+    #   while the first request is still running, returns a 409
+    #
+    # @return [Hash] the `id` of the sent email
+    #
+    # https://resend.com/docs/api-reference/inboxes/send-draft
+    #
+    # pkg:gem/resend#lib/resend/inboxes/drafts.rb:152
+    def send(params = T.unsafe(nil), options: T.unsafe(nil)); end
+
+    # Update an existing draft
+    #
+    # Updates the content of an unsent draft. Omitted fields are left unchanged. Send at least one
+    # of `to`, `cc`, `bcc`, `subject`, `text`, `html` or `attachments`. Sending `attachments` replaces
+    # every attachment on the draft. A request that sets `text` or `html` replaces the whole body.
+    # The body part you omit from that request becomes nil. The merged draft must still contain at
+    # least one non-empty field, and its combined recipients cannot exceed 50. A draft that was
+    # already sent, or that changed during the request, returns a 409.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String] :draft_id the draft ID (required)
+    # @option params [String, Array<String>, nil] :to the recipients. Pass nil to clear
+    # @option params [String, Array<String>, nil] :cc the CC recipients. Pass nil or [] to clear
+    # @option params [String, Array<String>, nil] :bcc the BCC recipients. Pass nil or [] to clear
+    # @option params [String, nil] :subject the subject, max 2000 characters. Pass nil to clear
+    # @option params [String, nil] :html the HTML body. Pass nil to clear
+    # @option params [String, nil] :text the plain text body. Pass nil to clear
+    # @option params [Array<Hash>] :attachments files to store on the draft, as in {create}. Sending
+    #   the field replaces every attachment on the draft. Send [] or nil to remove them all
+    #
+    # https://resend.com/docs/api-reference/inboxes/update-draft
+    #
+    # pkg:gem/resend#lib/resend/inboxes/drafts.rb:106
+    def update(params = T.unsafe(nil)); end
+
+    private
+
+    # pkg:gem/resend#lib/resend/inboxes/drafts.rb:170
+    def draft_path(params); end
+
+    # pkg:gem/resend#lib/resend/inboxes/drafts.rb:166
+    def drafts_path(params); end
+
+    # pkg:gem/resend#lib/resend/inboxes/drafts.rb:161
+    def validate_draft!(params); end
+  end
+end
+
+# Inbox Labels api wrapper
+#
+# A label is a named, colored tag that belongs to one inbox.
+#
+# pkg:gem/resend#lib/resend/inboxes/labels.rb:8
+module Resend::Inboxes::Labels
+  class << self
+    # Create a label on an inbox
+    #
+    # An inbox can have at most 100 labels. Label names are unique per inbox, compared without
+    # case. A duplicate name or a full inbox returns a 422 validation_error.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String] :name the name of the label, max 64 characters (required)
+    # @option params [String] :color the color of the label, as a `#RRGGBB` hex color. It is stored
+    #   in uppercase. When omitted, a random color from the dashboard palette is used
+    #
+    # @return [Hash] the created label `object` and `id`
+    #
+    # https://resend.com/docs/api-reference/inboxes/create-label
+    #
+    # pkg:gem/resend#lib/resend/inboxes/labels.rb:36
+    def create(params = T.unsafe(nil)); end
+
+    # Retrieve every label on the inbox, oldest first. The list is not paginated.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    #
+    # https://resend.com/docs/api-reference/inboxes/list-labels
+    #
+    # pkg:gem/resend#lib/resend/inboxes/labels.rb:16
+    def list(params = T.unsafe(nil)); end
+
+    # Remove an existing inbox label
+    #
+    # Deletes the label and removes it from every thread that carries it.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String] :label_id the label ID (required)
+    #
+    # https://resend.com/docs/api-reference/inboxes/delete-label
+    #
+    # pkg:gem/resend#lib/resend/inboxes/labels.rb:74
+    def remove(params = T.unsafe(nil)); end
+
+    # Update an existing inbox label
+    #
+    # Renames or recolors a label. Omitted fields keep their current value. A new name must not
+    # match another label on the inbox, compared without case, or the request returns a 422
+    # validation_error.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String] :label_id the label ID (required)
+    # @option params [String] :name a new name for the label, max 64 characters
+    # @option params [String] :color a new color for the label, as a `#RRGGBB` hex color.
+    #   It is stored in uppercase
+    #
+    # https://resend.com/docs/api-reference/inboxes/update-label
+    #
+    # pkg:gem/resend#lib/resend/inboxes/labels.rb:57
+    def update(params = T.unsafe(nil)); end
+  end
+end
+
+# Inbox Threads api wrapper
+#
+# A thread is a conversation made up of one or more emails.
+#
+# pkg:gem/resend#lib/resend/inboxes/threads.rb:8
+module Resend::Inboxes::Threads
+  class << self
+    # Retrieve a single inbox thread
+    #
+    # Returns the thread summary. List the emails in the thread with {Emails.list}.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String] :thread_id the thread ID (required)
+    #
+    # https://resend.com/docs/api-reference/inboxes/get-thread
+    #
+    # pkg:gem/resend#lib/resend/inboxes/threads.rb:90
+    def get(params = T.unsafe(nil)); end
+
+    # Retrieve a list of inbox threads, most recently active first
+    #
+    # The `after` and `before` cursors take a thread ID, and only one of them can be passed.
+    # A cursor thread that is not in the selected folders returns a 404. To find threads by text,
+    # sender, recipient, attachment, or date, use {search}.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [Array<String>] :folders the folders to list: `inbox`, `archive`, `spam`, `sent`,
+    #   `trash`. A thread is returned when any of its emails is in one of the folders. Defaults to
+    #   `inbox`, or to `inbox`, `archive` and `sent` when `labels` is set. `spam` and `trash` are only
+    #   included when you name them
+    # @option params [Array<String>] :labels label IDs. Returns threads with any of these labels.
+    #   Up to 50 IDs
+    # @option params [Boolean] :read true returns threads where every email is read. false returns
+    #   threads with at least one unread email
+    # @option params [Integer] :limit the maximum number of results to return
+    # @option params [String] :after the cursor for pagination
+    # @option params [String] :before the cursor for pagination
+    #
+    # https://resend.com/docs/api-reference/inboxes/list-threads
+    #
+    # pkg:gem/resend#lib/resend/inboxes/threads.rb:31
+    def list(params = T.unsafe(nil)); end
+
+    # Remove an existing inbox thread
+    #
+    # Moves the thread to `trash` and schedules it for deletion in 30 days. This is reversible.
+    # To restore the thread, update its `folder` to `inbox`, `archive`, or `spam`, which also clears
+    # the deletion deadline.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String] :thread_id the thread ID (required)
+    #
+    # https://resend.com/docs/api-reference/inboxes/delete-thread
+    #
+    # pkg:gem/resend#lib/resend/inboxes/threads.rb:132
+    def remove(params = T.unsafe(nil)); end
+
+    # Search the threads of an inbox
+    #
+    # Results are ordered by latest activity, newest first, and paginate like {list}. Search can be
+    # up to about a minute behind new emails. Different parameters combine, so a thread must match
+    # all of them. `folders`, `labels`, and `read` apply to the thread. `query`, `from`, `to`, `cc`,
+    # `bcc`, `has_attachment`, `start_date`, and `end_date` must all match the same email in the
+    # thread. When any of these email filters is set, the matching email must itself be in one of
+    # `folders`. For `sent`, that means an email the inbox sent. When more than 10,000 threads match,
+    # search covers the 10,000 with the newest matching email.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String] :query free text to search for in the subject, body, sender,
+    #   recipients, and attachment names. Every word must match. Wrap words in double quotes to
+    #   match an exact phrase. Start a word or quoted phrase with `-` to exclude it.
+    #   Max 256 characters and 32 words
+    # @option params [Array<String>] :from senders. Each value matches part of the sender's address
+    #   or name, without case. Returns threads that match any of them. Up to 20 values
+    # @option params [Array<String>] :to recipients, matched the same way as `from`. Up to 20 values
+    # @option params [Array<String>] :cc CC recipients, matched the same way as `from`. Up to 20 values
+    # @option params [Array<String>] :bcc BCC recipients, matched the same way as `from`.
+    #   Up to 20 values
+    # @option params [Boolean] :has_attachment true matches emails with an attachment. false matches
+    #   emails without one
+    # @option params [String] :start_date matches emails sent on or after this date. Accepts a date
+    #   like `2026-09-01` or an ISO 8601 timestamp, in UTC unless the timestamp has an offset
+    # @option params [String] :end_date matches emails sent on or before this date. Same formats as
+    #   `start_date`. A date covers that whole day
+    # @option params [Array<String>] :folders the folders to search, as in {list}
+    # @option params [Array<String>] :labels label IDs, as in {list}
+    # @option params [Boolean] :read the read state, as in {list}
+    # @option params [Integer] :limit the maximum number of results to return
+    # @option params [String] :after the cursor for pagination
+    # @option params [String] :before the cursor for pagination
+    #
+    # https://resend.com/docs/api-reference/inboxes/search-threads
+    #
+    # pkg:gem/resend#lib/resend/inboxes/threads.rb:74
+    def search(params = T.unsafe(nil)); end
+
+    # Update an existing inbox thread
+    #
+    # Marks a thread read or unread, or moves it to a folder. At least one of `read` or `folder` is
+    # required. To change the labels of a thread, use {Labels}. Moving a thread out of `trash` restores
+    # it and clears its deletion deadline. The changes apply in this order: `read`, then `folder`.
+    # They are not atomic.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String] :thread_id the thread ID (required)
+    # @option params [Boolean] :read marks every email in the thread read or unread
+    # @option params [String] :folder moves the thread to this folder: `inbox`, `archive`, `spam`,
+    #   or `trash`. `sent` is assigned automatically and cannot be set
+    #
+    # https://resend.com/docs/api-reference/inboxes/update-thread
+    #
+    # pkg:gem/resend#lib/resend/inboxes/threads.rb:113
+    def update(params = T.unsafe(nil)); end
+
+    private
+
+    # The API reads list filters as one comma-separated value and rejects a repeated parameter.
+    #
+    # pkg:gem/resend#lib/resend/inboxes/threads.rb:143
+    def build_query_path(base_path, query); end
+  end
+end
+
+# Inbox Thread Emails api wrapper
+#
+# pkg:gem/resend#lib/resend/inboxes/threads/emails.rb:7
+module Resend::Inboxes::Threads::Emails
+  class << self
+    # Forward a thread email
+    #
+    # Forwards a message from the inbox address right away, with no stored draft. The original
+    # message is quoted under a forwarded-message banner, below the optional `html` or `text`
+    # note. The attachments of the original message are sent with the forward, together with any
+    # `attachments` you add. The request fails when they exceed 25 MB of `content` in total. An
+    # original attachment that was sent from a URL (`path`) cannot be forwarded, and the request
+    # returns a 422.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String] :thread_id the thread ID (required)
+    # @option params [String] :email_id the email ID of the message to forward (required)
+    # @option params [String, Array<String>] :to the recipients (required). `to`, `cc` and `bcc`
+    #   combined cannot exceed 50 recipients
+    # @option params [String, Array<String>] :cc CC recipients
+    # @option params [String, Array<String>] :bcc BCC recipients
+    # @option params [String] :html an HTML note sent above the quoted original
+    # @option params [String] :text a plain-text note sent above the quoted original
+    # @option params [String] :subject the subject of the forward. When omitted, the thread subject
+    #   is used, prefixed with `Fwd:` if it does not already start with it
+    # @option params [Array<Hash>] :attachments files to attach, as on {Resend::Emails.send}. Each one
+    #   needs `content` or `path`. An empty file, a blocked file type, or a `path` that is not an
+    #   `http` or `https` URL, or that points to `localhost`, returns a 422
+    # @option params [Hash{String => String}] :headers custom headers to add to the email. The
+    #   `In-Reply-To`, `References` and `Reply-To` headers are set by Resend and cannot be set here.
+    #   Sending one of them, in any letter case, returns a 422. Header names cannot be empty, and
+    #   names and values cannot contain line breaks or null characters, or the request returns a 422
+    # @param options [Hash] additional options for the request
+    # @option options [String] :idempotency_key a unique key for the request, so the forward is sent
+    #   only once. 1 to 256 characters. A retry with the same key within 24 hours replays the first
+    #   successful (2xx) response, with the `idempotent-replayed: true` header. A failed request is
+    #   not stored, so you can retry it with the same key. Reusing the key with a different body, or
+    #   while the first request is still running, returns a 409
+    #
+    # @return [Hash] the `id` of the sent email
+    #
+    # https://resend.com/docs/api-reference/inboxes/forward-thread-email
+    #
+    # pkg:gem/resend#lib/resend/inboxes/threads/emails.rb:134
+    def forward(params = T.unsafe(nil), options: T.unsafe(nil)); end
+
+    # Retrieve a single thread email
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String] :thread_id the thread ID (required)
+    # @option params [String] :email_id the email ID, as returned in `data[].id` by {list} (required)
+    #
+    # https://resend.com/docs/api-reference/inboxes/get-thread-email
+    #
+    # pkg:gem/resend#lib/resend/inboxes/threads/emails.rb:39
+    def get(params = T.unsafe(nil)); end
+
+    # Retrieve a list of thread emails, oldest first
+    #
+    # Pass the `id` of the last message as `after` to get the next, newer page. Pass the `id` of
+    # the first message as `before` to get the previous, older page. You cannot combine `after`
+    # and `before`. A cursor that is not a message of the thread returns a 404.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String] :thread_id the thread ID (required)
+    # @option params [Integer] :limit the maximum number of results to return
+    # @option params [String] :after the cursor for pagination
+    # @option params [String] :before the cursor for pagination
+    #
+    # https://resend.com/docs/api-reference/inboxes/list-thread-emails
+    #
+    # pkg:gem/resend#lib/resend/inboxes/threads/emails.rb:23
+    def list(params = T.unsafe(nil)); end
+
+    # Reply to a thread email
+    #
+    # Sends a reply from the inbox address right away, with no stored draft. The `to` recipients
+    # come from the message you reply to. For a message the inbox received, the reply goes to its
+    # `Reply-To` addresses, or to its sender when it has no `Reply-To`. For a message the inbox
+    # sent, the reply goes to that message's `to` recipients. Set `reply_all` to also copy the
+    # other recipients of the message. At least one of `html` or `text` must contain more than
+    # whitespace.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String] :thread_id the thread ID (required)
+    # @option params [String] :email_id the email ID of the message to reply to (required)
+    # @option params [String] :html the HTML body of the reply
+    # @option params [String] :text the plain-text body of the reply
+    # @option params [String] :subject the subject of the reply. When omitted, the thread subject
+    #   is used, prefixed with `Re:` if it does not already start with it
+    # @option params [String, Array<String>] :cc CC recipients. Without `reply_all`, the reply
+    #   copies only these addresses
+    # @option params [String, Array<String>] :bcc BCC recipients. BCC recipients of the original
+    #   message are never copied
+    # @option params [Boolean] :reply_all reply to everyone on the original message. For a message the
+    #   inbox received, the reply goes to its `Reply-To` addresses, or to its sender when it has none,
+    #   and copies the other addresses of its `To` header and its `cc` recipients in `cc`. For a message
+    #   the inbox sent, the reply goes to its `Reply-To` addresses when they are not the inbox address,
+    #   otherwise to its `to` recipients, and copies its `cc` recipients. The inbox address is always
+    #   excluded, and duplicates are removed. Defaults to false
+    # @option params [Array<Hash>] :attachments files to attach, as on {Resend::Emails.send}. Each one
+    #   needs `content` or `path`. At most 25 MB of `content` in total. An empty file, a
+    #   blocked file type, or a `path` that is not an `http` or `https` URL, or that points to
+    #   `localhost`, returns a 422
+    # @option params [Hash{String => String}] :headers custom headers to add to the email. The
+    #   `In-Reply-To`, `References` and `Reply-To` headers are set by Resend and cannot be set here.
+    #   Sending one of them, in any letter case, returns a 422. Header names cannot be empty, and
+    #   names and values cannot contain line breaks or null characters, or the request returns a 422
+    # @param options [Hash] additional options for the request
+    # @option options [String] :idempotency_key a unique key for the request, so the reply is sent
+    #   only once. 1 to 256 characters. A retry with the same key within 24 hours replays the first
+    #   successful (2xx) response, with the `idempotent-replayed: true` header. A failed request is
+    #   not stored, so you can retry it with the same key. Reusing the key with a different body, or
+    #   while the first request is still running, returns a 409
+    #
+    # @return [Hash] the `id` of the sent email
+    #
+    # https://resend.com/docs/api-reference/inboxes/reply-thread-email
+    #
+    # pkg:gem/resend#lib/resend/inboxes/threads/emails.rb:90
+    def reply(params = T.unsafe(nil), options: T.unsafe(nil)); end
+
+    private
+
+    # pkg:gem/resend#lib/resend/inboxes/threads/emails.rb:156
+    def body(params); end
+
+    # pkg:gem/resend#lib/resend/inboxes/threads/emails.rb:152
+    def email_path(params); end
+
+    # pkg:gem/resend#lib/resend/inboxes/threads/emails.rb:147
+    def validate_email!(params); end
+
+    # pkg:gem/resend#lib/resend/inboxes/threads/emails.rb:142
+    def validate_thread!(params); end
+  end
+end
+
+# Inbox Thread Labels api wrapper
+#
+# Changes which labels a thread carries. To create, rename, or delete the labels themselves,
+# use {Resend::Inboxes::Labels}. Every method returns every label on the thread after the change.
+#
+# pkg:gem/resend#lib/resend/inboxes/threads/labels.rb:10
+module Resend::Inboxes::Threads::Labels
+  class << self
+    # Add labels to an inbox thread
+    #
+    # Labels already on the thread stay on it. A label ID that is not a label of the inbox returns
+    # a 404, and nothing changes. To replace the labels of the thread, use {set}.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String] :thread_id the thread ID (required)
+    # @option params [Array<String>] :labels the IDs of the labels to apply to the thread. Between
+    #   1 and 10 IDs, each a label of the inbox (required)
+    #
+    # https://resend.com/docs/api-reference/inboxes/add-thread-labels
+    #
+    # pkg:gem/resend#lib/resend/inboxes/threads/labels.rb:24
+    def add(params = T.unsafe(nil)); end
+
+    # Remove a label from an inbox thread
+    #
+    # The label itself is kept, and stays on every other thread that carries it. A label that is
+    # not on the thread returns the current labels. To delete the label, use
+    # {Resend::Inboxes::Labels.remove}.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String] :thread_id the thread ID (required)
+    # @option params [String] :label_id the label ID (required)
+    #
+    # https://resend.com/docs/api-reference/inboxes/remove-thread-label
+    #
+    # pkg:gem/resend#lib/resend/inboxes/threads/labels.rb:61
+    def remove(params = T.unsafe(nil)); end
+
+    # Set the labels of an inbox thread
+    #
+    # Replaces every label on the thread with the given labels, in one atomic change. The labels
+    # themselves are kept. An empty array takes every label off the thread. A label ID that is not
+    # a label of the inbox returns a 404, and nothing changes.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :inbox_id the inbox ID or the inbox email address (required)
+    # @option params [String] :thread_id the thread ID (required)
+    # @option params [Array<String>] :labels the IDs of the labels the thread carries after the
+    #   change. Up to 100 IDs, each a label of the inbox (required)
+    #
+    # https://resend.com/docs/api-reference/inboxes/set-thread-labels
+    #
+    # pkg:gem/resend#lib/resend/inboxes/threads/labels.rb:43
+    def set(params = T.unsafe(nil)); end
+
+    private
+
+    # pkg:gem/resend#lib/resend/inboxes/threads/labels.rb:80
+    def labels_path(params); end
+
+    # pkg:gem/resend#lib/resend/inboxes/threads/labels.rb:75
+    def validate_labels!(params); end
+
+    # pkg:gem/resend#lib/resend/inboxes/threads/labels.rb:70
+    def validate_thread!(params); end
   end
 end
 
