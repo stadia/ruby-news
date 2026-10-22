@@ -22,14 +22,15 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     get root_path
 
     assert_response :success
-    assert_select "aside.recent-blog-posts-sidebar + aside.recent-comments-sidebar"
-    assert_select "aside.recent-blog-posts-sidebar a[href=?]",
+    # 모바일 블록에도 같은 사이드바가 있으므로 데스크톱 사이드바로 범위를 좁힌다.
+    assert_select ".hidden.lg\\:block aside.recent-blog-posts-sidebar + aside.recent-comments-sidebar"
+    assert_select ".hidden.lg\\:block aside.recent-blog-posts-sidebar a[href=?]",
                   user_profile_blog_post_path(username: users(:john).username, slug: posts(:blog_published)),
                   text: /발행된 긴 글/
-    assert_select "aside.recent-blog-posts-sidebar a[href=?]",
+    assert_select ".hidden.lg\\:block aside.recent-blog-posts-sidebar a[href=?]",
                   user_profile_blog_post_path(username: users(:john).username, slug: posts(:blog_draft)), count: 0
     # 댓글 사이드바와 같은 이름(Post#author_name)을 쓴다.
-    assert_select "aside.recent-blog-posts-sidebar a[href=?] span",
+    assert_select ".hidden.lg\\:block aside.recent-blog-posts-sidebar a[href=?] span",
                   user_profile_blog_path(username: users(:john).username),
                   text: "존 도"
   end
@@ -39,9 +40,20 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select ".lg\\:hidden > aside.recent-blog-posts-sidebar + aside.recent-comments-sidebar"
+    assert_select "section.mb-8 + .lg\\:hidden + section h2", text: I18n.t("home.index.latest_news")
     assert_select ".lg\\:hidden aside.tags-sidebar", count: 0
     assert_select ".hidden.lg\\:block aside.recent-blog-posts-sidebar + aside.recent-comments-sidebar + aside.tags-sidebar"
     assert_select "aside.tags-sidebar", count: 1
+  end
+
+  test "GET root limits mobile comments to one and loads comments once" do
+    posts(:root_post).update_columns(post_type: Post.post_types[:comment], article_id: articles(:ruby_article).id, status: Post.statuses[:published])
+    queries = capture_queries { get root_path }
+
+    assert_response :success
+    assert_select ".lg\\:hidden aside.recent-comments-sidebar .space-y-3 > *", count: 1
+    assert_select ".hidden.lg\\:block aside.recent-comments-sidebar .space-y-3 > *", count: 2
+    assert_equal 1, queries.grep(/FROM "posts" INNER JOIN "articles"/).size
   end
 
   test "GET root hides the blog sidebar when no eligible blogs remain" do
@@ -51,6 +63,7 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "aside.recent-blog-posts-sidebar", count: 0
+    assert_select ".lg\\:hidden > aside.recent-comments-sidebar"
   end
 
   test "GET root loads recent blogs once and preloads multiple authors" do
