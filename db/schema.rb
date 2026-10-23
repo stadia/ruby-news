@@ -17,7 +17,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_000000) do
   enable_extension "fuzzystrmatch"
   enable_extension "pg_bigm"
   enable_extension "pg_catalog.plpgsql"
-  enable_extension "textsearch_ko"
+  enable_extension "public.pg_stat_statements"
+  enable_extension "public.textsearch_ko"
   enable_extension "vector"
 
   create_table "ra_news.active_storage_attachments", force: :cascade do |t|
@@ -49,31 +50,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_000000) do
   end
 
   create_table "ra_news.articles", force: :cascade do |t|
-    t.text "body", comment: "The main content of the article"
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.halfvec "embedding", limit: 3072
-    t.bigint "fedipub_actor_id"
-    t.string "federated_url"
-    t.string "host"
-    t.boolean "is_posted", default: false, comment: "소셜에 게시되었는지 여부를 나타냅니다."
-    t.boolean "is_related", default: false, null: false
-    t.boolean "is_youtube", default: false, null: false
-    t.integer "likers_count", default: 0, null: false
-    t.string "origin_url", default: "", null: false
-    t.integer "posts_count", default: 0, null: false
-    t.datetime "published_at"
-    t.bigint "site_id"
-    t.text "slug"
-    t.jsonb "social_post_ids", default: {}
-    t.text "summary_body", comment: "원문 상세 요약"
-    t.jsonb "summary_detail"
-    t.jsonb "summary_key"
     t.string "title", limit: 200
-    t.string "title_ko", limit: 200
-    t.datetime "updated_at", null: false
     t.string "url"
     t.bigint "user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.jsonb "summary_key"
+    t.jsonb "summary_detail"
+    t.string "title_ko", limit: 200
+    t.datetime "published_at"
+    t.datetime "deleted_at"
+    t.string "origin_url", default: "", null: false
+    t.string "host"
+    t.bigint "site_id"
+    t.text "slug"
+    t.boolean "is_youtube", default: false, null: false
+    t.boolean "is_related", default: false, null: false
+    t.text "body", comment: "The main content of the article"
+    t.halfvec "embedding", limit: 3072
+    t.boolean "is_posted", default: false, comment: "소셜에 게시되었는지 여부를 나타냅니다."
+    t.text "summary_body", comment: "원문 상세 요약"
+    t.jsonb "social_post_ids", default: {}
+    t.integer "posts_count", default: 0, null: false
+    t.string "federated_url"
+    t.bigint "fedipub_actor_id"
+    t.integer "likers_count", default: 0, null: false
     t.string "title_ja", limit: 200
     t.jsonb "summary_key_ja"
     t.jsonb "summary_detail_ja"
@@ -85,10 +86,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_000000) do
     t.index ["deleted_at", "slug", "title_ko", "id"], name: "index_articles_on_deleted_at_and_slug_and_title_ko_and_id", where: "((deleted_at IS NULL) AND (slug IS NOT NULL) AND (title_ko IS NOT NULL))", comment: "Optimized for listing articles with slug and title"
     t.index ["embedding"], name: "index_articles_on_embedding", opclass: :halfvec_cosine_ops, using: :hnsw
     t.index ["fedipub_actor_id"], name: "index_articles_on_fedipub_actor_id"
-    t.index ["is_related", "published_at"], name: "index_articles_on_is_related_and_published_at"
+    t.index ["is_related", "published_at"], name: "index_articles_on_related_and_published_at"
     t.index ["origin_url"], name: "index_articles_on_origin_url", unique: true
     t.index ["published_at"], name: "index_articles_on_published_at"
-    t.index ["site_id", "published_at"], name: "index_articles_on_site_id_and_published_at"
     t.index ["site_id"], name: "index_articles_on_site_id"
     t.index ["slug"], name: "index_articles_on_slug", unique: true, where: "(deleted_at IS NULL)"
     t.index ["url"], name: "index_articles_on_url", unique: true
@@ -105,19 +105,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_000000) do
   end
 
   create_table "ra_news.fedipub_activities", force: :cascade do |t|
+    t.string "entity_type", null: false
+    t.bigint "entity_id", null: false
     t.string "action", null: false
     t.bigint "actor_id", null: false
-    t.string "audience"
-    t.string "bcc"
-    t.string "bto"
-    t.string "cc"
     t.datetime "created_at", null: false
-    t.bigint "entity_id", null: false
-    t.string "entity_type", null: false
-    t.string "federated_url"
-    t.string "to"
     t.datetime "updated_at", null: false
     t.string "uuid"
+    t.string "to"
+    t.string "cc"
+    t.string "federated_url"
+    t.string "bto"
+    t.string "bcc"
+    t.string "audience"
     t.string "result"
     t.string "instrument"
     t.index ["actor_id"], name: "index_fedipub_activities_on_actor_id"
@@ -127,27 +127,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_000000) do
   end
 
   create_table "ra_news.fedipub_actors", force: :cascade do |t|
-    t.string "actor_type"
-    t.datetime "created_at", null: false
-    t.integer "entity_id"
-    t.string "entity_type"
-    t.json "extensions"
+    t.string "name"
     t.string "federated_url"
+    t.string "username"
+    t.string "server"
+    t.string "inbox_url"
+    t.string "outbox_url"
     t.string "followers_url"
     t.string "followings_url"
-    t.string "inbox_url"
-    t.integer "likees_count", default: 0, null: false
-    t.boolean "local", default: false, null: false
-    t.string "name"
-    t.string "outbox_url"
-    t.text "private_key"
     t.string "profile_url"
-    t.text "public_key"
-    t.string "server"
-    t.datetime "tombstoned_at"
+    t.integer "entity_id"
+    t.string "entity_type"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "username"
     t.string "uuid"
+    t.text "public_key"
+    t.text "private_key"
+    t.json "extensions"
+    t.boolean "local", default: false, null: false
+    t.string "actor_type"
+    t.datetime "tombstoned_at"
+    t.integer "likees_count", default: 0, null: false
     t.string "shared_inbox_url"
     t.integer "boostees_count", default: 0, null: false
     t.index ["entity_type", "entity_id"], name: "index_fedipub_actors_on_entity", unique: true
@@ -157,8 +157,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_000000) do
 
   create_table "ra_news.fedipub_blocks", force: :cascade do |t|
     t.bigint "actor_id", null: false
-    t.datetime "created_at", null: false
     t.bigint "target_actor_id", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["actor_id", "target_actor_id"], name: "index_fedipub_blocks_on_actor_id_and_target_actor_id", unique: true
     t.index ["actor_id"], name: "index_fedipub_blocks_on_actor_id"
@@ -185,10 +185,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_000000) do
 
   create_table "ra_news.fedipub_followings", force: :cascade do |t|
     t.bigint "actor_id", null: false
-    t.datetime "created_at", null: false
-    t.string "federated_url"
-    t.integer "status", default: 0
     t.bigint "target_actor_id", null: false
+    t.integer "status", default: 0
+    t.string "federated_url"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "uuid"
     t.index ["actor_id", "target_actor_id"], name: "index_fedipub_followings_on_actor_id_and_target_actor_id", unique: true
@@ -198,23 +198,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_000000) do
   end
 
   create_table "ra_news.fedipub_hosts", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.string "domain", null: false
     t.string "nodeinfo_url"
-    t.text "protocols", default: "[]"
-    t.text "services", default: "{}"
     t.string "software_name"
     t.string "software_version"
+    t.text "protocols", default: "[]"
+    t.text "services", default: "{}"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["domain"], name: "index_fedipub_hosts_on_domain", unique: true
   end
 
   create_table "ra_news.friendly_id_slugs", force: :cascade do |t|
-    t.datetime "created_at"
-    t.string "scope"
     t.string "slug", null: false
     t.integer "sluggable_id", null: false
     t.string "sluggable_type", limit: 50
+    t.string "scope"
+    t.datetime "created_at"
     t.index ["slug", "sluggable_type", "scope"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type_and_scope", unique: true
     t.index ["slug", "sluggable_type"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type"
     t.index ["sluggable_type", "sluggable_id"], name: "index_friendly_id_slugs_on_sluggable_type_and_sluggable_id"
@@ -229,9 +229,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_000000) do
   end
 
   create_table "ra_news.likes", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "likeable_id", null: false
     t.string "likeable_type", null: false
+    t.bigint "likeable_id", null: false
+    t.datetime "created_at", null: false
     t.bigint "actor_id", null: false
     t.index ["actor_id", "likeable_type", "likeable_id"], name: "index_likes_on_actor_and_likeable", unique: true
     t.index ["likeable_type", "likeable_id"], name: "index_likes_on_likeable"
@@ -287,11 +287,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_000000) do
 
   create_table "ra_news.pg_search_documents", force: :cascade do |t|
     t.text "content"
-    t.datetime "created_at", null: false
-    t.bigint "searchable_id"
     t.string "searchable_type"
-    t.tsvector "tsvector_content_tsearch"
+    t.bigint "searchable_id"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.tsvector "tsvector_content_tsearch"
     t.index ["content"], name: "index_pg_search_documents_on_content_bigm", opclass: :gin_bigm_ops, using: :gin
     t.index ["searchable_type", "searchable_id", "created_at"], name: "idx_on_searchable_type_searchable_id_created_at_0108fa1d12"
     t.index ["searchable_type", "searchable_id"], name: "index_pg_search_documents_on_searchable"
@@ -299,22 +299,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_000000) do
   end
 
   create_table "ra_news.posts", force: :cascade do |t|
-    t.bigint "article_id"
     t.text "body", null: false
-    t.integer "children_count", default: 0, null: false
-    t.datetime "created_at", null: false
-    t.integer "depth", default: 0, null: false
+    t.bigint "user_id"
     t.bigint "fedipub_actor_id"
     t.string "federated_url"
-    t.integer "lft", null: false
-    t.integer "likers_count", default: 0, null: false
-    t.jsonb "media_attachments", default: [], null: false
     t.bigint "parent_id"
+    t.integer "lft", null: false
     t.integer "rgt", null: false
-    t.string "title", limit: 255
+    t.integer "depth", default: 0, null: false
+    t.integer "children_count", default: 0, null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "likers_count", default: 0, null: false
     t.string "url", limit: 255
-    t.bigint "user_id"
+    t.string "title", limit: 255
+    t.jsonb "media_attachments", default: [], null: false
+    t.bigint "article_id"
     t.text "slug"
     t.integer "boosters_count", default: 0, null: false
     t.integer "post_type", default: 0, null: false
@@ -323,6 +323,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_000000) do
     t.datetime "deleted_at"
     t.index ["article_id"], name: "index_posts_on_article_id"
     t.index ["deleted_at"], name: "index_posts_on_deleted_at"
+    t.index ["depth"], name: "index_posts_on_depth"
     t.index ["federated_url"], name: "index_posts_on_federated_url", unique: true
     t.index ["fedipub_actor_id"], name: "index_posts_on_fedipub_actor_id"
     t.index ["lft"], name: "index_posts_on_lft"
@@ -335,23 +336,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_000000) do
   end
 
   create_table "ra_news.preferences", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.string "name", null: false
-    t.datetime "updated_at", null: false
     t.jsonb "value", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["name"], name: "index_preferences_on_name", unique: true
   end
 
   create_table "ra_news.push_subscriptions", force: :cascade do |t|
-    t.string "auth", null: false
-    t.datetime "created_at", null: false
-    t.text "endpoint", null: false
-    t.datetime "expiration_time"
-    t.datetime "last_error_at"
-    t.datetime "last_sent_at"
-    t.string "p256dh", null: false
-    t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.text "endpoint", null: false
+    t.string "p256dh", null: false
+    t.string "auth", null: false
+    t.datetime "expiration_time"
+    t.datetime "last_sent_at"
+    t.datetime "last_error_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["endpoint"], name: "index_push_subscriptions_on_endpoint", unique: true
     t.index ["user_id"], name: "index_push_subscriptions_on_user_id"
   end
@@ -368,23 +369,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_000000) do
   end
 
   create_table "ra_news.roles", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.string "name", null: false
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_roles_on_name", unique: true
   end
 
   create_table "ra_news.sites", force: :cascade do |t|
-    t.string "base_uri"
-    t.string "channel"
-    t.integer "client", default: 0, null: false
-    t.datetime "created_at", null: false
-    t.datetime "deleted_at"
-    t.string "email"
-    t.datetime "last_checked_at"
     t.string "name", null: false
-    t.string "path"
+    t.string "base_uri"
+    t.integer "client", default: 0, null: false
+    t.datetime "last_checked_at"
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "email"
+    t.string "path"
+    t.string "channel"
+    t.datetime "deleted_at"
     t.string "url"
     t.index ["client", "id"], name: "index_sites_on_client_and_id"
     t.index ["deleted_at"], name: "index_sites_on_deleted_at"
@@ -392,19 +393,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_000000) do
   end
 
   create_table "ra_news.taggings", force: :cascade do |t|
+    t.bigint "tag_id"
+    t.string "taggable_type"
+    t.bigint "taggable_id"
+    t.string "tagger_type"
+    t.bigint "tagger_id"
     t.string "context", limit: 128
     t.datetime "created_at", precision: nil
-    t.bigint "tag_id"
-    t.bigint "taggable_id"
-    t.string "taggable_type"
-    t.bigint "tagger_id"
-    t.string "tagger_type"
     t.string "tenant", limit: 128
     t.index ["tag_id", "taggable_id", "taggable_type", "context", "tagger_id", "tagger_type"], name: "taggings_idx", unique: true
     t.index ["tag_id"], name: "index_taggings_on_tag_id"
     t.index ["taggable_id", "taggable_type", "context", "tag_id"], name: "index_taggings_on_taggable_and_context_and_tag_id"
     t.index ["taggable_id", "taggable_type", "context"], name: "taggings_taggable_context_idx"
-    t.index ["taggable_id", "taggable_type", "tagger_id", "context"], name: "taggings_idy"
+    t.index ["taggable_id", "taggable_type", "tagger_id", "context"], name: "idx_on_taggable_id_taggable_type_tagger_id_context_72eb419f98"
     t.index ["taggable_id"], name: "index_taggings_on_taggable_id"
     t.index ["taggable_type", "taggable_id"], name: "index_taggings_on_taggable_type_and_taggable_id"
     t.index ["taggable_type"], name: "index_taggings_on_taggable_type"
@@ -414,27 +415,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_000000) do
   end
 
   create_table "ra_news.tags", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.boolean "is_confirmed", default: false, null: false
     t.string "name"
-    t.integer "taggings_count", default: 0
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "taggings_count", default: 0
+    t.boolean "is_confirmed", default: false, null: false
     t.index "lower((name)::text)", name: "index_tags_on_lower_name"
     t.index ["name"], name: "index_tags_on_name", unique: true
   end
 
   create_table "ra_news.users", force: :cascade do |t|
-    t.datetime "created_at", null: false
     t.string "email", null: false
-    t.string "encrypted_password", null: false
-    t.integer "likees_count", default: 0, null: false
-    t.string "name", default: "", null: false
-    t.datetime "remember_created_at"
-    t.datetime "reset_password_sent_at"
-    t.string "reset_password_token"
-    t.string "roles", default: ["user"], array: true
+    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "name", limit: 50, default: "", null: false
+    t.string "roles", default: ["user"], array: true
     t.string "username", limit: 30
+    t.integer "likees_count", default: 0, null: false
+    t.string "encrypted_password", default: "", null: false
+    t.string "reset_password_token"
+    t.datetime "reset_password_sent_at"
+    t.datetime "remember_created_at"
     t.string "confirmation_token"
     t.datetime "confirmed_at"
     t.datetime "confirmation_sent_at"
