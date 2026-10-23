@@ -17,8 +17,7 @@ class Components::Comments::CommentForm < Components::Base
       render RubyUI::Card.new(
         class: "bg-surface-muted border-border-muted p-6",
         data: {
-          controller: "character-counter post-form",
-          character_counter_max_length_value: ::Post::MAX_BODY_LENGTH.to_s,
+          controller: "post-form",
           action: "turbo:submit-end->post-form#reset"
         }
       ) do
@@ -40,7 +39,8 @@ class Components::Comments::CommentForm < Components::Base
   def comment_form_fields
     return login_prompt unless view_context.user_signed_in?
 
-    form_with(model: [ @article, @comment ], url: article_posts_path(@article), local: false, class: "space-y-4") do |f|
+    form_with(model: [ @article, @comment ], url: article_posts_path(@article), local: false, class: "space-y-4",
+              data: { controller: "character-counter", character_counter_max_length_value: ::Post::MAX_BODY_LENGTH.to_s }) do |f|
       error_messages if @comment.errors.any?
       body_field(f)
       submit_section(f)
