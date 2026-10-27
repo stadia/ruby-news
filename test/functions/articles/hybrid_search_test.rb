@@ -97,6 +97,33 @@ class Articles::HybridSearchTest < ActiveSupport::TestCase
     end
   end
 
+  def capture_sql(&block)
+    sqls = []
+    callback = ->(*, payload) { sqls << payload[:sql] }
+    ActiveSupport::Notifications.subscribed(callback, "sql.active_record", &block)
+    sqls
+  end
+
+  test "widens HNSW search so filtered vector candidates fill the pool" do
+    Rails.cache.clear
+    qvec = Array.new(Articles::HybridSearch::EMBED_DIMENSIONS, 0.0).tap { |v| v[0] = 1.0 }
+
+    sqls = stub_embed(qvec) { capture_sql { Articles::HybridSearch.run(query: "Ruby") } }
+
+    assert sqls.any? { |s| s.include?("hnsw.ef_search") }
+    assert sqls.any? { |s| s.include?("hnsw.iterative_scan") }
+  end
+
+  test "threshold filter reuses vector distances instead of reloading embeddings" do
+    Rails.cache.clear
+    qvec = Array.new(Articles::HybridSearch::EMBED_DIMENSIONS, 0.0).tap { |v| v[0] = 1.0 }
+    articles(:ruby_article).update_column(:embedding, qvec)
+
+    sqls = stub_embed(qvec) { capture_sql { Articles::HybridSearch.run(query: "zzznontextmatch") } }
+
+    assert_not sqls.any? { |s| s.include?(%("articles"."embedding" FROM)) }
+  end
+
   test "mmr reranking path returns aligned article without error" do
     Rails.cache.clear
     qvec = Array.new(Articles::HybridSearch::EMBED_DIMENSIONS, 0.0)
