@@ -1,3 +1,11 @@
+---
+id: ruby-news-layers
+type: architecture-design
+title: 계층 경계와 Packwerk 검사
+status: active
+parent: ruby-news-architecture
+---
+
 # 계층 경계와 Packwerk 검사
 
 Rails MVC 구조는 그대로 두고, 책임이 섞이기 쉬운 곳부터 계층을 선언해 [Packwerk](https://github.com/Shopify/packwerk)와 [packwerk-extensions](https://github.com/rubyatscale/packwerk-extensions)의 Layer Checker로 의존 방향을 검사한다(#1014). 전체 코드베이스를 한 번에 계층화하지 않는다. 한 흐름에 먼저 적용하고 넓혀 간다.
