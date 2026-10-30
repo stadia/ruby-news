@@ -49,7 +49,8 @@ module Articles
           "#{prompt}\n\n[지침]\n#{INSTRUCTIONS}",
           model: MODEL,
           provider: PROVIDER,
-          provider_options: { aspect_ratio: "16:9" }
+          size: "1536x864",
+          # provider_options: { aspect_ratio: "16:9" }
         )
       end
 
