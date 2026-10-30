@@ -9,10 +9,9 @@ module Articles
   module Thumbnail
     extend FunctionLogger
 
-    MODEL = "openai/gpt-image-2"
-    # MODEL = "google/gemini-3.1-flash-lite-image"
+    MODEL = "gpt-image-2"
     # MODEL = "google/gemini-3.1-flash-image"
-    PROVIDER = :openrouter
+    PROVIDER = :openai
 
     INSTRUCTIONS = <<~PROMPT
       - 16:9 비율의 가로형 이미지로 생성한다.

@@ -19,6 +19,8 @@ RubyLLM.configure do |config|
 
   # API key - use what your server expects
   config.openai_api_key = ENV.fetch("OPENAI_API_KEY", nil)
+  config.openai_organization_id = "org-RxAHv5NkI9HQ4TW6MqGxLZ8N"  # Billing organization
+  config.openai_project_id = "proj_N3WzA0aRDq1scEnoYABBGJVk"
 
   config.openrouter_api_key = ENV.fetch("OPENROUTER_API_KEY", nil)
 
