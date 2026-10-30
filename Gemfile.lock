@@ -617,7 +617,9 @@ GEM
       actionpack (>= 7.0.0)
       activesupport (>= 7.0.0)
       rack
-    prosopite (2.2.0)
+    prosopite (2.5.0)
+      activerecord (>= 6.1)
+      railties (>= 6.1)
     public_suffix (7.0.5)
     puma (8.0.2)
       nio4r (~> 2.0)
