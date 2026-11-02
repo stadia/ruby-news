@@ -904,7 +904,7 @@ GEM
       railties (>= 6.0.0)
     tailwind_merge (1.5.6)
       sin_lru_redux (~> 2.5)
-    tailwindcss-rails (4.6.0)
+    tailwindcss-rails (4.7.0)
       railties (>= 7.0.0)
       tailwindcss-ruby (~> 4.0)
     tailwindcss-ruby (4.3.3)
@@ -1094,7 +1094,7 @@ DEPENDENCIES
   sqlite3 (>= 2.1)
   stimulus-rails
   tailwind_merge (~> 1.5)
-  tailwindcss-rails (~> 4.5)
+  tailwindcss-rails (~> 4.7)
   tapioca
   test-prof (~> 1.6)
   turbo-rails
