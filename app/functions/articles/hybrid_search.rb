@@ -31,15 +31,14 @@ module Articles
         return [] if term.blank?
 
         qvec = query_embedding(term)
-        vector_ids = qvec ? vector_search(qvec) : []
+        similarities = qvec ? vector_search(qvec) : {}
         fts_ids = fts_search(term)
 
-        fused = Articles::Search.fuse([ vector_ids, fts_ids ], k: RRF_K)
+        fused = Articles::Search.fuse([ similarities.keys, fts_ids ], k: RRF_K)
         return fused.first(limit) if fused.empty? || qvec.nil?
 
-        vectors = candidate_vectors(fused)
-        kept = threshold_filter(fused, vectors, qvec, fts_ids)
-        ranked = mmr ? rerank(kept, vectors, qvec, limit) : kept
+        kept = threshold_filter(fused, similarities, fts_ids)
+        ranked = mmr ? rerank(kept, candidate_vectors(kept), qvec, limit) : kept
         ranked.first(limit)
       end
 
@@ -62,14 +61,24 @@ module Articles
 
       # 후보 선정은 embedding의 HNSW 인덱스(halfvec_cosine_ops)에 맞춰 cosine 거리로 한다.
       # threshold_filter / rerank 도 cosine 기준이라 검색~필터~재랭킹이 동일 기준으로 일관된다.
-      # RRF는 순위만 사용하므로 neighbor_distance 값 자체는 필요 없다.
-      #: (Array[Float] qvec) -> Array[Integer]
+      # 반환값은 거리순 { id => 코사인 유사도 }. 유사도는 threshold_filter 가 재사용한다.
+      #
+      # HNSW 는 ef_search(기본 40)개까지만 돌려주고 kept.confirmed 필터는 그 뒤에 걸려,
+      # 프로덕션에서 LIMIT 100 이 32건으로 줄었다. ef_search 를 넓히고 iterative scan 으로
+      # 필터 뒤에도 풀을 채운다. relaxed_order 는 순서가 살짝 어긋날 수 있어 거리로 다시 정렬한다.
+      #: (Array[Float] qvec) -> Hash[Integer, Float]
       def vector_search(qvec)
-        Article.kept.confirmed
-               .nearest_neighbors(:embedding, qvec, distance: "cosine")
-               .limit(CANDIDATE_POOL)
-               .select(:id)
-               .map(&:id)
+        Article.transaction do
+          Article.connection.execute("SET LOCAL hnsw.ef_search = #{CANDIDATE_POOL * 2}")
+          Article.connection.execute("SET LOCAL hnsw.iterative_scan = relaxed_order")
+          Article.kept.confirmed
+                 .nearest_neighbors(:embedding, qvec, distance: "cosine")
+                 .limit(CANDIDATE_POOL)
+                 .select(:id)
+                 .map { |a| [ a.id, 1 - a[:neighbor_distance] ] }
+                 .sort_by { |_id, similarity| -similarity }
+                 .to_h
+        end
       end
 
       #: (String term) -> Array[Integer]
@@ -84,15 +93,11 @@ module Articles
                .to_h { |a| [ a.id, a.embedding.to_a ] }
       end
 
-      #: (Array[Integer] fused, Hash[Integer, Array[Float]] vectors, Array[Float] qvec, Array[Integer] fts_ids) -> Array[Integer]
-      def threshold_filter(fused, vectors, qvec, fts_ids)
+      # FTS 가 아닌 후보는 모두 vector_search 결과라 유사도가 이미 있다.
+      #: (Array[Integer] fused, Hash[Integer, Float] similarities, Array[Integer] fts_ids) -> Array[Integer]
+      def threshold_filter(fused, similarities, fts_ids)
         fts_set = fts_ids.to_set
-        fused.select do |id|
-          next true if fts_set.include?(id)
-
-          vec = vectors[id]
-          vec && Articles::Search.cosine_similarity(qvec, vec) >= COSINE_THRESHOLD
-        end
+        fused.select { |id| fts_set.include?(id) || similarities.fetch(id, 0.0) >= COSINE_THRESHOLD }
       end
 
       # MMR은 limit 개까지만 선택하면 충분하다. no_vec(임베딩 없는 FTS 후보)는 항상 뒤에 붙고
