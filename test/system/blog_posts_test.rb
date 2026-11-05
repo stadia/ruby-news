@@ -8,6 +8,40 @@ class BlogPostsTest < ApplicationSystemTestCase
     login_as @user, scope: :user
   end
 
+  # 툴바 이미지 버튼 → direct upload → 저장 → 글 화면까지. 테스트는 Disk 서비스라
+  # R2 CORS(docs/r2-cors.md)와 무관하게 나머지 경로가 이어지는지 지킨다.
+  test "image uploaded from the editor toolbar is saved and shown on the post" do
+    draft = posts(:blog_draft)
+    visit edit_blog_post_path(draft)
+
+    assert_selector ".post-composer-editor .lexxy-editor__content", wait: 10
+
+    page.attach_file(file_fixture("blog-image.png"), make_visible: true) do
+      find("lexxy-toolbar button[name='image']").click
+    end
+
+    # 에디터는 업로드 전에 미리보기 이미지부터 그린다. 업로드가 끝나 첨부에
+    # sgid가 붙은 뒤에 저장한다.
+    page.document.synchronize(10) do
+      uploaded = evaluate_script("document.querySelector('.post-composer-editor').value.includes('sgid=')")
+      raise Capybara::ExpectationNotMet, "업로드가 끝나지 않았다" unless uploaded
+    end
+
+    click_button I18n.t("posts.blog.preview")
+
+    assert_no_selector "lexxy-editor", wait: 10
+    assert_selector ".post-content figure img[src*='/rails/active_storage/']"
+    # 저장된 src(blob 리다이렉트)로 실제 이미지를 불러오는지 — 픽스처는 16×16이다.
+    width = evaluate_async_script(<<~JS)
+      const done = arguments[0];
+      const img = document.querySelector(".post-content figure img");
+      img.decode().then(() => done(img.naturalWidth), () => done(0));
+    JS
+
+    assert_equal 16, width
+    assert_equal 1, ActiveStorage::Blob.where(filename: "blog-image.png").count
+  end
+
   test "user creates and publishes a blog post" do
     visit feed_path
 
