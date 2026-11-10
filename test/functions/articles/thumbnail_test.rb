@@ -7,8 +7,8 @@ class Articles::ThumbnailTest < ActiveSupport::TestCase
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
   )
 
-  # OpenRouter 이미지 API는 b64_json을 RubyLLM::Image(data:)로 돌려준다.
-  test "OpenRouter openai/gpt-image-2로 그린 이미지를 썸네일로 붙인다" do
+  # OpenAI 이미지 API는 b64_json을 RubyLLM::Image(data:)로 돌려준다.
+  test "OpenAI gpt-image-2로 그린 16:9 이미지를 썸네일로 붙인다" do
     article = articles(:ruby_article)
     article.update!(summary_key: [ "요점" ])
     image = RubyLLM::Image.new(data: Base64.strict_encode64(ONE_PX_PNG), mime_type: "image/png")
@@ -19,8 +19,11 @@ class Articles::ThumbnailTest < ActiveSupport::TestCase
 
     assert_predicate article.thumbnail, :attached?
     assert_equal "image/png", article.thumbnail.content_type
-    assert_equal "openai/gpt-image-2", called_with[:model]
-    assert_equal :openrouter, called_with[:provider]
+    assert_equal "thumbnail-#{article.id}.png", article.thumbnail.filename.to_s
+    assert_equal ONE_PX_PNG, article.thumbnail.download
+    assert_equal "gpt-image-2", called_with[:model]
+    assert_equal :openai, called_with[:provider]
+    assert_equal "1536x864", called_with[:size]
     assert_includes called_with[:prompt], "1. 요점"
   end
 
