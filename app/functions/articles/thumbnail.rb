@@ -42,7 +42,7 @@ module Articles
 
       private
 
-      # OpenRouter 이미지 API는 size를 무시하고 aspect_ratio provider 옵션을 받는다.
+      # OpenAI 이미지 API의 size 옵션으로 16:9 가로형 해상도를 지정한다.
       #: (String prompt) -> RubyLLM::Image
       def paint(prompt)
         RubyLLM.paint(
