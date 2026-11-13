@@ -4,6 +4,8 @@
 --ignore=tmp/
 --ignore=vendor/
 --ignore=bin/
+# Other git worktrees live here; their copies of app code would be duplicate definitions.
+--ignore=.worktrees/
 # Only loaded by `bin/ci`, which supplies the `CI` constant itself.
 --ignore=config/ci.rb
 # Runs under its own bundle (tools/rubycritic/Gemfile), whose gems have no RBI here.
