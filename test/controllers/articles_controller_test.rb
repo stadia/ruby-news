@@ -284,6 +284,42 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
     assert_select "meta[name='description'][content='日本語の要約']"
   end
 
+  test "GET show presents the Solid Cable correction and metadata on the Japanese article" do
+    article = article_with_uncorrected_solid_cable_summary
+    host! "ruby-news.jp"
+
+    get article_path(article)
+
+    assert_response :success
+    assert_select "#article-detail-body", text: /伝達遅延の上限ではありません/
+    assert_select "#article-detail-body a[href='https://github.com/rails/solid_cable#readme']"
+    assert_select "meta[name='description']", count: 1 do |elements|
+      assert_includes elements.first["content"], "ポーリング"
+      assert_equal elements.first["content"], structured_data("NewsArticle").fetch("description")
+    end
+    assert_not_includes response.body, "PostgreSQL環境ではLISTEN/NOTIFYを利用"
+    assert_not_includes response.body, "最大100msの遅延"
+  end
+
+  test "GET show limits the Solid Cable correction to the target slug and host without persisting it" do
+    article = article_with_uncorrected_solid_cable_summary
+    host! "ruby-news.jp"
+    article.update_columns(slug: "unrelated-solid-cache-control")
+    get article_path(article)
+
+    assert_response :success
+    assert_select "#article-detail-body", text: /最大100msの遅延/
+
+    article.update_columns(slug: "rails-8-solidcable-database-backed-websockets-guide")
+    host! "ruby-news.dev"
+    get article_path(article), headers: { "Cookie" => "locale=ja" }
+
+    assert_response :success
+    assert_equal "ja-JP", structured_data("NewsArticle").fetch("inLanguage")
+    assert_select "#article-detail-body", text: /最大100msの遅延/
+    assert_equal "最大100msの遅延", article.reload.summary_body_ja
+  end
+
   test "GET show uses attached thumbnail in Open Graph and article schema" do
     article = articles(:ruby_article)
     article.thumbnail.attach(io: StringIO.new("thumbnail"), filename: "thumbnail.png", content_type: "image/png")
@@ -794,6 +830,18 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
   end
 
   private
+
+  def article_with_uncorrected_solid_cable_summary
+    article = articles(:ruby_article)
+    article.update_columns(
+      slug: "rails-8-solidcable-database-backed-websockets-guide",
+      title_ja: "Solid Cable",
+      summary_key_ja: [ "元の日本語の要約", "PostgreSQL環境ではLISTEN/NOTIFYを利用" ],
+      summary_body_ja: "最大100msの遅延",
+      summary_detail_ja: { "conclusion" => "元の日本語の結論" }
+    )
+    article
+  end
 
   def structured_data(type)
     response.parsed_body.css("script[type='application/ld+json']").map { |script| JSON.parse(script.text) }

@@ -5,12 +5,12 @@ class Views::Articles::Show < Views::Base
   include Phlex::Rails::Helpers::ContentFor
   include Phlex::Rails::Helpers::DOMID
 
-  def initialize(article:, comments:, comment:, similar_articles:)
+  def initialize(article:, presenter:, comments:, comment:, similar_articles:)
     @article = article
     @comments = comments
     @comment = comment
     @similar_articles = similar_articles
-    @presenter = ArticleShowPresenter.new(article)
+    @presenter = presenter
   end
 
   def view_template

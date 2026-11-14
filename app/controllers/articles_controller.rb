@@ -87,7 +87,8 @@ class ArticlesController < ApplicationController
   def show
     @comments = @article.posts.comments.kept.includes(:user)
 
-    prepare_article_metadata
+    presenter = ArticleShowPresenter.new(@article, host: request.host)
+    prepare_article_metadata(presenter)
     @similar_articles = similar_articles
 
     @comment = Post.new
@@ -95,6 +96,7 @@ class ArticlesController < ApplicationController
       format.html do
         render Views::Articles::Show.new(
           article: @article,
+          presenter: presenter,
           comments: @comments,
           comment: @comment,
           similar_articles: @similar_articles
@@ -140,12 +142,12 @@ class ArticlesController < ApplicationController
   end
 
   private
-    def prepare_article_metadata
+    def prepare_article_metadata(presenter)
       # 현재 로케일(.jp=ja) 번역이 없으면 한국어 원문으로 폴백된 상태이므로,
       # 검색/AI에 "한국어를 일본어로" 노출하지 않도록 noindex 처리한다.
       @robots_noindex = !@article.available_in?(I18n.locale)
       @page_title = @article.display_title
-      @page_description = @article.summary_key_preview
+      @page_description = presenter.description
       tags = @article.tags.map(&:name)
       @page_keywords = tags.join(",") if tags.any?
       @og_type = "article"
