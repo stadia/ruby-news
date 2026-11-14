@@ -84,6 +84,7 @@ class Article < ApplicationRecord
   # 영/한 term 은 tsvector 분기만 타서 ts_rank GIN 으로 빠르게 종결.
   # LIKE 는 gin_bigm_ops 인덱스를 타지만 ILIKE 는 타지 않으므로 LIKE 를 사용한다.
   JAPANESE_KANA_REGEX = /[\p{Hiragana}\p{Katakana}･-ﾟ]/
+  # 중복 제거 전 입력 토큰 수를 제한해 긴 입력의 파싱과 SQL 조건 수를 제한한다.
   JAPANESE_SEARCH_MAX_TERMS = 10
 
   scope :full_text_search_for, ->(term) do
@@ -93,12 +94,12 @@ class Article < ApplicationRecord
     tsquery = "websearch_to_tsquery('korean', #{connection.quote(term)})"
     results = joins(:pg_search_document)
     if term.match?(JAPANESE_KANA_REGEX)
-      # 전각 공백도 구분자로 취급한다. 긴 입력은 조건을 무한히 늘리거나 뒤 단어를 버리지 않는다.
+      # +2는 선행 전각 공백의 빈 요소와 상한 초과 감지용 토큰을 확보한다.
       terms = term.split(/[[:space:]]+/, JAPANESE_SEARCH_MAX_TERMS + 2).reject(&:empty?)
       next none if terms.size > JAPANESE_SEARCH_MAX_TERMS
 
       # korean 사전이 가나를 버리므로 전체 tsquery와 OR하면 혼합 검색이 일부 단어만으로 일치한다.
-      # 단어별 tsearch/LIKE를 묶고, 모든 단어의 조건을 AND로 연결한다.
+      # 단어별 tsearch/LIKE를 AND로 연결한다. 가나 경로는 OR·제외·구문 검색 문법을 지원하지 않는다.
       terms.uniq.each do |word|
         results = results.where(
           "pg_search_documents.tsvector_content_tsearch @@ websearch_to_tsquery('korean', :word) " \

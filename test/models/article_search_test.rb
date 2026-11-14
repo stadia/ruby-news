@@ -73,12 +73,14 @@ class ArticleSearchTest < ActiveSupport::TestCase
     assert_empty Article.full_text_search_for("ブラウザ '); SELECT 1; --")
   end
 
-  test "일본어 검색은 열 단어까지 검사하고 초과한 단어를 조용히 버리지 않는다" do
+  test "일본어 검색은 중복 제거 전 입력 토큰 열 개까지 허용한다" do
     words = %w[ブラウザ インタラクション テスト コード データ サーバー クライアント メモリ キャッシュ パフォーマンス]
     index_article(@both, words.reverse.join("・"))
 
-    assert_equal [ @both.id ], Article.full_text_search_for(words.join(" ")).pluck(:id)
+    assert_equal [ @both.id ], Article.full_text_search_for("　#{words.join(" ")}　").pluck(:id)
+    assert_equal [ @both.id, @browser_only.id ].sort, Article.full_text_search_for(([ "ブラウザ" ] * 10).join(" ")).pluck(:id).sort
     assert_empty Article.full_text_search_for((words + [ "ブラウザ" ]).join(" "))
+    assert_empty Article.full_text_search_for((words + [ "ネットワーク" ]).join(" "))
   end
 
   private
