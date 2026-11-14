@@ -84,24 +84,33 @@ class Article < ApplicationRecord
   # 영/한 term 은 tsvector 분기만 타서 ts_rank GIN 으로 빠르게 종결.
   # LIKE 는 gin_bigm_ops 인덱스를 타지만 ILIKE 는 타지 않으므로 LIKE 를 사용한다.
   JAPANESE_KANA_REGEX = /[\p{Hiragana}\p{Katakana}･-ﾟ]/
+  JAPANESE_SEARCH_MAX_TERMS = 10
 
   scope :full_text_search_for, ->(term) do
     term = term.to_s.strip
     next none if term.blank?
 
     tsquery = "websearch_to_tsquery('korean', #{connection.quote(term)})"
-    where_clause =
-      if term.match?(JAPANESE_KANA_REGEX)
-        like = connection.quote("%#{sanitize_sql_like(term)}%")
-        "pg_search_documents.tsvector_content_tsearch @@ #{tsquery} " \
-          "OR pg_search_documents.content LIKE #{like}"
-      else
-        "pg_search_documents.tsvector_content_tsearch @@ #{tsquery}"
-      end
+    results = joins(:pg_search_document)
+    if term.match?(JAPANESE_KANA_REGEX)
+      # 전각 공백도 구분자로 취급한다. 긴 입력은 조건을 무한히 늘리거나 뒤 단어를 버리지 않는다.
+      terms = term.split(/[[:space:]]+/, JAPANESE_SEARCH_MAX_TERMS + 2).reject(&:empty?)
+      next none if terms.size > JAPANESE_SEARCH_MAX_TERMS
 
-    joins(:pg_search_document)
-      .where(where_clause)
-      .order(Arel.sql("ts_rank(pg_search_documents.tsvector_content_tsearch, #{tsquery}) DESC"), created_at: :desc)
+      # korean 사전이 가나를 버리므로 전체 tsquery와 OR하면 혼합 검색이 일부 단어만으로 일치한다.
+      # 단어별 tsearch/LIKE를 묶고, 모든 단어의 조건을 AND로 연결한다.
+      terms.uniq.each do |word|
+        results = results.where(
+          "pg_search_documents.tsvector_content_tsearch @@ websearch_to_tsquery('korean', :word) " \
+            "OR pg_search_documents.content LIKE :pattern",
+          word: word, pattern: "%#{sanitize_sql_like(word)}%"
+        )
+      end
+    else
+      results = results.where("pg_search_documents.tsvector_content_tsearch @@ #{tsquery}")
+    end
+
+    results.order(Arel.sql("ts_rank(pg_search_documents.tsvector_content_tsearch, #{tsquery}) DESC"), created_at: :desc)
   end
   scope :related, -> { kept.where(is_related: true) }
   scope :unrelated, -> { kept.where(is_related: false) }
