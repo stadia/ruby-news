@@ -3,8 +3,8 @@
 # rbs_inline: enabled
 
 class ArticleAgent < RubyLLM::Agent
-  model "openai/gpt-6-luna", provider: :openrouter, assume_model_exists: true
-  # temperature 0.2
+  model "gpt-6.1-terra", provider: :openai
+  temperature 0.2
   tools SearchRelatedArticles, GetExistingTags, ValidateSlug
 
   instructions {

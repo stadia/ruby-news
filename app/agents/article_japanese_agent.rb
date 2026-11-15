@@ -3,8 +3,7 @@
 # rbs_inline: enabled
 
 class ArticleJapaneseAgent < RubyLLM::Agent
-  # model "qwen/qwen3.7-plus", provider: :openrouter, assume_model_exists: true
-  model "deepseek-v4.1-flash", provider: :ollama_cloud
+  model "gpt-6.1-terra", provider: :openai
   temperature 0.2
   tools SearchRelatedArticles, GetExistingTags, ValidateSlug
 

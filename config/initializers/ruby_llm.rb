@@ -2,15 +2,14 @@
 RubyLLM.configure do |config|
   # --- Default Models ---
   # Used by RubyLLM.chat, RubyLLM.embed, RubyLLM.paint if no model is specified.
-  config.default_model = "gemini-3.6-flash"
+  config.default_model = "gpt-6.1-terra"
   # config.gemini_api_base = 'https://generativelanguage.googleapis.com/v1'
 
   # --- Connection Settings ---
   config.request_timeout = 120  # Request timeout in seconds (default: 120)
   config.max_retries = 3        # Max retries on transient network errors (default: 3)
   config.retry_interval = 0.2 # Initial delay in seconds (default: 0.1)
-
-  config.model_registry_file = "config/models.json"
+  config.context_budget = { per_result: 0.25, per_request: 0.7 }
 
   # --- OR Custom Logger ---
   config.logger = Rails.logger
@@ -21,8 +20,6 @@ RubyLLM.configure do |config|
   config.openai_api_key = ENV.fetch("OPENAI_API_KEY", nil)
   config.openai_organization_id = "org-RxAHv5NkI9HQ4TW6MqGxLZ8N"  # Billing organization
   config.openai_project_id = "proj_N3WzA0aRDq1scEnoYABBGJVk"
-
-  config.openrouter_api_key = ENV.fetch("OPENROUTER_API_KEY", nil)
 
   config.ollama_cloud_api_key = ENV.fetch("OLLAMA_CLOUD_API_KEY", nil)
 
