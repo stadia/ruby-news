@@ -28,5 +28,5 @@ Minitest/MultipleAssertions:
 # Offense count: 4
 Sorbet/ConstantsFromStrings:
   Exclude:
-    - 'app/skills/humanize_korean/references/metrics_v2.rb'
+    - 'app/skills/humanize-korean/references/metrics_v2.rb'
     - 'sorbet/tapioca/compilers/phlex_kit_methods.rb'

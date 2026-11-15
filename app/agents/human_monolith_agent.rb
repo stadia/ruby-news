@@ -6,7 +6,8 @@ class HumanMonolithAgent < RubyLLM::Agent
   # model "qwen/qwen3.7-plus", provider: :openrouter, assume_model_exists: true
   model "deepseek-v4.1-flash", provider: :ollama_cloud
   temperature 0.2
-  skills "app/skills", only: [ "humanize_korean" ]
+  skills :humanize_korean
+  code_execution
 
   schema do
     array :summary_key, of: :string, description: "윤문된 핵심 요약 배열 (원본 길이·항목 수 유지)"

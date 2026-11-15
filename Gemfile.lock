@@ -406,6 +406,9 @@ GEM
     multi_xml (0.9.1)
       bigdecimal (>= 3.1, < 5)
     multipart-post (2.4.1)
+    mxc (0.4.1-aarch64-linux)
+    mxc (0.4.1-arm64-darwin)
+    mxc (0.4.1-x86_64-linux)
     neighbor (1.2.0)
       activerecord (>= 7.2)
     net-http (0.9.1)
@@ -817,7 +820,7 @@ GEM
       logger
     ruby2ruby (2.6.2)
       sexp_processor (~> 4.6)
-    ruby_llm (2.2.0)
+    ruby_llm (2.2.1)
       base64
       faraday (>= 1.10.0, != 2.0.0)
       faraday-multipart (>= 1)
@@ -828,8 +831,6 @@ GEM
       marcel (>= 1.0, < 3)
       schematist (~> 1.1)
       zeitwerk (~> 2)
-    ruby_llm-skills (0.5.0.pre1)
-      ruby_llm (>= 2.0.0.rc3, < 3)
     ruby_parser (3.22.0)
       racc (~> 1.5)
       sexp_processor (~> 4.16)
@@ -1023,6 +1024,7 @@ DEPENDENCIES
   minitest (~> 6.0)
   minitest-mock
   mission_control-jobs
+  mxc (~> 0.4.1)
   neighbor
   newrelic_rpm
   oauth2 (~> 2.0)
@@ -1079,8 +1081,7 @@ DEPENDENCIES
   ruby-mcp-client (~> 3.0)
   ruby-readability
   ruby-vips (~> 2.0)
-  ruby_llm (~> 2.1)
-  ruby_llm-skills (~> 0.5.0.pre1)
+  ruby_llm (~> 2.2)
   ruby_ui (~> 1.2)
   schema_dot_org
   schematist

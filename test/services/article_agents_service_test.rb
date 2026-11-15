@@ -18,11 +18,8 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     RubyLLM::Message.new(role: :assistant, content:, finish_reason: "stop")
   end
 
-  # run_humanize는 HumanMonolithAgent.chat.with_skills.ask 체인을 타므로
-  # 스텁도 with_skills를 지원해야 실제 호출 경로를 검증한다.
   def build_humanize_chat(response, &capture)
     chat = Object.new
-    chat.define_singleton_method(:with_skills) { self }
     chat.define_singleton_method(:ask) do |prompt|
       capture&.call(prompt)
       response
@@ -430,7 +427,6 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
   test "run_humanize는 예외가 나면 예외 클래스를 로그에 남기고 :humanize_failed를 반환한다" do
     article = articles(:ruby_article)
     chat = Object.new
-    chat.define_singleton_method(:with_skills) { self }
     chat.define_singleton_method(:ask) { |_prompt| raise Faraday::TimeoutError, "timed out" }
 
     result = nil
@@ -553,7 +549,6 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
 
   def failing_chat(error)
     chat = Object.new
-    chat.define_singleton_method(:with_skills) { self }
     chat.define_singleton_method(:ask) { |_prompt| raise error }
     chat
   end

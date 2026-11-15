@@ -25,4 +25,9 @@ RubyLLM.configure do |config|
   config.openrouter_api_key = ENV.fetch("OPENROUTER_API_KEY", nil)
 
   config.ollama_cloud_api_key = ENV.fetch("OLLAMA_CLOUD_API_KEY", nil)
+
+  # --- Code Execution ---
+  config.sandbox = "SkillScriptSandbox"
+  # k3s 파드는 Bubblewrap이 쓸 user namespace를 열어 주지 않으므로 Landlock(Linux 6.2+)으로 격리한다.
+  config.sandbox_backend = :landlock
 end
