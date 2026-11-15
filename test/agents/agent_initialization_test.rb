@@ -38,6 +38,15 @@ class AgentInitializationTest < ActiveSupport::TestCase
     assert_includes chat.schema.to_json, "gate_unverified"
   end
 
+  # RubyLLM에는 Agent 도구가 없어, 스킬이 부르는 하위 에이전트 지침을 load_skill로 읽어 직접 수행한다.
+  test "윤문 에이전트는 스킬의 하위 에이전트 지침을 읽을 수 있다" do
+    loader = HumanMonolithAgent.new(context: @context).chat.tools.fetch(:load_skill)
+
+    %w[humanize-diagnostician humanize-monolith humanize-finalizer].each do |name|
+      assert_includes loader.execute(skill: "humanize-korean", file: "references/agents/#{name}.md").to_s, "name: #{name}"
+    end
+  end
+
   # 파일 저장소가 없으면 run_code 실행마다 작업 디렉터리가 지워져, shim이 만든
   # _workspace를 다음 실행(진단 결합·게이트)이 찾지 못한다.
   test "윤문 에이전트는 실행 사이에 작업 파일을 유지할 파일 저장소를 쓴다" do

@@ -53,7 +53,8 @@ humanize-korean v2.3 — 경로: {light|standard|heavy} ({route_hint|사용자 �
 - RubyLLM code execution: 스킬이 작업 디렉터리의 `skills/humanize-korean/`에 읽기 전용으로 마운트된다 → `SKILL_ROOT=skills/humanize-korean`
   - `run_code`는 실행마다 셸과 작업 디렉터리를 새로 만든다. 셸 변수가 다음 실행에 남지 않으므로 **스크립트를 부르는 실행마다** 맨 앞에 `SKILL_ROOT=skills/humanize-korean`를 두거나 경로를 직접 쓴다.
   - 앞 단계 산출물(`_workspace/{run_id}/...`)이 필요한 실행은 `files: ["_workspace"]`로 불러온다.
-  - `Agent` 도구가 없다. `humanize-monolith`·`humanize-finalizer`를 부르라는 단계는 **현재 에이전트가 직접 수행**한다(진단 단계도 같다). 윤문본은 `_workspace/{run_id}/final.md`로 써서 Phase 2.5 게이트를 돌린 뒤, 같은 내용을 에이전트 출력 스키마로 반환한다.
+  - `Agent` 도구가 없다. `humanize-diagnostician`·`humanize-monolith`·`humanize-finalizer`를 부르라는 단계는 **현재 에이전트가 직접 수행**한다. 각 단계 전에 `load_skill`로 그 에이전트의 지침(`references/agents/{이름}.md`, upstream v2.3.2 원본)을 읽고 그대로 따른다. 지침의 Read·Write는 `run_code`로 `_workspace/{run_id}/` 파일을 읽고 쓰는 것으로 대신하고, `quick_rules_path`·`taxonomy_path` 같은 인자는 `${SKILL_ROOT}/references/...`로 채운다.
+  - 윤문본은 `_workspace/{run_id}/final.md`로 써서 Phase 2.5 게이트를 돌린 뒤, 같은 내용을 에이전트 출력 스키마로 반환한다.
 - Claude Code: Phase 1 시작 전에 한 번 `SKILL_ROOT="${CLAUDE_SKILL_DIR}"`로 정한다.
 
 `references/*`도 같은 스킬 폴더에 있다. `${CLAUDE_SKILL_DIR}`가 없는 환경에서는 `${CLAUDE_SKILL_DIR}/references/...`를 `${SKILL_ROOT}/references/...`로 읽는다.
@@ -249,6 +250,7 @@ exit code로 분기한다 (0/1/2/3 의미는 기존 게이트와 동일):
 **에이전트 정의 위치:** 저장소 루트 `agents/`에 9종 정의(플러그인 컨벤션). Claude Code 탐색 경로:
 1. 플러그인 설치 시 — `humanize-korean` 플러그인이 `agents/`를 번들로 제공(전역).
 2. 스크립트 설치 시 — `install.sh`가 `agents/*.md`를 `~/.claude/agents/`에 심링크(전역).
+3. 이 Ruby 포트 — 런타임 3종(`humanize-diagnostician`·`humanize-monolith`·`humanize-finalizer`)을 `references/agents/`에 upstream 원본 그대로 둔다. `Agent` 도구가 없는 RubyLLM 경로에서 현재 에이전트가 읽고 따른다.
 
 9종의 내역은 런타임 3 + 유지보수 1 + 개발용 1회성 5이며, **본 스킬 런타임이 호출하는 것은 3종뿐**이다.
 
