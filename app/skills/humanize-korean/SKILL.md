@@ -58,7 +58,7 @@ humanize-korean v2.3 — 경로: {light|standard|heavy} ({route_hint|사용자 �
 
 `references/*`도 같은 스킬 폴더에 있다. `${CLAUDE_SKILL_DIR}`가 없는 환경에서는 `${CLAUDE_SKILL_DIR}/references/...`를 `${SKILL_ROOT}/references/...`로 읽는다.
 
-**확인**: `ls "${SKILL_ROOT}/scripts/prepare_monolith_input.rb"` 가 실패하면 경로 유도가 틀린 것이다. 이 경우 스크립트를 찾을 때까지 임의로 추측하지 말고, 정량 shim·게이트 없이 진행한다고 **사용자에게 알린 뒤** 계속한다. 조용히 건너뛰면 route_hint 와 철칙 #4 게이트가 사라진 것을 아무도 모른다.
+**확인**: `ls "${SKILL_ROOT}/scripts/prepare_monolith_input.rb"` 가 실패하면 경로 유도가 틀린 것이다. 이 경우 스크립트를 찾을 때까지 임의로 추측하지 말고, **윤문 결과를 채택하지 않고 실패(보류)로 끝낸다.** 정량 shim·게이트 없이 만든 윤문은 철칙 #4로 검증되지 않았으므로 반영하지 않는다. 사용자에게 사유를 알리고, RubyLLM 경로에서는 출력 스키마의 `gate_unverified: true`로 반환한다(앱이 반영하지 않는다).
 
 ## Phase 1: 입력 저장 + 정량 사전 점수 (input shim — 전 경로 공통)
 
@@ -176,7 +176,7 @@ exit code로 분기한다 (0/1/2/3 의미는 기존 게이트와 동일):
 | 0 | 수렴 — 4축 모두 통과 | 결과 전달 진행 |
 | 1 | 경고 — 문자율 30~50% / S1 목표 미달·과교정 / 대구 전멸 / golden FAIL | 결과 전달 + **해당 축 고지** + finalize 승급 |
 | 2 | 중단 — 문자율 ≥ 50% | **윤문본 채택 금지.** monolith에 롤백 지시 후 1회 재실행, 재차 2면 `hold_and_report` |
-| 3 | 판정 불가 | 입력 파일 확인 후 재시도. 게이트를 건너뛰지 않는다 |
+| 3 | 판정 불가 | 입력 파일 확인 후 재시도. 게이트를 건너뛰지 않는다. 재시도해도 3이거나 스크립트를 실행할 수 없으면 **윤문본 채택 금지** — 실패(보류)로 끝내고, RubyLLM 경로에서는 `gate_unverified: true`로 반환 |
 
 - 스크립트가 `<!-- HUMANIZE-SUMMARY -->` 블록을 자동 제거하고 비교하므로 별도 전처리 불필요.
 - 헤딩·불릿 산문화가 많아 변경률이 부풀려진 것으로 보이면 `--ignore-markup`으로 본문만 재측정해 교차 확인한다. **판정을 뒤집는 근거로 쓰려면 두 수치를 모두 사용자에게 보고할 것.**

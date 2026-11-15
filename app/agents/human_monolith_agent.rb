@@ -31,5 +31,6 @@ class HumanMonolithAgent < RubyLLM::Agent
     end
 
     boolean :over_polish_aborted, description: "변경률 50% 초과로 롤백되었는지 여부"
+    boolean :gate_unverified, description: "정량 shim 또는 구조 게이트(verify_gates.rb)를 실행하지 못해 윤문을 검증하지 못했는지 여부"
   end
 end
