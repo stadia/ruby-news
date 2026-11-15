@@ -177,6 +177,11 @@ ko:
         password: 비밀번호
         username: 영문, 숫자, 밑줄, 점
   home:
+    article:
+      episode_formats: 같은 에피소드
+      format_article: 글
+      format_podcast: 팟캐스트
+      format_video: 영상
     feature:
       heading: 주요 뉴스
     index:

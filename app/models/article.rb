@@ -116,6 +116,17 @@ class Article < ApplicationRecord
   scope :related, -> { kept.where(is_related: true) }
   scope :unrelated, -> { kept.where(is_related: false) }
   scope :confirmed, -> { where("slug IS NOT NULL AND title_ko IS NOT NULL") }
+  # 같은 episode_key를 가진 공개 기사 중 먼저 수집된 하나만 남긴다(키가 없는 기사는 모두 남는다).
+  scope :episode_representatives, -> {
+    where(<<~SQL.squish)
+      NOT EXISTS (
+        SELECT 1 FROM articles earlier
+        WHERE earlier.episode_key = articles.episode_key AND earlier.id < articles.id
+          AND earlier.deleted_at IS NULL AND earlier.is_related
+          AND earlier.slug IS NOT NULL AND earlier.title_ko IS NOT NULL
+      )
+    SQL
+  }
   # 윤문이 반영되지 않아 원 요약이 그대로인 살아 있는 기사(건너뜀·실패·대기). 기록이 없는(NULL)
   # 기사는 윤문 기록 도입 전 기사라 제외한다.
   scope :humanize_not_applied, -> { kept.where("humanize_status->>'outcome' IN (?)", HUMANIZE_NOT_APPLIED) }

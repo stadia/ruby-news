@@ -20,6 +20,9 @@ production:
   article_batch_job:
     class: "ArticleBatchJob"
     schedule: "*/5 * * * *"
+  article_episode_link_job:
+    class: "ArticleEpisodeLinkJob"
+    schedule: "20 * * * *"
   social_post_job:
     class: "SocialPostJob"
     schedule: "*/10 8-19 * * *"

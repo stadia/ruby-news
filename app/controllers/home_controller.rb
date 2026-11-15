@@ -38,6 +38,7 @@ class HomeController < ApplicationController
     @articles = build_recent_articles(scope, excluded_ids: @featured_articles.map(&:id))
     @liked_article_ids = liked_article_ids_for(@articles, @featured_articles)
     @boosted_article_ids = boosted_article_ids_for(@articles, @featured_articles)
+    @episode_siblings = episode_siblings_for(@articles)
     @news_media_organization = self.class.publisher_schema(Hosts.locale_for_host(request.host))
     @recent_comments = recent_comments
     @recent_blog_posts = Post.recent_published_blogs
@@ -49,7 +50,8 @@ class HomeController < ApplicationController
       recent_blog_posts: @recent_blog_posts,
       sidebar_tags: @sidebar_tags,
       liked_article_ids: @liked_article_ids,
-      boosted_article_ids: @boosted_article_ids
+      boosted_article_ids: @boosted_article_ids,
+      episode_siblings: @episode_siblings
     )
   end
 
@@ -125,7 +127,17 @@ class HomeController < ApplicationController
   ROBOTS_TXT = Rails.root.join("app/views/home/robots.txt").read.freeze
 
   def article_scope
-    Article.includes(:user, :site).with_attached_thumbnail.kept.confirmed.related
+    Article.includes(:user, :site).with_attached_thumbnail.kept.confirmed.related.episode_representatives
+  end
+
+  # 대표 카드에서 숨긴 같은 에피소드 기사들(episode_key => 기사 목록). 카드가 다른 형식 링크로 보여준다.
+  #: (Array[Article] articles) -> Hash[String?, Array[Article]]
+  def episode_siblings_for(articles)
+    keys = articles.filter_map(&:episode_key)
+    return {} if keys.empty?
+
+    Article.related.confirmed.without_toast.where(episode_key: keys).where.not(id: articles.map(&:id))
+           .order(:id).group_by(&:episode_key)
   end
 
   def build_featured_articles(scope)

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_15_020340) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_15_150000) do
   create_schema "ra_news", if_not_exists: true
 
   # These are extensions that must be enabled in order to support this database
@@ -80,10 +80,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_15_020340) do
     t.text "summary_body_ja"
     t.integer "boosters_count", default: 0, null: false
     t.jsonb "humanize_status", comment: "윤문 결과. outcome(applied|skipped|failed|pending)·reason·dropped·stage·error·at"
+    t.string "episode_key", comment: "같은 에피소드를 다른 출처로 수집한 기사끼리 공유하는 키(예: on_rails:20121188)"
     t.index ["created_at"], name: "index_articles_on_created_at"
     t.index ["deleted_at", "published_at", "created_at"], name: "index_articles_on_deleted_at_and_published_at_and_created_at", where: "(deleted_at IS NULL)"
     t.index ["deleted_at", "slug", "title_ko", "id"], name: "index_articles_on_deleted_at_and_slug_and_title_ko_and_id", where: "((deleted_at IS NULL) AND (slug IS NOT NULL) AND (title_ko IS NOT NULL))", comment: "Optimized for listing articles with slug and title"
     t.index ["embedding"], name: "index_articles_on_embedding", opclass: :halfvec_cosine_ops, using: :hnsw
+    t.index ["episode_key"], name: "index_articles_on_episode_key", where: "(episode_key IS NOT NULL)"
     t.index ["fedipub_actor_id"], name: "index_articles_on_fedipub_actor_id"
     t.index ["is_related", "published_at"], name: "index_articles_on_is_related_and_published_at"
     t.index ["origin_url"], name: "index_articles_on_origin_url", unique: true

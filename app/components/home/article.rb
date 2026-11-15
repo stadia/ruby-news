@@ -9,10 +9,11 @@ class Components::Home::Article < Components::Base
 
   attr_reader :article
 
-  def initialize(article:, liked: nil, boosted: nil)
+  def initialize(article:, liked: nil, boosted: nil, episode_siblings: [])
     @article = article
     @liked = liked
     @boosted = boosted
+    @episode_siblings = episode_siblings
   end
 
   def view_template
@@ -23,6 +24,7 @@ class Components::Home::Article < Components::Base
         header_section
         render RubyUI::Badge.new(variant: :blue, size: :sm, class: "mb-4 self-start") { article.host }
         summary_section
+        episode_formats_section
         footer_section
       end
     end
@@ -53,6 +55,28 @@ class Components::Home::Article < Components::Base
           p { summary }
         end
       end
+    end
+  end
+
+  # 같은 에피소드의 다른 형식(팟캐스트·영상 등) 기사. 카드 전체를 덮는 제목 링크 위에 올린다.
+  def episode_formats_section
+    return if @episode_siblings.empty?
+
+    div(class: "relative z-10 mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-content-secondary") do
+      span { t("home.article.episode_formats") }
+      @episode_siblings.each do |sibling|
+        link_to(episode_format_label(sibling), article_path(sibling), class: "text-link hover:text-link-hover underline")
+      end
+    end
+  end
+
+  def episode_format_label(sibling)
+    if sibling.is_youtube?
+      t("home.article.format_video")
+    elsif ::Articles::OnRailsEpisode.podcast_episode_id(sibling.url)
+      t("home.article.format_podcast")
+    else
+      t("home.article.format_article")
     end
   end
 

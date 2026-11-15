@@ -165,6 +165,29 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_select "li span", text: /세 번째 요약/
   end
 
+  # #1157: 공식 발표·팟캐스트·영상으로 따로 수집된 같은 On Rails 에피소드
+  test "GET root shows one card per episode and links the other formats" do
+    published_at = 5.days.ago # 주요 뉴스 대체 후보(최신 published_at)에 들지 않게 한다
+    blog = create_featured_article!(title: "On Rails — Marco Roth", title_ko: "마르코 로스 발표 요약", slug: "marco-blog", summary_key: [ "발표" ], published_at:)
+    video = create_featured_article!(title: "Marco Roth video", title_ko: "마르코 로스 영상 요약", slug: "marco-video", summary_key: [ "영상" ], published_at:)
+    podcast = create_featured_article!(title: "Marco Roth podcast", title_ko: "마르코 로스 팟캐스트 요약", slug: "marco-podcast", summary_key: [ "팟캐스트" ], published_at:)
+    video.update_columns(is_youtube: true, episode_key: "on_rails:20121188")
+    podcast.update_columns(url: "https://podcast.rubyonrails.org/2462975/episodes/20121188-marco", episode_key: "on_rails:20121188")
+    blog.update_columns(episode_key: "on_rails:20121188")
+    separate = create_featured_article!(title: "Marco Roth keynote", title_ko: "마르코 로스 키노트", slug: "marco-keynote", summary_key: [ "키노트" ], published_at:)
+
+    get root_path
+
+    assert_response :success
+    assert_select "#articlesList #article_#{blog.id}" do
+      assert_select "a[href='#{article_path(video)}']", text: "영상"
+      assert_select "a[href='#{article_path(podcast)}']", text: "팟캐스트"
+    end
+    assert_select "#article_#{video.id}", count: 0
+    assert_select "#article_#{podcast.id}", count: 0
+    assert_select "a[href='#{article_path(separate)}']", text: /마르코 로스 키노트/ # 키가 없는 별개 글은 그대로 보인다
+  end
+
   test "GET about returns 200 with introduction content" do
     get about_path
 
