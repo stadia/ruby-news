@@ -51,8 +51,9 @@ class RenderBlockingAssetsTest < ActionDispatch::IntegrationTest
   test "앱 스타일시트는 모두 Turbo 리로드 대상으로 추적된다" do
     head = visit_root
 
-    stylesheets(head).each do |href|
-      link = head.css('link[rel="stylesheet"]').find { it["href"] == href }
+    head.css('link[rel="stylesheet"]').each do |link|
+      href = link["href"]
+      next if href.include?("fonts.googleapis.com")
 
       assert_equal "reload", link["data-turbo-track"], href
       assert_nil link["data_turbo_track"], href
