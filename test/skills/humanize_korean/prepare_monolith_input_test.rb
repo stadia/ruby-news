@@ -73,6 +73,23 @@ class HumanizeKoreanPrepareMonolithInputTest < ActiveSupport::TestCase
     end
   end
 
+  # 위생 처리 실패는 파이프라인을 막지 않지만, 정규화되지 않은 기준선이 남으므로 흔적을 남긴다.
+  test "위생 처리가 실패하면 원문으로 계속하되 증적과 경고를 남긴다" do
+    with_run_dir("2026-08-17-003") do |work, run|
+      script = <<~RUBY
+        load #{SHIM.dump}
+        HumanizeKoreanSanitize.define_singleton_method(:sanitize) { |*| raise "boom" }
+        exit main(["--run-dir", "_workspace/2026-08-17-003"])
+      RUBY
+      _stdout, stderr, status = Open3.capture3(RbConfig.ruby, "-e", script, chdir: work)
+
+      assert_predicate status, :success?, stderr
+      assert_equal SAMPLE, File.read(File.join(run, "01_input.txt"), encoding: "UTF-8")
+      assert_match(/sanitize_failed: RuntimeError: boom/, File.read(File.join(run, "00_sanitize.error")))
+      assert_match(/sanitize_failed/, stderr)
+    end
+  end
+
   test "--no-sanitize면 입력을 그대로 둔다" do
     nfd = SAMPLE.unicode_normalize(:nfd)
     with_run_dir(text: nfd) do |work, run|

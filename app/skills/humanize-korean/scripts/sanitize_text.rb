@@ -6,6 +6,7 @@
 # 텍스트 위생(sanitize) — 결정적 처리, LLM 호출 0회.
 #
 # upstream scripts/sanitize_text.py(v2.3.2)의 Ruby 포트다. 규칙을 바꾸면 upstream과 같이 맞춘다.
+# 로컬 차이 하나: 마크다운 강제 줄바꿈(정확히 두 칸 공백 + 줄바꿈)은 지우지 않는다(TRAILING_SPACE 참고).
 #
 # 하는 일: 눈에 보이지 않으면서 실제로 문제를 일으키는 문자를 정리한다.
 #   - 한글 자모 분해(NFD) → 완성형(NFC). macOS 경유 텍스트는 자모로 분해된 경우가 많아

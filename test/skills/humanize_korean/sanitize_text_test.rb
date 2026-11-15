@@ -99,7 +99,7 @@ class HumanizeKoreanSanitizeTextTest < ActiveSupport::TestCase
     assert_equal "가\n\n\n\n나", sanitize("가\n\n\n\n나").first
   end
 
-  # upstream과 다른 로컬 규칙: summary_body는 마크다운이라 두 칸 이상 공백 강제 줄바꿈은 의미가 있다.
+  # upstream과 다른 로컬 규칙: summary_body는 마크다운이라 정확히 두 칸 공백 강제 줄바꿈은 의미가 있다.
   test "마크다운 강제 줄바꿈의 줄 끝 공백은 보존한다" do
     out, report = sanitize("첫 번째 줄  \n두 번째 줄 \n세 번째 줄\t\n끝   ")
 

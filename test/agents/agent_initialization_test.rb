@@ -5,7 +5,7 @@ require "test_helper"
 class AgentInitializationTest < ActiveSupport::TestCase
   setup do
     @context = RubyLLM.context do |config|
-      config.openrouter_api_key = "test-key"
+      config.openai_api_key = "test-key"
       config.ollama_cloud_api_key = "test-key"
     end
   end

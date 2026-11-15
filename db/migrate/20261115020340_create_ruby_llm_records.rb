@@ -97,8 +97,9 @@ class CreateRubyLlmRecords < ActiveRecord::Migration[8.1]
       t.index [ :owner_type, :owner_id ]
       t.index :status
       t.index :workflow_id
-      t.check_constraint "operation::text IN ('chat', 'embedding', 'moderation', 'image', 'speech', 'transcription', 'ocr', 'rerank', 'judgment', 'video', 'research', 'code_execution')"
-      t.check_constraint "status::text IN ('pending', 'succeeded', 'failed', 'cancelled')"
+      # varchar IN (...) CHECK는 마이그레이션과 schema.rb의 역파싱 결과가 달라지므로 ANY(ARRAY[...]) 형태로 쓴다(AGENTS.md).
+      t.check_constraint "operation::text = ANY (ARRAY['chat'::text, 'embedding'::text, 'moderation'::text, 'image'::text, 'speech'::text, 'transcription'::text, 'ocr'::text, 'rerank'::text, 'judgment'::text, 'video'::text, 'research'::text, 'code_execution'::text])"
+      t.check_constraint "status::text = ANY (ARRAY['pending'::text, 'succeeded'::text, 'failed'::text, 'cancelled'::text])"
     end
 
     create_table :ruby_llm_queued_messages, id: :bigint do |t|

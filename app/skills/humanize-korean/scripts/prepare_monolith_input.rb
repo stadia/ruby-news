@@ -109,7 +109,11 @@ def load_input(input_path, run_dir, enabled)
 
   begin
     cleaned, report = SANITIZER.sanitize(text)
-  rescue StandardError
+  rescue StandardError => error
+    # 정규화되지 않은 원문이 게이트 기준선으로 남으므로, 막지는 않되 metrics처럼 증적을 남긴다.
+    message = "sanitize_failed: #{error.class}: #{error.message}"
+    File.write(File.join(run_dir, "00_sanitize.error"), "#{message}\n\n#{error.full_message(highlight: false)}", encoding: "UTF-8")
+    warn message
     return text
   end
   return text unless report.changed?

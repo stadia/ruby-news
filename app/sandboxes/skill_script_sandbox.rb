@@ -7,4 +7,8 @@
 class SkillScriptSandbox < MXC::Sandbox
   network false
   timeout 60
+  # Landlock은 파일·네트워크만 격리하므로 폭주하는 스크립트가 워커를 잡아먹지 않게 자원을 제한한다.
+  limits cpu_time: 60
+  # macOS(Seatbelt)는 메모리 제한을 지원하지 않아(MXC::UnsupportedError) 운영 환경인 Linux에서만 건다.
+  limits memory: 512 * 1024**2 if RUBY_PLATFORM.include?("linux")
 end
