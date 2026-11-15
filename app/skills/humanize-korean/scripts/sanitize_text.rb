@@ -44,8 +44,11 @@ module HumanizeKoreanSanitize
   # 항상 제거해도 안전한 비가시 문자: 소프트하이픈, 몽골어 모음 구분자, ZWSP, 워드조이너, BOM
   INVISIBLE_ALWAYS = char_class(0x00AD, 0x180E, 0x200B, 0x2060, 0xFEFF)
   BIDI = char_class(0x061C, 0x200E..0x200F, 0x202A..0x202E, 0x2066..0x2069)
-  # 태그 문자 — 숨은 텍스트 삽입 외 쓰임이 없다
+  # 태그 문자 — 숨은 텍스트 삽입에 쓰인다. 단 깃발 이모지(U+1F3F4 + 태그 + U+E007F 종료, 예: 잉글랜드)는
+  # 유효한 이모지 태그 시퀀스라 남긴다(UTS #51). 이 예외는 upstream에 없는 로컬 차이다.
   TAG_CHARS = char_class(0xE0000..0xE007F)
+  EMOJI_TAG_SEQUENCE = Regexp.new("\\u{1F3F4}#{char_class(0xE0020..0xE007E).source}+\\u{E007F}")
+  TAG_OR_EMOJI_SEQUENCE = Regexp.union(EMOJI_TAG_SEQUENCE, TAG_CHARS)
   # 특수 공백 → 보통 공백. 전각공백(U+3000)은 눈에 보이는 폭이라 제외하고 옵션으로 켠다.
   SPECIAL_SPACES = char_class(0x00A0, 0x1680, 0x2000..0x200A, 0x202F, 0x205F)
   IDEOGRAPHIC_SPACE = char_class(0x3000)
@@ -57,8 +60,9 @@ module HumanizeKoreanSanitize
   # ZWJ/ZWNJ는 이모지 결합에 필수라, 양옆이 모두 평범한 문자일 때만 잘라낸다.
   PLAIN_NEIGHBOR = /\A[가-힣0-9A-Za-z\s.,!?;:'"()\[\]{}-]\z/
   JOINERS = [ 0x200C, 0x200D ].map { |code| code.chr(Encoding::UTF_8) }.freeze
-  # 줄 끝 공백. upstream과 달리 정확히 두 칸 공백 + 줄바꿈(마크다운 강제 줄바꿈)은 남긴다.
-  # 윤문 대상 summary_body가 마크다운이라, 지우면 기준 파일에서 줄바꿈이 사라져 게이트가 놓친다.
+  # 줄 끝 공백. upstream과 달리 글자 뒤 두 칸 이상 공백 + 줄바꿈(마크다운 강제 줄바꿈)은 두 칸으로
+  # 정규화해 남긴다. 윤문 대상 summary_body가 마크다운이라, 지우면 기준 파일에서 줄바꿈이 사라져 게이트가 놓친다.
+  HARD_BREAK = /(?<=[^ \t\n]) {2,}(?=\n)/
   TRAILING_SPACE = /(?<![ \t])(?!(?<=[^ \t\n]) {2}\n)[ \t]+$/
 
   COUNT_KEYS = %w[hangul_recomposed invisible bidi tag_chars special_spaces line_breaks trailing_space_lines].freeze
@@ -88,6 +92,8 @@ module HumanizeKoreanSanitize
       if normalize_unicode
         counts["hangul_recomposed"] = text.scan(DECOMPOSED_HANGUL).size
         text = text.unicode_normalize(:nfc)
+        # 분해 자모 사이의 joiner는 NFC 뒤에야 양옆이 완성형 한글이 되므로 다시 평가해 멱등을 지킨다.
+        text = strip_joiners_outside_emoji(text, counts) if strip_invisible
       end
       text = replace_counted(text, SPECIAL_SPACES, " ", counts, "special_spaces") if normalize_spaces
       text = replace_counted(text, IDEOGRAPHIC_SPACE, " ", counts, "special_spaces") if normalize_ideographic_space
@@ -131,7 +137,12 @@ module HumanizeKoreanSanitize
     def strip_invisibles(text, counts)
       text = replace_counted(text, INVISIBLE_ALWAYS, "", counts, "invisible")
       text = replace_counted(text, BIDI, "", counts, "bidi")
-      text = replace_counted(text, TAG_CHARS, "", counts, "tag_chars")
+      text = text.gsub(TAG_OR_EMOJI_SEQUENCE) do |match|
+        next match if match.length > 1
+
+        counts["tag_chars"] += 1
+        ""
+      end
       strip_joiners_outside_emoji(text, counts)
     end
 
@@ -160,7 +171,11 @@ module HumanizeKoreanSanitize
     def normalize_line_breaks(text, counts)
       counts["line_breaks"] = text.scan("\r\n").size + text.scan(/\r(?!\n)/).size + text.scan(UNI_BREAKS).size
       text = text.gsub("\r\n", "\n").tr("\r", "\n").gsub(UNI_BREAKS, "\n")
-      counts["trailing_space_lines"] = text.scan(TRAILING_SPACE).size
+      text = text.gsub(HARD_BREAK) do |spaces|
+        counts["trailing_space_lines"] += 1 if spaces.length > 2
+        "  "
+      end
+      counts["trailing_space_lines"] += text.scan(TRAILING_SPACE).size
       text.gsub(TRAILING_SPACE, "")
     end
 

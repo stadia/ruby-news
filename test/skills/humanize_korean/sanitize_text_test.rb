@@ -92,20 +92,37 @@ class HumanizeKoreanSanitizeTextTest < ActiveSupport::TestCase
   test "줄바꿈을 LF로 통일하고 줄 끝 공백을 지우며 빈 줄은 기본 보존한다" do
     out, report = sanitize("첫 줄   \r\n둘째 줄#{LINE_SEP}셋째 줄#{PARA_SEP}\n\n\n\n넷째 줄")
 
-    assert_equal "첫 줄\n둘째 줄\n셋째 줄\n\n\n\n\n넷째 줄", out
+    # 로컬 차이: "첫 줄   " 뒤에 줄이 이어지므로 마크다운 강제 줄바꿈(두 칸)으로 정규화된다.
+    assert_equal "첫 줄  \n둘째 줄\n셋째 줄\n\n\n\n\n넷째 줄", out
     assert_operator report.counts["line_breaks"], :>=, 3
     assert_operator report.counts["trailing_space_lines"], :>=, 1
     assert_equal "가\n\n나", sanitize("가\n\n\n\n나", collapse_blank_lines: true).first
     assert_equal "가\n\n\n\n나", sanitize("가\n\n\n\n나").first
   end
 
-  # upstream과 다른 로컬 규칙: summary_body는 마크다운이라 정확히 두 칸 공백 강제 줄바꿈은 의미가 있다.
-  test "마크다운 강제 줄바꿈의 줄 끝 공백은 보존한다" do
-    out, report = sanitize("첫 번째 줄  \n두 번째 줄 \n세 번째 줄\t\n끝   ")
+  # upstream과 다른 로컬 규칙: summary_body는 마크다운이라 두 칸 이상 공백 강제 줄바꿈은 의미가 있다.
+  test "마크다운 강제 줄바꿈은 두 칸 공백으로 보존한다" do
+    out, report = sanitize("첫 번째 줄  \n두 번째 줄   \n세 번째 줄 \n네 번째 줄\t\n끝   ")
 
-    assert_equal "첫 번째 줄  \n두 번째 줄\n세 번째 줄\n끝", out
-    assert_equal 3, report.counts["trailing_space_lines"]
+    assert_equal "첫 번째 줄  \n두 번째 줄  \n세 번째 줄\n네 번째 줄\n끝", out
+    assert_equal 4, report.counts["trailing_space_lines"]
     assert_equal out, sanitize(out).first
+  end
+
+  test "분해된 한글 사이의 joiner도 한 번에 제거해 멱등을 지킨다" do
+    nfd = "한".unicode_normalize(:nfd) + ZWJ + "글".unicode_normalize(:nfd)
+    out, = sanitize(nfd)
+
+    assert_equal "한글", out
+    assert_equal out, sanitize(out).first
+  end
+
+  test "깃발 이모지의 태그 시퀀스는 보존하고 그 밖의 태그 문자는 지운다" do
+    england = [ 0x1F3F4, 0xE0067, 0xE0062, 0xE0065, 0xE006E, 0xE0067, 0xE007F ].pack("U*")
+    out, report = sanitize("깃발 #{england} 본문#{TAG_A}끝")
+
+    assert_equal "깃발 #{england} 본문끝", out
+    assert_equal 1, report.counts["tag_chars"]
   end
 
   test "멱등이다" do

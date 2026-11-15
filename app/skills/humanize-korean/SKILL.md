@@ -50,11 +50,11 @@ humanize-korean v2.3 — 경로: {light|standard|heavy} ({route_hint|사용자 �
 
 이 Ruby 포트는 upstream과 레이아웃이 다르다. `scripts/*.rb`가 저장소 루트가 아니라 **스킬 폴더 안**에 있으므로 `${SKILL_ROOT}`는 스킬 폴더 자신이다. 반면 `_workspace/` 같은 데이터 경로는 cwd 기준이다(run_id 규칙 참조).
 
-Phase 1 시작 전에 한 번 정한다.
-
 - RubyLLM code execution: 스킬이 작업 디렉터리의 `skills/humanize-korean/`에 읽기 전용으로 마운트된다 → `SKILL_ROOT=skills/humanize-korean`
-  - `run_code` 실행마다 작업 디렉터리가 새로 만들어진다. 앞 단계 산출물(`_workspace/{run_id}/...`)이 필요한 실행은 `files: ["_workspace"]`로 불러온다.
-- Claude Code: `SKILL_ROOT="${CLAUDE_SKILL_DIR}"`
+  - `run_code`는 실행마다 셸과 작업 디렉터리를 새로 만든다. 셸 변수가 다음 실행에 남지 않으므로 **스크립트를 부르는 실행마다** 맨 앞에 `SKILL_ROOT=skills/humanize-korean`를 두거나 경로를 직접 쓴다.
+  - 앞 단계 산출물(`_workspace/{run_id}/...`)이 필요한 실행은 `files: ["_workspace"]`로 불러온다.
+  - `Agent` 도구가 없다. `humanize-monolith`·`humanize-finalizer`를 부르라는 단계는 **현재 에이전트가 직접 수행**한다(진단 단계도 같다). 윤문본은 `_workspace/{run_id}/final.md`로 써서 Phase 2.5 게이트를 돌린 뒤, 같은 내용을 에이전트 출력 스키마로 반환한다.
+- Claude Code: Phase 1 시작 전에 한 번 `SKILL_ROOT="${CLAUDE_SKILL_DIR}"`로 정한다.
 
 `references/*`도 같은 스킬 폴더에 있다. `${CLAUDE_SKILL_DIR}`가 없는 환경에서는 `${CLAUDE_SKILL_DIR}/references/...`를 `${SKILL_ROOT}/references/...`로 읽는다.
 
