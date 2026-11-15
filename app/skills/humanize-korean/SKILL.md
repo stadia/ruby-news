@@ -53,6 +53,7 @@ humanize-korean v2.3 — 경로: {light|standard|heavy} ({route_hint|사용자 �
 Phase 1 시작 전에 한 번 정한다.
 
 - RubyLLM code execution: 스킬이 작업 디렉터리의 `skills/humanize-korean/`에 읽기 전용으로 마운트된다 → `SKILL_ROOT=skills/humanize-korean`
+  - `run_code` 실행마다 작업 디렉터리가 새로 만들어진다. 앞 단계 산출물(`_workspace/{run_id}/...`)이 필요한 실행은 `files: ["_workspace"]`로 불러온다.
 - Claude Code: `SKILL_ROOT="${CLAUDE_SKILL_DIR}"`
 
 `references/*`도 같은 스킬 폴더에 있다. `${CLAUDE_SKILL_DIR}`가 없는 환경에서는 `${CLAUDE_SKILL_DIR}/references/...`를 `${SKILL_ROOT}/references/...`로 읽는다.

@@ -31,4 +31,13 @@ class AgentInitializationTest < ActiveSupport::TestCase
 
     assert_equal SkillScriptSandbox, chat.tools.fetch(:run_code).sandbox.policy
   end
+
+  # 파일 저장소가 없으면 run_code 실행마다 작업 디렉터리가 지워져, shim이 만든
+  # _workspace를 다음 실행(진단 결합·게이트)이 찾지 못한다.
+  test "윤문 에이전트는 실행 사이에 작업 파일을 유지할 파일 저장소를 쓴다" do
+    chat = HumanMonolithAgent.new(context: @context).chat
+
+    assert_instance_of RubyLLM::FileStore::Memory, chat.file_store
+    assert chat.tools.fetch(:run_code).parameters_schema.dig("properties", "files")
+  end
 end

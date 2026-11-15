@@ -8,6 +8,9 @@ class HumanMonolithAgent < RubyLLM::Agent
   temperature 0.2
   skills :humanize_korean
   code_execution
+  # run_code 실행마다 작업 디렉터리가 지워지므로, shim이 만든 _workspace를 다음 실행에서
+  # files:로 다시 받도록 채팅별 저장소를 둔다. 도구 결과는 이전처럼 잘라 내지 않는다.
+  file_store :memory, inline_limit: false
 
   schema do
     array :summary_key, of: :string, description: "윤문된 핵심 요약 배열 (원본 길이·항목 수 유지)"
