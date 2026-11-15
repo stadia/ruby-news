@@ -4,8 +4,9 @@
 
 class HumanMonolithAgent < RubyLLM::Agent
   # model "qwen/qwen3.7-plus", provider: :openrouter, assume_model_exists: true
-  model "deepseek-v4.1-flash", provider: :ollama_cloud
-  temperature 0.2
+  # model "deepseek-v4.1-flash", provider: :ollama_cloud
+  model "gpt-6-luna", provider: :openai
+  # temperature 0.2
   skills :humanize_korean
   code_execution
   # run_code 실행마다 작업 디렉터리가 지워지므로, shim이 만든 _workspace를 다음 실행에서

@@ -4,7 +4,7 @@
 
 class ArticleJapaneseAgent < RubyLLM::Agent
   model "gpt-6.1-terra", provider: :openai
-  temperature 0.2
+  # temperature 0.2
   tools SearchRelatedArticles, GetExistingTags, ValidateSlug
 
   instructions {
