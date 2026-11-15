@@ -245,6 +245,26 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "episode source links render localized labels and identify their article" do
+    episode = create_episode_articles
+    episode.last.update_columns(title_ja: "Marco Roth インタビュー")
+    {
+      "ko" => [ "공식 발표", "팟캐스트", "영상" ],
+      "ja" => [ "公式発表", "ポッドキャスト", "動画" ],
+      "en" => [ "Announcement", "Podcast", "Video" ]
+    }.each do |locale, labels|
+      cookies[:locale] = locale
+      get root_path
+
+      assert_response :success
+      title = locale == "ja" ? "Marco Roth インタビュー" : "Marco Roth 인터뷰"
+
+      episode.zip(labels).each do |article, label|
+        assert_select "a[href=?][aria-label=?]", article.url, "#{label}: #{title}", text: label, count: 1
+      end
+    end
+  end
+
   test "latest news deduplicates before filling nine cards" do
     Article.update_all(created_at: 5.days.ago)
     episode = create_episode_articles

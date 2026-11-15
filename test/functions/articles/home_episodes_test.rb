@@ -3,6 +3,17 @@
 require "test_helper"
 
 class Articles::HomeEpisodesTest < ActiveSupport::TestCase
+  test "configured episodes have three source URLs with no URL shared across groups" do
+    sources = Articles::HomeEpisodes::SOURCES
+    sources.each do |urls|
+      assert_kind_of Array, urls
+      assert_equal 3, urls.size
+    end
+    urls = sources.flatten
+
+    assert_equal urls.uniq.size, urls.size
+  end
+
   test "keeps the newest eligible source and falls back when it is discarded" do
     announcement, podcast, video = episode_articles
     scope = Article.kept.confirmed.related

@@ -178,6 +178,7 @@ ja:
         username: 英字、数字、アンダースコア、ドット
   home:
     episode_sources:
+      link_label: "%{source}: %{title}"
       announcement: 公式発表
       podcast: ポッドキャスト
       video: 動画

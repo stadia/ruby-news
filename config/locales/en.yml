@@ -178,6 +178,7 @@ en:
         username: Letters, numbers, underscores, dots
   home:
     episode_sources:
+      link_label: "%{source}: %{title}"
       announcement: Announcement
       podcast: Podcast
       video: Video

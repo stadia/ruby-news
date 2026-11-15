@@ -178,6 +178,7 @@ ko:
         username: 영문, 숫자, 밑줄, 점
   home:
     episode_sources:
+      link_label: "%{source}: %{title}"
       announcement: 공식 발표
       podcast: 팟캐스트
       video: 영상
