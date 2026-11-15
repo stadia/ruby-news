@@ -48,6 +48,18 @@ class RenderBlockingAssetsTest < ActionDispatch::IntegrationTest
     assert_equal STYLESHEETS, stylesheets(visit_root).map { asset_name(it) }
   end
 
+  test "앱 스타일시트는 모두 Turbo 리로드 대상으로 추적된다" do
+    head = visit_root
+
+    head.css('link[rel="stylesheet"]').each do |link|
+      href = link["href"]
+      next if href.include?("fonts.googleapis.com")
+
+      assert_equal "reload", link["data-turbo-track"], href
+      assert_nil link["data_turbo_track"], href
+    end
+  end
+
   test "modulepreload는 정해진 모듈만 받는다" do
     assert_equal MODULE_PRELOADS.sort, modulepreloads(visit_root).map { asset_name(it) }.sort
   end
