@@ -20,10 +20,10 @@ class Components::Layout < Components::Base
         render Components::Layout::AssetPreloads.new(section: :google_fonts)
         # tailwind만 링크한다. `:app`은 app/assets/**/*.css를 펼쳐 vendor/lightgallery.css까지
         # 렌더 차단으로 만들었다(#1108). lightgallery.css는 lightbox 컨트롤러가 연결될 때만 주입한다.
-        stylesheet_link_tag "tailwind", data_turbo_track: "reload"
+        stylesheet_link_tag "tailwind", "data-turbo-track": "reload"
         # lexxy.css는 @import 체인(lexxy → content/editor → variables)이라 직접 링크보다
         # 직렬 왕복이 2번 더 생긴다(#1108).
-        stylesheet_link_tag "lexxy-variables", "lexxy-content", "lexxy-editor", data_turbo_track: "reload"
+        stylesheet_link_tag "lexxy-variables", "lexxy-content", "lexxy-editor", "data-turbo-track": "reload"
         javascript_importmap_tags
         render_controller_entry_preloads
         render Components::Layout::StructuredData.new
