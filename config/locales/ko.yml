@@ -177,6 +177,10 @@ ko:
         password: 비밀번호
         username: 영문, 숫자, 밑줄, 점
   home:
+    episode_sources:
+      announcement: 공식 발표
+      podcast: 팟캐스트
+      video: 영상
     feature:
       heading: 주요 뉴스
     index:

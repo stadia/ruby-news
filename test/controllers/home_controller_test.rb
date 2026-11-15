@@ -218,7 +218,86 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "both home hosts show one card per verified episode and keep a separate Marco interview" do
+    episode = create_episode_articles
+    separate = create_featured_article!(title: "Herb and ReactionView with Marco Roth", title_ko: "Marco Roth 인터뷰", slug: "episode-555", summary_key: [ "요약" ])
+    separate.update_columns(url: "https://www.therubyonrailspodcast.com/555", origin_url: "https://www.therubyonrailspodcast.com/555")
+
+    %w[ruby-news.dev ruby-news.jp].each_with_index do |host, index|
+      episode.last.update_columns(likers_count: index.zero? ? 100 : 0)
+      host! host
+      get root_path
+
+      assert_response :success
+      assert_select "#feature_article_#{episode.last.id}", count: 1
+      episode.first(2).each do |article|
+        assert_select "[id='article_#{article.id}'], [id='feature_article_#{article.id}']", count: 0
+      end
+      assert_select "a[href=?]", article_path(separate), minimum: 1
+      episode.each { |article| assert_select "a[href=?]", article.url, count: 1 }
+    end
+
+    episode.each do |article|
+      get article_path(article)
+
+      assert_response :success
+      assert_predicate article.reload, :kept?
+    end
+  end
+
+  test "latest news deduplicates before filling nine cards" do
+    Article.update_all(created_at: 5.days.ago)
+    episode = create_episode_articles
+    episode.each { |article| article.update_columns(created_at: 3.days.ago) }
+    8.times do |i|
+      article = create_featured_article!(title: "Other #{i}", title_ko: "별개 기사 #{i}", slug: "other-#{i}", summary_key: [ "요약" ])
+      article.update_columns(created_at: 4.days.ago)
+    end
+
+    get root_path
+
+    assert_response :success
+    assert_select "#articlesList > div", count: 9
+    assert_select "#articlesList #article_#{episode.last.id}", count: 1
+    episode.first(2).each { |article| assert_select "#article_#{article.id}", count: 0 }
+    episode.each { |article| assert_select "#articlesList a[href=?]", article.url, count: 1 }
+  end
+
+  test "latest news counts unique episodes before choosing the 24 hour window" do
+    Article.update_all(created_at: 5.days.ago)
+    episode = create_episode_articles
+    7.times do |i|
+      create_featured_article!(title: "Recent #{i}", title_ko: "최근 별개 기사 #{i}", slug: "recent-#{i}", summary_key: [ "요약" ])
+    end
+    old = create_featured_article!(title: "Older", title_ko: "이전 기사", slug: "older", summary_key: [ "요약" ])
+    old.update_columns(created_at: 3.days.ago)
+    # 주요 뉴스는 48시간 이후에만 빠지므로, 여기서는 주요 뉴스 세 자리를 참여도로 고정한다.
+    3.times do |i|
+      feature = create_featured_article!(title: "Featured #{i}", title_ko: "주요 기사 #{i}", slug: "featured-#{i}", summary_key: [ "요약" ])
+      feature.update_columns(created_at: 30.hours.ago, likers_count: 100)
+    end
+
+    get root_path
+
+    assert_response :success
+    assert_select "#articlesList > div", count: 9
+    assert_select "#articlesList #article_#{episode.last.id}", count: 1
+    assert_select "#articlesList #article_#{old.id}", count: 1
+  end
+
   private
+
+  def create_episode_articles
+    [
+      "https://rubyonrails.org/2026/11/13/on-rails-marco-roth-herb-reaction-view",
+      "https://podcast.rubyonrails.org/2462975/episodes/20121188-marco-roth-teaching-rails-to-read-its-own-template",
+      "https://www.youtube.com/watch?v=ko60zbx6dOE"
+    ].each_with_index.map do |url, i|
+      article = create_featured_article!(title: "Marco Roth interview", title_ko: "Marco Roth 인터뷰", slug: "marco-#{i}", summary_key: [ "요약" ])
+      article.update_columns(url: url, origin_url: url, created_at: (3 - i).minutes.ago)
+      article
+    end
+  end
 
   def with_memory_cache
     original_cache = Rails.cache

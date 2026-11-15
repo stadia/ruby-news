@@ -177,6 +177,10 @@ ja:
         password: パスワード
         username: 英字、数字、アンダースコア、ドット
   home:
+    episode_sources:
+      announcement: 公式発表
+      podcast: ポッドキャスト
+      video: 動画
     feature:
       heading: 注目ニュース
     index:

@@ -1,0 +1,21 @@
+# typed: true
+# frozen_string_literal: true
+
+class Components::Home::EpisodeSources < Components::Base
+  def initialize(article:)
+    @article = article
+  end
+
+  def view_template
+    urls = ::Articles::HomeEpisodes.source_urls(@article)
+    return if urls.empty?
+
+    div(class: "relative z-10 flex flex-wrap gap-1 mb-4") do
+      urls.zip(%w[announcement podcast video]).each do |url, kind|
+        render RubyUI::Link.new(href: url, variant: :link, size: :sm, class: "min-h-11") do
+          t(kind, scope: "home.episode_sources")
+        end
+      end
+    end
+  end
+end

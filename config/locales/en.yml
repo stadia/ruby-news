@@ -177,6 +177,10 @@ en:
         password: Password
         username: Letters, numbers, underscores, dots
   home:
+    episode_sources:
+      announcement: Announcement
+      podcast: Podcast
+      video: Video
     feature:
       heading: Featured News
     index:

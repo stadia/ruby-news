@@ -23,6 +23,7 @@ class Components::Home::Article < Components::Base
         header_section
         render RubyUI::Badge.new(variant: :blue, size: :sm, class: "mb-4 self-start") { article.host }
         summary_section
+        render Components::Home::EpisodeSources.new(article: article)
         footer_section
       end
     end

@@ -32,7 +32,7 @@ class HomeController < ApplicationController
 
   def index
     cacheable_page!
-    scope = article_scope
+    scope = Articles::HomeEpisodes.representatives(article_scope)
 
     @featured_articles = build_featured_articles(scope)
     @articles = build_recent_articles(scope, excluded_ids: @featured_articles.map(&:id))

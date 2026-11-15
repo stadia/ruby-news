@@ -119,6 +119,7 @@ class Components::Home::Feature < Components::Base
   end
 
   def meta_block(article)
+    render Components::Home::EpisodeSources.new(article: article)
     render RubyUI::Separator.new(class: "mt-auto")
     div(class: "relative z-10 pt-3 flex flex-wrap justify-between items-center text-sm text-content-secondary gap-y-2") do
       span(class: "inline-flex items-center") do
