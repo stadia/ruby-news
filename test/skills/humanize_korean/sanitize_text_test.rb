@@ -99,6 +99,15 @@ class HumanizeKoreanSanitizeTextTest < ActiveSupport::TestCase
     assert_equal "가\n\n\n\n나", sanitize("가\n\n\n\n나").first
   end
 
+  # upstream과 다른 로컬 규칙: summary_body는 마크다운이라 두 칸 이상 공백 강제 줄바꿈은 의미가 있다.
+  test "마크다운 강제 줄바꿈의 줄 끝 공백은 보존한다" do
+    out, report = sanitize("첫 번째 줄  \n두 번째 줄 \n세 번째 줄\t\n끝   ")
+
+    assert_equal "첫 번째 줄  \n두 번째 줄\n세 번째 줄\n끝", out
+    assert_equal 3, report.counts["trailing_space_lines"]
+    assert_equal out, sanitize(out).first
+  end
+
   test "멱등이다" do
     dirty = "안#{ZWSP}녕#{NBSP}하세요#{RLO}\r\n\r\n\r\n#{"둘째".unicode_normalize(:nfd)}   \n#{TAG_A}"
     once, = sanitize(dirty)

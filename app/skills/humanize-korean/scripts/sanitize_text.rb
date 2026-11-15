@@ -56,6 +56,9 @@ module HumanizeKoreanSanitize
   # ZWJ/ZWNJ는 이모지 결합에 필수라, 양옆이 모두 평범한 문자일 때만 잘라낸다.
   PLAIN_NEIGHBOR = /\A[가-힣0-9A-Za-z\s.,!?;:'"()\[\]{}-]\z/
   JOINERS = [ 0x200C, 0x200D ].map { |code| code.chr(Encoding::UTF_8) }.freeze
+  # 줄 끝 공백. upstream과 달리 정확히 두 칸 공백 + 줄바꿈(마크다운 강제 줄바꿈)은 남긴다.
+  # 윤문 대상 summary_body가 마크다운이라, 지우면 기준 파일에서 줄바꿈이 사라져 게이트가 놓친다.
+  TRAILING_SPACE = /(?<![ \t])(?!(?<=[^ \t\n]) {2}\n)[ \t]+$/
 
   COUNT_KEYS = %w[hangul_recomposed invisible bidi tag_chars special_spaces line_breaks trailing_space_lines].freeze
   SUMMARY_LABELS = {
@@ -156,8 +159,8 @@ module HumanizeKoreanSanitize
     def normalize_line_breaks(text, counts)
       counts["line_breaks"] = text.scan("\r\n").size + text.scan(/\r(?!\n)/).size + text.scan(UNI_BREAKS).size
       text = text.gsub("\r\n", "\n").tr("\r", "\n").gsub(UNI_BREAKS, "\n")
-      counts["trailing_space_lines"] = text.scan(/[ \t]+$/).size
-      text.gsub(/[ \t]+$/, "")
+      counts["trailing_space_lines"] = text.scan(TRAILING_SPACE).size
+      text.gsub(TRAILING_SPACE, "")
     end
 
     def summary(counts, changed)
