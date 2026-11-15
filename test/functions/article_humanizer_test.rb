@@ -36,6 +36,13 @@ class ArticleHumanizerTest < ActiveSupport::TestCase
     assert_skipped :humanize_aborted, ArticleHumanizer.extract({ "over_polish_aborted" => true })
   end
 
+  # 정량 shim·구조 게이트를 돌리지 못한 윤문은 검증되지 않았으므로 반영하지 않는다.
+  test "게이트로 검증하지 못한 응답은 :humanize_gate_unverified로 건너뛴다" do
+    assert_skipped :humanize_gate_unverified, ArticleHumanizer.extract({ "gate_unverified" => true, "summary_body" => "x" })
+    assert_skipped :humanize_gate_unverified,
+                   ArticleHumanizer.extract({ "gate_unverified" => true, "over_polish_aborted" => true, "summary_body" => "x" })
+  end
+
   test "Hash가 아닌 응답은 모두 :humanize_invalid_response로 건너뛴다" do
     [ nil, [], [ "summary_body" ], 1 ].each do |content|
       assert_skipped :humanize_invalid_response, ArticleHumanizer.extract(content)

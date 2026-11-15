@@ -187,8 +187,18 @@ module HumanizeKoreanVerifyGates
       3
     end
     # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
+
+    # 처리되지 않은 예외는 exit 1로 끝나는데, 게이트 계약에서 1은 "경고"다. 검증이 죽은 것이
+    # 경고로 읽히지 않도록 예외를 실행 오류(3)로 보낸다. (upstream console.run_gate, #84)
+    def run_gate(argv = ARGV)
+      main(argv)
+    rescue StandardError => error
+      warn "[gate] 실행 오류 — #{error.class}: #{error.message}"
+      warn error.full_message(highlight: false)
+      3
+    end
   end
 end
 # rubocop:enable Metrics/ModuleLength
 
-exit HumanizeKoreanVerifyGates.main if $PROGRAM_NAME == __FILE__
+exit HumanizeKoreanVerifyGates.run_gate if $PROGRAM_NAME == __FILE__

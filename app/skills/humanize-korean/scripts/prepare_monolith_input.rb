@@ -15,10 +15,8 @@ require "digest"
 require "fileutils"
 require "json"
 require "optparse"
-require "pathname"
 
 HERE = File.expand_path(__dir__)
-PROJECT_ROOT = File.expand_path("..", HERE)
 METRICS_DIR = File.expand_path("../references", HERE)
 
 begin
@@ -33,6 +31,15 @@ rescue StandardError, LoadError
     # @rbs skip
     METRICS_PROVIDER = nil
   end
+end
+
+# 텍스트 위생 처리. 실패해도 파이프라인을 막지 않는다(upstream과 같은 graceful degrade).
+begin
+  require File.join(HERE, "sanitize_text")
+  SANITIZER = HumanizeKoreanSanitize
+rescue StandardError, LoadError
+  # @rbs skip
+  SANITIZER = nil
 end
 
 ROUTE_LIGHT_MAX_TELLS = 2
@@ -74,17 +81,47 @@ def next_run_dir(workspace)
   end
 end
 
+# 상대 경로는 cwd 기준으로 푼다. 스킬 폴더 기준으로 풀면 사용자 작업 디렉터리(RubyLLM code
+# execution의 실행 디렉터리 포함)에서 부르는 정상 흐름이 실패한다. 없는 run-dir은 만들지 않고
+# 실패한다. 새로 만드는 경우(--text)에만 생성한다.
 def resolve_run_dir(run_dir_arg, text_arg)
   if run_dir_arg
-    run_dir = Pathname.new(run_dir_arg).absolute? ? run_dir_arg : File.join(PROJECT_ROOT, run_dir_arg)
-    FileUtils.mkdir_p(run_dir)
-    return File.expand_path(run_dir)
+    run_dir = File.expand_path(run_dir_arg, Dir.pwd)
+    if text_arg
+      FileUtils.mkdir_p(run_dir)
+    elsif !File.directory?(run_dir)
+      raise "run-dir not found: #{run_dir}\n  (상대 경로는 현재 디렉터리 기준으로 해석됩니다. --text 를 주면 새로 만듭니다.)"
+    end
+    return run_dir
   end
   raise "Either --run-dir or --text is required" if text_arg.nil?
 
-  run_dir = next_run_dir(File.join(PROJECT_ROOT, "_workspace"))
+  run_dir = next_run_dir(File.join(Dir.pwd, "_workspace"))
   FileUtils.mkdir_p(run_dir)
   run_dir
+end
+
+# 01_input.txt를 읽고, 켜져 있으면 위생 처리해 제자리에 반영한다. 01_input.txt가 이후 모든
+# 단계(변경률 게이트·diff·글자수)의 기준선이라 shim에서 한 번 정규화한다.
+def load_input(input_path, run_dir, enabled)
+  text = File.read(input_path, encoding: "UTF-8")
+  return text unless enabled && SANITIZER
+
+  begin
+    cleaned, report = SANITIZER.sanitize(text)
+  rescue StandardError => error
+    # 정규화되지 않은 원문이 게이트 기준선으로 남으므로, 막지는 않되 metrics처럼 증적을 남긴다.
+    message = "sanitize_failed: #{error.class}: #{error.message}"
+    File.write(File.join(run_dir, "00_sanitize.error"), "#{message}\n\n#{error.full_message(highlight: false)}", encoding: "UTF-8")
+    warn message
+    return text
+  end
+  return text unless report.changed?
+
+  File.write(input_path, cleaned, encoding: "UTF-8")
+  File.write(File.join(run_dir, "00_sanitize.json"), JSON.pretty_generate(report.to_h), encoding: "UTF-8")
+  puts "sanitize=#{report.summary}"
+  cleaned
 end
 
 def compute_route_hint(metrics_obj)
@@ -414,7 +451,7 @@ def run_chunk_mode(options, diagnosis)
   File.write(input_path, options[:text], encoding: "UTF-8") unless options[:text].nil?
   raise "01_input.txt not found in #{run_dir}; pass --text to create" unless File.exist?(input_path)
 
-  text = File.read(input_path, encoding: "UTF-8")
+  text = load_input(input_path, run_dir, !options[:no_sanitize])
   raise "01_input.txt is empty; nothing to chunk" if text.strip.empty?
 
   spans, warnings = compute_chunk_spans(text)
@@ -496,7 +533,7 @@ end
 # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
 def parse_options(argv)
-  options = { genre: "essay", baseline: nil, diagnosis: nil, chunk: false }
+  options = { genre: "essay", baseline: nil, diagnosis: nil, chunk: false, no_sanitize: false }
   parser = OptionParser.new do |opts|
     opts.banner = "Usage: prepare_monolith_input.rb (--run-dir DIR | --text TEXT) [options]"
     opts.on("--run-dir DIR", "Existing run directory (relative ok)") { |value| options[:run_dir] = value }
@@ -505,6 +542,7 @@ def parse_options(argv)
     opts.on("--baseline PATH", "Override baseline JSON path (default: project default)") { |value| options[:baseline] = value }
     opts.on("--diagnosis PATH", "Path to a diagnosis text file; prepended before the metrics block") { |value| options[:diagnosis] = value }
     opts.on("--chunk", "장문 청킹 모드") { options[:chunk] = true }
+    opts.on("--no-sanitize", "텍스트 위생 처리를 끈다(기본 켜짐, AI 워터마크와 무관)") { options[:no_sanitize] = true }
   end
   parser.parse!(argv)
   options
@@ -514,7 +552,7 @@ def main(argv = ARGV)
   options = parse_options(argv)
   diagnosis = nil
   if options[:diagnosis]
-    diagnosis_path = Pathname.new(options[:diagnosis]).absolute? ? options[:diagnosis] : File.join(PROJECT_ROOT, options[:diagnosis])
+    diagnosis_path = File.expand_path(options[:diagnosis], Dir.pwd) # --run-dir과 같은 기준(cwd)
     raise "--diagnosis file not found: #{diagnosis_path}" unless File.exist?(diagnosis_path)
 
     diagnosis = File.read(diagnosis_path, encoding: "UTF-8")
@@ -526,7 +564,7 @@ def main(argv = ARGV)
   File.write(input_path, options[:text], encoding: "UTF-8") unless options[:text].nil?
   raise "01_input.txt not found in #{run_dir}; pass --text to create" unless File.exist?(input_path)
 
-  text = File.read(input_path, encoding: "UTF-8")
+  text = load_input(input_path, run_dir, !options[:no_sanitize])
   metrics_obj = nil
   metrics_path = File.join(run_dir, "00_metrics.json")
   error_path = File.join(run_dir, "00_metrics.error")

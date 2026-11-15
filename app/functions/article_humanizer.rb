@@ -14,7 +14,9 @@ module ArticleHumanizer
   ABORTED = :humanize_aborted
   INVALID_RESPONSE = :humanize_invalid_response
   BLANK_BODY = :humanize_blank_body
-  SKIP_REASONS = [ ABORTED, INVALID_RESPONSE, BLANK_BODY ].freeze
+  # 정량 shim·구조 게이트(철칙 #4)를 실행하지 못해 윤문을 검증하지 못했다고 모델이 보고한 경우.
+  GATE_UNVERIFIED = :humanize_gate_unverified
+  SKIP_REASONS = [ ABORTED, INVALID_RESPONSE, BLANK_BODY, GATE_UNVERIFIED ].freeze
   # 예외로 윤문하지 못했을 때의 사유. ArticleAgentsService가 Failure로 돌려준다.
   FAILED_REASON = "humanize_failed"
 
@@ -138,6 +140,8 @@ module ArticleHumanizer
     #: (untyped content) -> (Humanized | Skipped)
     def extract(content)
       return Skipped.build(INVALID_RESPONSE) unless content.is_a?(Hash)
+      # 검증하지 못한 결과는 롤백 여부와 관계없이 반영하지 않으므로 과윤문 중단보다 먼저 본다.
+      return Skipped.build(GATE_UNVERIFIED) if content["gate_unverified"]
       return Skipped.build(ABORTED) if content["over_polish_aborted"]
 
       summary_body = stripped_string(content["summary_body"])

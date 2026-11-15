@@ -128,7 +128,7 @@ class ArticleAgentsService < OperationService
   # 날 수 있어, 반영된 윤문을 실패로 덮어쓰지 않도록 여기서 잡지 않는다.
   #: (Article article) -> Dry::Monads::Result
   def run_humanize(article)
-    message = HumanMonolithAgent.chat.with_skills.ask(ArticleHumanizer.prompt(article))
+    message = HumanMonolithAgent.chat.ask(ArticleHumanizer.prompt(article))
     content = Articles::AgentResponse.structured(message)
     extraction = ArticleHumanizer.extract(content)
   rescue StandardError => e

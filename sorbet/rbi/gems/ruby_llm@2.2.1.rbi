@@ -1132,7 +1132,7 @@ module RubyLLM::ActiveRecord::ChatApprovals
   # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_approvals.rb:55
   def record_tool_call_decision(tool_call, decision); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_approvals.rb:61
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_approvals.rb:64
   def tool_call_record(tool_call); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_approvals.rb:44
@@ -1603,7 +1603,7 @@ module RubyLLM::ActiveRecord::ChatMethods
   # without calling the model while another process is #running? the
   # chat.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:868
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:864
   def compact(*args, **kwargs, &block); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:687
@@ -1611,11 +1611,13 @@ module RubyLLM::ActiveRecord::ChatMethods
 
   # Runs the completion loop on the underlying chat, persisting each
   # message, and returns the latest RubyLLM::Message. Pauses while a call
-  # waits on a person (see #pending_questions). When the API call fails,
-  # destroys the empty assistant message and any orphaned tool results,
-  # then re-raises the error. When the block raises, destroys the empty
-  # assistant message and re-raises. Tool calls paused on a task or a
-  # question stay, so the next #complete picks them up.
+  # waits on a person (see #pending_questions). When the API call or a
+  # tool fails, destroys the empty assistant message, closes the tool
+  # calls of the round left without a result as unfinished, and
+  # re-raises the error. A tool call that finished keeps its result.
+  # When the block raises, destroys the empty assistant message and
+  # re-raises. Tool calls paused on a task or a question stay, so the
+  # next #complete picks them up.
   #
   # Only one process runs a chat at a time. While another process is
   # #running? it, returns the latest message without calling the model
@@ -1651,14 +1653,14 @@ module RubyLLM::ActiveRecord::ChatMethods
   # +ruby_llm.reply_error.failed+ for any other error, with English
   # defaults.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:940
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:938
   def complete(*args, **kwargs, &block); end
 
   # Returns whether the conversation has no pending work, neither a
   # response to generate nor tool calls to run. See
   # RubyLLM::Chat#complete?.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:895
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:891
   def complete?; end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:687
@@ -1722,7 +1724,7 @@ module RubyLLM::ActiveRecord::ChatMethods
   # while another process is #running? the chat. A block receives the
   # chunks as it does in #complete.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:860
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:856
   def generate(*args, **kwargs, &block); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:687
@@ -1735,7 +1737,7 @@ module RubyLLM::ActiveRecord::ChatMethods
   #
   #   chat.join_queued_messages.map(&:content) # => ["Use the EU file"]
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1006
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1004
   def join_queued_messages; end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:687
@@ -1829,13 +1831,13 @@ module RubyLLM::ActiveRecord::ChatMethods
   #   chat.queue params[:content], sender: Current.user
   #   ChatResponseJob.perform_later(chat.id)
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:982
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:980
   def queue(message = T.unsafe(nil), with: T.unsafe(nil), steer: T.unsafe(nil), sender: T.unsafe(nil)); end
 
   # Returns the QueuedMessage records waiting in the queue, oldest
   # first, ready to render.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:988
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:986
   def queued_messages; end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:186
@@ -1860,7 +1862,7 @@ module RubyLLM::ActiveRecord::ChatMethods
   # calling the model. See RubyLLM::Chat#run_tools. Does nothing while
   # another process is #running? the chat. Returns +self+.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:875
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:871
   def run_tools(*args, **kwargs, &block); end
 
   # Returns whether a process is running this chat's conversation loop:
@@ -1892,7 +1894,7 @@ module RubyLLM::ActiveRecord::ChatMethods
   #
   #   chat.step until chat.complete? || chat.waiting?
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:888
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:884
   def step(*args, **kwargs, &block); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:687
@@ -2030,131 +2032,128 @@ module RubyLLM::ActiveRecord::ChatMethods
   # QueuedMessage#withdraw does the same from the record. See
   # RubyLLM::Chat#withdraw.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:995
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:993
   def withdraw(queued); end
 
   private
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1326
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1304
   def assign_fallback_attributes(attributes, message); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1331
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1309
   def assign_supported_attribute(attributes, name, value); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1176
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1154
   def attachment_association?(message_class); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1039
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1037
   def bind_message_chat(message); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1019
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1017
   def broadcasts_messages?; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1180
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1158
   def build_llm_chat; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1259
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1237
   def cache_boundary_attributes(cache_until_here); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1031
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1029
   def chat_model_moved?; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1132
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1130
   def cleanup_after_block_failure; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1125
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1123
   def cleanup_after_failure(error); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1136
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1134
   def cleanup_failed_messages(reason:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1141
-  def cleanup_orphaned_tool_results; end
-
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1218
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1196
   def clear_persisted_system_instructions; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1024
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1022
   def completing(block = T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1012
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1010
   def create_message_record(llm_message, record_attributes); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1161
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1139
   def eager_load_messages; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1104
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1102
   def find_or_create_model(model_info); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1083
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1081
   def find_registered_model; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1212
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1190
   def install_persistence_callbacks(chat); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1035
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1033
   def latest_message; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1044
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1042
   def link_usage_entries(message); end
 
   # An empty store would otherwise hold only this chat's model on the next
   # boot, since the registry reads whatever the store returns.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1089
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1087
   def load_model_registry_into_store; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1309
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1287
   def message_attributes(message); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1096
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1094
   def model_store_empty?; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1290
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1268
   def persist_message_completion(message); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1245
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1223
   def persist_system_instruction(instructions, append:, cache_until_here:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1335
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1313
   def persist_tool_calls(tool_calls, message_record: T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1284
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1262
   def reapply_runtime_instructions(chat); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1100
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1098
   def remember_model_registry_stored; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1224
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1202
   def replace_persisted_system_instructions(instructions, cache_until_here:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1059
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1057
   def resolve_model; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1071
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1069
   def resolve_model_info; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1270
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1248
   def store_unpersisted_instruction(instructions, append:, cache_until_here:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1194
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1172
   def sync_messages(chat = T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1266
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1244
   def unpersisted_instructions; end
 
   # Rewriting the same instructions every turn would move the system row
   # behind the user messages and rebroadcast it each time.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1237
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1215
   def update_persisted_system_instruction(record, instructions, cache_until_here:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1055
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1053
   def usage_records_by_entry; end
 
   # PostgreSQL jsonb cannot store U+0000.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1347
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_methods.rb:1325
   def without_nul(text); end
 end
 
@@ -2334,55 +2333,58 @@ class RubyLLM::ActiveRecord::ChatQueue
   # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:17
   def initialize(chat); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:30
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:42
   def delete(queued); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:40
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:52
   def none?(steering_only: T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:21
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:33
   def push(content:, attachments:, steer:, sender:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:44
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:21
+  def stage(message, attachments:); end
+
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:56
   def take(steering_only: T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:36
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:48
   def to_a; end
 
   private
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:111
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:124
   def attachments?(queued); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:115
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:128
   def available?; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:94
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:107
   def detach(queued); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:69
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:82
   def join(queued, attributes); end
 
   # Nil once the sender's class, or the subclass its row names, is
   # gone, say renamed since the message was queued, so the message
   # joins without its sender instead of holding up the queue.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:88
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:101
   def queued_sender(queued); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:107
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:120
   def read(&); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:103
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:116
   def rows; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:99
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:112
   def scope(steering_only); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:77
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:90
   def sender_attributes(queued); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:55
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/chat_queue.rb:67
   def take_one(queued); end
 end
 
@@ -3636,7 +3638,7 @@ module RubyLLM::ActiveRecord::RunClaims
 
   private
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:419
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:434
   def by_exit(claimed_until); end
 
   # Writes the chat's claim, moving its stored expiry forward and never
@@ -3645,19 +3647,19 @@ module RubyLLM::ActiveRecord::RunClaims
   # is to the process's exit, past which no claim lasts. Returns whether
   # the claim is still this run's.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:310
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:325
   def chat_claim_extended?(token, claimed_until); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:566
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:594
   def chat_row; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:580
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:608
   def claim_lock; end
 
   # A max_run_time shorter than the lease is the claim's whole life, so
   # a renewal has to land within it.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:426
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:441
   def claim_renewal_interval; end
 
   # A released call has no expiry, while a call that started keeps its
@@ -3665,104 +3667,111 @@ module RubyLLM::ActiveRecord::RunClaims
   # process dies. Returns whether the claim was written, and whether it
   # took over an expired one.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:497
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:512
   def claim_tool_call_row(scope, written); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:159
   def claim_tool_call_rows(leases, executing); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:411
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:426
   def claims_in_transaction?; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:519
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:534
   def decide_persisted_tool_call(record, decision); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:526
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:541
   def decision_recorded?(record, decision); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:536
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:551
   def discard_superseded_message; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:178
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:193
   def exclusively(busy, &); end
 
   # Whole seconds, so a column that rounds fractions up still holds a
   # time that has passed.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:266
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:281
   def expire_run_claim; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:503
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:518
   def extend_run_claim_for_tool_calls; end
 
   # Renewing inside the transaction holds the chat row until the result
-  # commits, so no other process can take the chat over in between.
+  # commits, so no other process can take the chat over in between. A
+  # message that touches its chat touches it after the commit: on
+  # Postgres, a second write to the row the claim renewed rechecks every
+  # foreign key on it and locks each row the chat references until the
+  # commit, which can deadlock with the application's own locks.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:543
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:562
   def fenced_by_run_claim(&); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:282
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:297
   def free_chat_row(token); end
 
   # A run stopped because its process is shutting down didn't end, so
   # it keeps its claim but expires it, and the chat counts as
   # interrupted at once.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:187
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:202
   def holding_run_claim(busy); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:171
   def initialize_dup(*); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:444
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:459
   def latest_message_id; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:415
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:430
   def leased_until(deadline, now); end
 
   # Calls whose claim the heartbeat found taken, so their start fails
   # rather than taking them for calls that were never claimed.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:576
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:604
   def lost_tool_calls; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:272
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:575
+  def message_chat_touch; end
+
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:287
   def release_run_claim(completed); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:456
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:471
   def reload_usages; end
 
   # Runs on the heartbeat's thread. A chat claim it finds taken is lost,
   # but only the run's own thread raises, at its next renewal.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:321
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:336
   def renew_claim_leases; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:289
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:304
   def renew_run_claim(force: T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:327
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:342
   def renew_run_claim_lease(now); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:379
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:394
   def renew_tool_call_lease(tool_call_id, row, written, claimed_until); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:340
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:355
   def renew_tool_call_leases(now); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:450
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:465
   def resync_messages; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:599
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:627
   def row_supports_approval?; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:232
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:247
   def run_claim_acquired?; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:603
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:631
   def run_claim_duration; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:591
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:619
   def run_claims?; end
 
   # A released claim leaves no token behind, so what another process's
@@ -3771,10 +3780,10 @@ module RubyLLM::ActiveRecord::RunClaims
   # keeps its id and may lose its usage row, so such a reply is always
   # read again: repeating it would bill the model twice.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:255
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:270
   def run_finished_elsewhere?; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:430
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:445
   def running_elsewhere?; end
 
   # Whether the process is shutting down: a thread killed at exit, or
@@ -3782,37 +3791,43 @@ module RubyLLM::ActiveRecord::RunClaims
   # count: Ctrl-C in a console stops the run, and a job backend that
   # interrupts a job on shutdown, as Sidekiq does, runs it again.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:226
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:241
   def shutting_down?(stopped_by); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:461
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:476
   def snapshot_run_claim; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:392
+  # Hold the same row a run claims without replacing its token, so a
+  # failed submission leaves an interrupted run discoverable.
+  #
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:180
+  def stage_while_idle; end
+
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:407
   def start_claim_heartbeat; end
 
   # Writes a starting call's claim to its row, unless another process
   # took the row over, and returns whether this process still holds it.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:359
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:374
   def started_tool_call_claimed?(tool_call_id, claim, now); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:405
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:420
   def stop_claim_heartbeat; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:401
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:416
   def stop_idle_claim_heartbeat; end
 
   # Tool call rows carry no token, so this process recognizes its claim
   # on a row by the whole-second expiries it wrote there.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:472
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:487
   def tool_call_claimed?(tool_call_id, row, seconds, executing); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:570
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:598
   def tool_call_claims; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:595
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:623
   def tool_call_claims?; end
 
   # A call that hasn't started yet, waiting for the calls before it in
@@ -3820,23 +3835,23 @@ module RubyLLM::ActiveRecord::RunClaims
   # another process takes the chat over, this run won't start it, so
   # there is no deadline to renew to.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:372
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:387
   def tool_call_deadline(claim); end
 
   # Keeps the heartbeat and a starting call from writing a tool call's
   # row at once, when one write would find the other's expiry there and
   # take the claim for lost.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:587
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:615
   def tool_call_renewal_lock; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:553
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:581
   def tool_call_rows(tool_call_ids); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:511
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:526
   def tool_result_recorded?(tool_call, message); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:561
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:589
   def unclaimed(scope, now); end
 
   # Under a fiber scheduler, as in Async or Solid Queue's fiber workers,
@@ -3846,16 +3861,16 @@ module RubyLLM::ActiveRecord::RunClaims
   # without yielding to the scheduler, and one that finished yields as
   # usual.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:218
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:233
   def unyielding(stopped, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:260
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:275
   def usage_row_count; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:437
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:452
   def work_arrived_during_run?; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:298
+  # pkg:gem/ruby_llm#lib/ruby_llm/active_record/run_claims.rb:313
   def write_run_claim(now = T.unsafe(nil)); end
 
   class << self
@@ -4397,13 +4412,11 @@ class RubyLLM::Agent
   extend ::Forwardable
   extend ::RubyLLM::Agent::ModelOptions
   extend ::RubyLLM::Support::Rescuable::ClassMethods
-  extend ::RubyLLM::Skills::SourceDetection
   extend ::RubyLLM::Agent::ContextBudget
   extend ::RubyLLM::Agent::ToolConversion
   extend ::RubyLLM::Agent::Callbacks
   extend ::RubyLLM::Agent::Ownership
   extend ::RubyLLM::Agent::JoinCallbacks
-  extend ::RubyLLM::Skills::AgentExtensions::ConfigurationPatch
 
   # Returns a new agent wrapping +chat:+, or wrapping a newly built chat
   # when +chat:+ is +nil+. Applies the agent's configuration either way.
@@ -4419,304 +4432,304 @@ class RubyLLM::Agent
   #   record = Chat.find(params[:id])
   #   WorkAssistant.new(chat: record)
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1022
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1023
   def initialize(chat: T.unsafe(nil), inputs: T.unsafe(nil), persist_instructions: T.unsafe(nil), **kwargs); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def add_completion(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def add_message(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def after_fallback(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def after_file_write(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def after_message(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def after_tool_progress(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def after_tool_result(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def answer(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def approve(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def around_join(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def around_tool_call(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1799
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1800
   def ask(*args, **kwargs, &block); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1799
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1800
   def ask_later(*args, **kwargs, &block); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def before_fallback(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def before_message(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def before_request(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def before_tool_call(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1811
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1812
   def bind(chat, input_values); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def cache_until_here(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def caching(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def cancel(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def cancelled?(*, **, &); end
 
   # The wrapped Chat, or the chat record in Rails mode.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1045
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1046
   def chat; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def citations(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def code_execution(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1799
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1800
   def compact(*args, **kwargs, &block); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def compaction(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1799
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1800
   def complete(*args, **kwargs, &block); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def complete?(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def concurrency(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def context(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def context_budget(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def convert_unsupported_attachments(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def cost(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1799
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1800
   def count_tokens(*args, **kwargs, &block); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def decline(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def deferred_tools(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def each(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def end_user(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def fallbacks(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def file_store(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1799
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1800
   def generate(*args, **kwargs, &block); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def headers(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def join_queued_messages(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def max_output_tokens(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def mcp(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def messages(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def model(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def model_id(*, **, &); end
 
   # Returns whoever the usage of the agent's chat is attributed to, as
   # Chat#owner describes. For a persisted chat, reads it from the
   # record's chat, since the record leaves +owner+ to the application.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1807
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1808
   def owner; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def pending_questions(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def pending_tasks(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def provider(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def provider_options(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def provider_tools(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def queue(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def queued_messages(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def render(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1799
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1800
   def run_tools(*args, **kwargs, &block); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1799
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1800
   def say(*args, **kwargs, &block); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def schema(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def skills(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1799
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1800
   def step(*args, **kwargs, &block); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def temperature(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def thinking(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def tokens(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def tool_options(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def tools(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def waiting?(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_caching(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_citations(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_code_execution(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_compaction(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_context(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_context_budget(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_end_user(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_fallbacks(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_file_store(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_headers(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_instructions(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_max_output_tokens(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_mcp(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_model(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_owner(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_provider_options(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_provider_tools(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_schema(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_skills(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_temperature(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_thinking(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_tool_options(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def with_tools(*, **, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1050
   def withdraw(*, **, &); end
 
   private
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1821
+  # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:1822
   def rescuing(&); end
 
   class << self
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:698
-    def apply_configuration(chat, input_values: T.unsafe(nil), **options); end
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:699
+    def apply_configuration(chat, **); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:594
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:595
     def build_chat(inputs:, options:, resolved_context: T.unsafe(nil)); end
 
     # Enables prompt caching for chats this agent builds, applied via
@@ -4731,7 +4744,7 @@ class RubyLLM::Agent
     #   caching ttl: "1h"
     #   caching { { ttl: workspace.cache_ttl } }
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:446
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:447
     def caching(enabled = T.unsafe(nil), **options, &block); end
 
     # Builds a Chat configured with this agent's declarations and returns
@@ -4741,7 +4754,7 @@ class RubyLLM::Agent
     #   chat = WorkAssistant.chat
     #   chat.ask "Hello"
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:606
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:607
     def chat(**kwargs); end
 
     # Sets the ActiveRecord chat class this agent creates and finds,
@@ -4751,13 +4764,13 @@ class RubyLLM::Agent
     #
     #   chat_class Chat
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:556
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:557
     def chat_class(value = T.unsafe(nil)); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:581
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:582
     def chat_kwargs; end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:563
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:564
     def chat_model(value = T.unsafe(nil)); end
 
     # Enables citations for chats this agent builds, applied via
@@ -4766,7 +4779,7 @@ class RubyLLM::Agent
     #   citations
     #   citations false
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:428
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:429
     def citations(value = T.unsafe(nil)); end
 
     # Lets chats this agent builds run code in the configured sandbox,
@@ -4783,7 +4796,7 @@ class RubyLLM::Agent
     # A +mounts+ lambda runs before each run, with +chat+ and the
     # agent's inputs in scope, like the agent's other lambdas.
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:343
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:344
     def code_execution(enabled = T.unsafe(nil), **options); end
 
     # Enables context compaction for chats this agent builds, applied via
@@ -4794,7 +4807,7 @@ class RubyLLM::Agent
     #   compaction false
     #   compaction at: 50_000
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:306
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:307
     def compaction(options = T.unsafe(nil)); end
 
     # Sets a Context whose configuration chats this agent builds should
@@ -4810,7 +4823,7 @@ class RubyLLM::Agent
     #   context { |config| config.request_timeout = 180 }
     #   context -> { RubyLLM.context { |config| config.openai_api_key = api_key } }
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:535
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:536
     def context(value = T.unsafe(nil), &block); end
 
     # Keeps tool results within shares of the model's context window in
@@ -4826,7 +4839,7 @@ class RubyLLM::Agent
     #
     #   context_budget { { window: model_window, per_request: 0.7 } if model_window }
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:328
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:329
     def context_budget(budget = T.unsafe(nil), **, &); end
 
     # Creates a ::chat_class record, applies this agent's configuration to
@@ -4837,7 +4850,7 @@ class RubyLLM::Agent
     #
     # Raises ArgumentError if ::chat_class is not configured.
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:621
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:622
     def create(**); end
 
     # Like ::create, but calls the model's <tt>create!</tt>, raising if
@@ -4845,7 +4858,7 @@ class RubyLLM::Agent
     #
     #   chat = WorkAssistant.create!(user: current_user)
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:630
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:631
     def create!(**); end
 
     # Sets the safety identifier for chats this agent builds, applied via
@@ -4856,7 +4869,7 @@ class RubyLLM::Agent
     #   end_user "tenant-42"
     #   end_user { workspace.public_id }
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:406
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:407
     def end_user(value = T.unsafe(nil), &block); end
 
     # Sets fallback models for chats this agent builds, applied via
@@ -4868,7 +4881,7 @@ class RubyLLM::Agent
     #   fallbacks "gpt-4.1-mini", on: [*RubyLLM::Fallback::DEFAULT_ERRORS, RubyLLM::ContextLengthExceededError]
     #   fallbacks drop_unsupported: true
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:509
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:510
     def fallbacks(*models, on: T.unsafe(nil), drop_unsupported: T.unsafe(nil)); end
 
     # Attaches a file store to chats this agent builds, with the tools to
@@ -4892,7 +4905,7 @@ class RubyLLM::Agent
     #
     # :call-seq: file_store(store = default, inline_limit: 10_000, tools: %i[read write edit])
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:369
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:370
     def file_store(store = T.unsafe(nil), inline_limit: T.unsafe(nil), tools: T.unsafe(nil)); end
 
     # Finds the ::chat_class record with +id+ and applies this agent's
@@ -4903,14 +4916,14 @@ class RubyLLM::Agent
     #
     # Raises ArgumentError if ::chat_class is not configured.
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:641
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:642
     def find(id, **kwargs); end
 
     # Sets custom HTTP headers for chats this agent builds, applied via
     # Chat#with_headers. A block defers evaluation until the chat is
     # built. Called with no arguments, returns the configured value.
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:476
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:477
     def headers(**headers, &block); end
 
     # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:110
@@ -4923,7 +4936,7 @@ class RubyLLM::Agent
     #
     #   inputs :workspace
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:575
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:576
     def inputs(*names); end
 
     # Adds system instructions for chats this agent builds. Accepts a string,
@@ -4946,10 +4959,10 @@ class RubyLLM::Agent
     # ::find always reapplies them without rewriting history. Called with no
     # arguments, returns the declarations.
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:243
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:244
     def instructions(text = T.unsafe(nil), append: T.unsafe(nil), persist: T.unsafe(nil), cache_until_here: T.unsafe(nil), **prompt_locals, &block); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:273
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:274
     def max_output_tokens(value = T.unsafe(nil)); end
 
     # Connects MCP servers to chats this agent builds, applied via
@@ -5007,10 +5020,10 @@ class RubyLLM::Agent
     #   owner { account }
     #   owner { chat.user }
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:420
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:421
     def owner(value = T.unsafe(nil), &block); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:682
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:683
     def partition_inputs(kwargs); end
 
     # Sets options in the provider's request vocabulary for chats this
@@ -5020,7 +5033,7 @@ class RubyLLM::Agent
     #
     #   provider_options service_tier: "flex"
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:467
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:468
     def provider_options(**provider_options, &block); end
 
     # Enables provider-executed tools for chats this agent builds, applied
@@ -5033,16 +5046,16 @@ class RubyLLM::Agent
     #   provider_tools web_search: { allowed_domains: ["ruby-lang.org"] }
     #   provider_tools { { web_search: { max_uses: max_searches } } }
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:218
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:219
     def provider_tools(*tools, **tools_with_options, &block); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:677
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:678
     def render_prompt(name, chat:, inputs:, locals:); end
 
     # Resolves a deferred context before plain-Ruby chat construction;
     # +chat+ is nil in the evaluation runtime.
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:587
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:588
     def resolved_context(inputs:); end
 
     # Sets the structured output schema for chats this agent builds,
@@ -5057,7 +5070,7 @@ class RubyLLM::Agent
     #     string :feedback
     #   end
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:494
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:495
     def schema(value = T.unsafe(nil), &block); end
 
     # Gives chats this agent builds the skills named, applied via
@@ -5073,7 +5086,7 @@ class RubyLLM::Agent
     #   skills true
     #   skills false
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:391
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:392
     def skills(*skills); end
 
     # Re-renders this agent's instructions and persists them on the given
@@ -5085,10 +5098,10 @@ class RubyLLM::Agent
     #
     # Raises ArgumentError if ::chat_class is not configured.
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:659
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:660
     def sync_instructions(chat_or_id, **kwargs); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:273
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:274
     def temperature(value = T.unsafe(nil)); end
 
     # Enables thinking for chats this agent builds, applied via
@@ -5102,7 +5115,7 @@ class RubyLLM::Agent
     #   thinking budget: 10_000
     #   thinking display: :summarized
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:291
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:292
     def thinking(enabled = T.unsafe(nil), **options); end
 
     # Sets how chats this agent builds use their tools, applied via
@@ -5111,8 +5124,9 @@ class RubyLLM::Agent
     # Called with no arguments, returns the configured options.
     #
     #   tool_options choice: :required, calls: :one
+    #   tool_options rounds: 25, calls: 50
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:202
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:203
     def tool_options(**options, &block); end
 
     # Declares the tools for chats this agent builds. A block defers
@@ -5136,124 +5150,124 @@ class RubyLLM::Agent
 
     private
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:857
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:858
     def apply_caching(chat, runtime); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:848
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:849
     def apply_citations(chat); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:870
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:871
     def apply_code_execution(chat, runtime); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:864
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:865
     def apply_compaction(chat); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:774
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:775
     def apply_context(chat, runtime, **); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:852
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:853
     def apply_end_user(chat, runtime); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:912
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:913
     def apply_fallbacks(chat); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:880
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:881
     def apply_file_store(chat, runtime); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:902
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:903
     def apply_headers(chat, runtime); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:779
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:780
     def apply_instructions(chat, runtime, inputs:, persist:, persistent_only: T.unsafe(nil)); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:835
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:836
     def apply_passthrough_options(chat); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:897
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:898
     def apply_provider_options(chat, runtime); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:916
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:917
     def apply_rescue_handlers(chat, agent, input_values); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:907
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:908
     def apply_schema(chat, runtime); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:891
-    def apply_skills(chat, runtime); end
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:892
+    def apply_skills(chat); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:842
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:843
     def apply_thinking(chat); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:830
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:831
     def apply_tool_options(chat, runtime); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:819
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:820
     def apply_tools(chat, runtime); end
 
     # An empty prompt file, such as the one the agent generator writes,
     # means no instructions rather than an empty system message.
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:815
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:816
     def blank_instruction?(value); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:750
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:751
     def copy_inherited_config_to(subclass); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:963
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:964
     def default_instructions_prompt_exists?; end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:930
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:931
     def evaluate(value, runtime); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:517
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:518
     def fallback_options; end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:955
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:956
     def instruction_declarations; end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:944
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:945
     def instructions_config; end
 
     # Applying an agent to a record on every request would otherwise
     # rewrite the same system rows each time, behind the conversation.
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:803
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:804
     def instructions_persisted?(chat, instructions); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:993
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:994
     def prompt_agent_path; end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:967
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:968
     def prompt_instruction?(value); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:959
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:960
     def rails_chat_record?(chat); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:971
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:972
     def resolve_prompt_locals(locals, runtime:, chat:, inputs:); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:998
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:999
     def resolved_chat_class; end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:934
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:935
     def resolved_instruction_value(declaration, chat_object, runtime, inputs:); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:785
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:786
     def resolved_instructions(chat, runtime, inputs:, persist:, persistent_only:); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:922
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:923
     def resolved_schema_value(runtime); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:979
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:980
     def runtime_context(chat:, inputs:); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:732
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:733
     def validate_context_proc(value); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:739
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:740
     def validate_thinking_options(enabled, options); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:763
+    # pkg:gem/ruby_llm#lib/ruby_llm/agent.rb:764
     def with_rails_chat_record(method_name, **kwargs); end
   end
 end
@@ -6345,7 +6359,6 @@ class RubyLLM::Chat
   include ::RubyLLM::Support::DeprecatedEnumerable
   include ::RubyLLM::Chat::ToolSearch
   include ::RubyLLM::Chat::ToolSequences
-  include ::RubyLLM::Skills::SourceDetection
 
   # Creates a chat with +model:+, or with the configured default model
   # when +model:+ is +nil+. Most code calls RubyLLM.chat instead.
@@ -6358,13 +6371,13 @@ class RubyLLM::Chat
   # which requires +provider:+. Pass a Context as +context:+ to use its
   # configuration instead of the global one.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:157
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:158
   def initialize(model: T.unsafe(nil), provider: T.unsafe(nil), protocol: T.unsafe(nil), assume_model_exists: T.unsafe(nil), context: T.unsafe(nil)); end
 
   # Receives a completion produced out-of-band (e.g. by a batch), running the
   # same callbacks as a synchronous completion so persistence works unchanged.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1697
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1703
   def add_completion(*args, **kwargs, &block); end
 
   # Appends a message to the conversation and returns it as a Message.
@@ -6373,23 +6386,23 @@ class RubyLLM::Chat
   #
   #   chat.add_message(role: :user, content: "What's the capital of France?")
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1660
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1666
   def add_message(message_or_attributes); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1709
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1715
   def add_usage_entry(entry); end
 
   # Registers a callback that receives the Fallback attempt once it has
   # succeeded or failed. Returns +self+.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1495
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1501
   def after_fallback(&); end
 
   # Registers a callback that receives each StoredFile the conversation
   # writes to the chat's FileStore (see #with_file_store): attachments as they
   # are kept, long tool results, and the files tools and code write.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1482
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1488
   def after_file_write(&); end
 
   # Registers a callback that receives each assistant response, each
@@ -6398,7 +6411,7 @@ class RubyLLM::Chat
   #
   #   chat.after_message { |message| puts message.content }
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1396
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1402
   def after_message(&); end
 
   # Registers a callback that receives the ToolCall and a Progress each
@@ -6415,25 +6428,25 @@ class RubyLLM::Chat
   # fibers the tool starts. With concurrent tool execution, callbacks for
   # different tool calls can run at the same time.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1475
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1481
   def after_tool_progress(&); end
 
   # Registers a callback that receives each local tool's result after
   # execution. Returns +self+.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1458
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1464
   def after_tool_result(&); end
 
   # The Agent class that configured the chat, which its instrumentation
   # events name.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1632
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1638
   def agent_class; end
 
   # The Agent class that configured the chat, which its instrumentation
   # events name.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1632
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1638
   def agent_class=(_arg0); end
 
   # Answers +question+, a Question from #pending_questions or its id, as
@@ -6452,13 +6465,13 @@ class RubyLLM::Chat
   # Raises ArgumentError for a question the chat never asked, and for an
   # answer the question can't take.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:589
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:590
   def answer(question, value = T.unsafe(nil), **values); end
 
   # Returns whether +tool_call+ requires approval and has no recorded
   # decision.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:627
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:628
   def approval_pending?(tool_call); end
 
   # Records approval for +tool_call+, the approval Question from
@@ -6482,7 +6495,7 @@ class RubyLLM::Chat
   # ArgumentError, and the approval never applies to another call.
   # Raises ArgumentError for a Question that is not an approval.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:518
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:519
   def approve(tool_call, remember: T.unsafe(nil)); end
 
   # Registers a callback that wraps the moment each queued message joins
@@ -6510,7 +6523,7 @@ class RubyLLM::Chat
   # chat has no such columns, so its +join+ raises ArgumentError when
   # given attributes. Registering the same block again does nothing.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1424
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1430
   def around_join(&block); end
 
   # Registers a callback that wraps each local tool's execution. It
@@ -6527,7 +6540,7 @@ class RubyLLM::Chat
   # the tool's, whatever the block returns. A block that never calls
   # +run+ skips the tool, and the model is told the call did not run.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1452
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1458
   def around_tool_call(&); end
 
   # Adds +message+ as a user message and runs the conversation loop,
@@ -6549,7 +6562,7 @@ class RubyLLM::Chat
   #   chat.ask("Tell me a story") { |chunk| print chunk.content }
   #   chat.ask github.prompt(:code_review, code: diff)
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:257
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:258
   def ask(*args, **kwargs, &block); end
 
   # Stages +message+ as a user message without requesting a completion,
@@ -6567,21 +6580,21 @@ class RubyLLM::Chat
   # tool calls: finish the round first, recording #approve or #decline
   # decisions for calls that require approval.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:278
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:279
   def ask_later(*args, **kwargs, &block); end
 
   # Registers a callback that receives the Fallback attempt after the
   # current model fails and before the next model is tried, or the same
   # model again without a parameter it rejected. Returns +self+.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1489
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1495
   def before_fallback(&); end
 
   # Registers a callback that runs before each assistant response or tool
   # result is appended to the conversation. Callbacks are additive: every
   # registered block runs. Returns +self+.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1386
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1392
   def before_message(&); end
 
   # Registers a callback that receives the fully rendered request payload
@@ -6590,7 +6603,7 @@ class RubyLLM::Chat
   #
   #   chat.before_request { |payload| logger.debug payload }
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1505
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1511
   def before_request(&); end
 
   # Registers a callback that receives each local ToolCall before the tool
@@ -6598,7 +6611,7 @@ class RubyLLM::Chat
   #
   #   chat.before_tool_call { |tool_call| puts tool_call.name }
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1435
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1441
   def before_tool_call(&); end
 
   # Deprecated: mark the message itself with Message#cache_until_here, or
@@ -6611,7 +6624,7 @@ class RubyLLM::Chat
   #
   # Raises ArgumentError if the chat has no messages.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1684
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1690
   def cache_until_here(ttl: T.unsafe(nil)); end
 
   # The prompt caching options set with #with_caching, +false+ when
@@ -6630,18 +6643,29 @@ class RubyLLM::Chat
   # text a cancelled stream showed stays as a reply that is
   # Message#cancelled?.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:674
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:675
   def cancel; end
 
   # Returns whether this in-memory chat has been marked for cancellation.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:680
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:681
   def cancelled?; end
 
   # Whether #with_citations asked the provider for citations.
   #
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:126
   def citations; end
+
+  # Closes the calls of the latest round that a raising tool left without
+  # a result, as unfinished, the way #cancel does, so the next request is
+  # valid and no finished call runs again. Unlike a cancel, the turn goes
+  # on: the next #complete asks the model, without forcing another tool
+  # call. A call that waits on a person or a task, or that another
+  # process runs, stays pending. A call that raised once its questions
+  # were answered is closed too, so the answers don't run it again.
+  #
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1773
+  def close_unfinished_tool_calls; end
 
   # The code execution options set with #with_code_execution, +false+
   # when explicitly disabled, or +nil+ when not configured.
@@ -6663,7 +6687,7 @@ class RubyLLM::Chat
   # when the provider has no manual compaction endpoint, and
   # PendingToolCallsError until pending tool calls have been answered.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1597
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1603
   def compact(*args, **kwargs, &block); end
 
   # The context compaction options set with #with_compaction, +false+ when
@@ -6696,7 +6720,7 @@ class RubyLLM::Chat
   # retry, or a pause for an approval, continues that turn: only
   # messages that steer join. See #queue.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:363
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:364
   def complete(*args, **kwargs, &block); end
 
   # Returns whether the chat has no pending response or tool execution:
@@ -6706,7 +6730,7 @@ class RubyLLM::Chat
   # <tt>steer: false</tt> don't count, so the chat is complete while
   # they wait for the next #complete.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:396
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:397
   def complete?; end
 
   # The tool concurrency mode, or +nil+ when tools run sequentially.
@@ -6730,7 +6754,7 @@ class RubyLLM::Chat
   # loop goes on with the turn that is running, so messages queued with
   # <tt>steer: false</tt> stay queued.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:372
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:373
   def continue_turn(steering_only: T.unsafe(nil), &); end
 
   # Converts attachments the current protocol cannot render with the
@@ -6746,7 +6770,7 @@ class RubyLLM::Chat
   #     Attachment.new(StringIO.new(text), filename: 'extracted.txt') if text
   #   end
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1521
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1527
   def convert_unsupported_attachments(&); end
 
   # Returns a Cost aggregating every provider attempt this chat has made,
@@ -6754,7 +6778,7 @@ class RubyLLM::Chat
   #
   #   chat.cost.total
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1553
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1559
   def cost; end
 
   # Counts input tokens for the conversation, including instructions,
@@ -6769,7 +6793,7 @@ class RubyLLM::Chat
   # are not included. Raises Error when the provider has no token counting
   # endpoint.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1568
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1574
   def count_tokens(*args, **kwargs, &block); end
 
   # Declines +question+, a Question from #pending_questions, its id, or
@@ -6791,7 +6815,7 @@ class RubyLLM::Chat
   #
   # Raises ArgumentError for a question the chat never asked.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:616
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:617
   def decline(question, note = T.unsafe(nil)); end
 
   # Returns the tools whose definitions stay out of the model's context
@@ -6801,7 +6825,7 @@ class RubyLLM::Chat
   #   chat.with_tools(Weather).with_mcp(GitHub, defer: true)
   #   chat.deferred_tools.keys # => [:search_issues, :create_issue, ...]
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:775
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:776
   def deferred_tools; end
 
   # Deprecated: iterate #messages instead. Yields each Message in the
@@ -6812,7 +6836,7 @@ class RubyLLM::Chat
   #
   #   chat.messages.each { |message| puts message.content }
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1533
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1539
   def each(&); end
 
   # The opaque per-user identifier set with #with_end_user, or
@@ -6835,7 +6859,7 @@ class RubyLLM::Chat
   #   chat.file_store.list
   #   chat.file_store.read("notes/plan.md")
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1287
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1293
   def file_store; end
 
   # Requests one completion from the model, appends the response to the
@@ -6844,7 +6868,7 @@ class RubyLLM::Chat
   # Chunk objects. Tool calls in the response are not executed; that is
   # #run_tools.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:295
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:296
   def generate(*args, **kwargs, &block); end
 
   # Extra HTTP headers set with #with_headers.
@@ -6864,7 +6888,7 @@ class RubyLLM::Chat
   # Raises PendingToolCallsError while the last response has unanswered
   # tool calls, as #ask_later does.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:455
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:456
   def join_queued_messages; end
 
   # The output cap set with #with_max_output_tokens, or +nil+.
@@ -6880,7 +6904,7 @@ class RubyLLM::Chat
 
   # Hooks installed by the Rails integration.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1628
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1634
   def message_queue=(_arg0); end
 
   # The Message objects exchanged so far, including system instructions.
@@ -6892,7 +6916,7 @@ class RubyLLM::Chat
   # into a Message. Accepts Message objects, attribute Hashes, and
   # records responding to +to_llm+.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1617
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1623
   def messages=(new_messages); end
 
   # The Model the chat sends requests to.
@@ -6934,7 +6958,7 @@ class RubyLLM::Chat
   # Consults each pending tool's approval resolver when one is declared,
   # so resolvers must be idempotent reads.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:563
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:564
   def pending_questions; end
 
   # Returns the Task objects that tool calls wait on, as they were when
@@ -6955,10 +6979,10 @@ class RubyLLM::Chat
   #   sleep chat.pending_tasks.first.poll_interval
   #   chat.complete
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:655
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:656
   def pending_tasks; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1666
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1672
   def prepare_message(message_or_attributes, &taken); end
 
   # The Provider instance handling requests for the current model.
@@ -7002,38 +7026,38 @@ class RubyLLM::Chat
   # running, call #complete. +sender+, whoever queued the message, is
   # stored with it and handed back without RubyLLM interpreting it.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:423
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:424
   def queue(message = T.unsafe(nil), with: T.unsafe(nil), steer: T.unsafe(nil), sender: T.unsafe(nil)); end
 
   # Returns the messages waiting in the queue, as QueuedMessage objects,
   # oldest first.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:429
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:430
   def queued_messages; end
 
   # Refuses to stage a user message onto an unfinished tool round, which
   # providers reject. Called by #ask_later here and in the Rails
   # integration before it persists anything.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1749
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1755
   def raise_if_pending_tool_calls!; end
 
   # Refuses attachments an MCP::Prompt has no place for. Called by
   # #ask_later here and in the Rails integration.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1740
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1746
   def raise_if_prompt_attachments!(message, with); end
 
   # Returns the request payload this chat would send to the provider for
   # its next completion, with #before_request hooks applied. Useful for
   # inspecting and testing request output.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1716
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1722
   def render(*args, **kwargs, &block); end
 
   # Hooks installed by the Rails integration.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1628
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1634
   def run=(_arg0); end
 
   # Runs the #around_join callbacks for +queued+, outermost first, around
@@ -7042,7 +7066,7 @@ class RubyLLM::Chat
   # callback withdrew it. Takes the message back out of the conversation
   # when a callback raises.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:479
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:480
   def run_around_join(queued, &add); end
 
   # Executes the tool calls pending in the latest response and appends
@@ -7056,7 +7080,7 @@ class RubyLLM::Chat
   # is then ready for the next #generate, or the next batch round.
   # Returns +self+.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:316
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:317
   def run_tools(*args, **kwargs, &block); end
 
   # Runs the block inside one +agent.ruby_llm+ event when an Agent
@@ -7064,10 +7088,10 @@ class RubyLLM::Chat
   # and threads started during a run inherit its marker, which is emptied
   # when the run ends, so their later turns open events of their own.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1638
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1644
   def running_agent(&); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:262
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:263
   def say(*args, **kwargs, &block); end
 
   # The normalized structured output schema set with #with_schema, or +nil+.
@@ -7089,14 +7113,14 @@ class RubyLLM::Chat
   # #queue) joins the conversation before the model is asked, whether it
   # steers or not.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:336
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:337
   def step(*args, **kwargs, &block); end
 
   # Adds every queued message to the conversation, or with
   # <tt>steering_only: true</tt> only those that steer, and runs
   # #after_message for each one that joined. Returns the joined messages.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:463
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:464
   def take_queued_messages(steering_only: T.unsafe(nil)); end
 
   # The sampling temperature set with #with_temperature, or +nil+ to let
@@ -7111,7 +7135,7 @@ class RubyLLM::Chat
   # the request itself, <tt>{ enabled: true }</tt> or
   # <tt>{ enabled: false }</tt>; the request then raises ArgumentError.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1007
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1013
   def thinking; end
 
   # Returns token usage aggregated across every provider attempt this chat
@@ -7119,12 +7143,12 @@ class RubyLLM::Chat
   #
   #   chat.tokens.input
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1544
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1550
   def tokens; end
 
   # Hooks installed by the Rails integration.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1628
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1634
   def tool_call_state=(_arg0); end
 
   # Returns the +choice+, +calls+, +concurrency+, and +rounds+ set with
@@ -7145,7 +7169,7 @@ class RubyLLM::Chat
   # <tt>:crm_customer_lookup</tt>. Raises ArgumentError when two tools
   # share a key.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:755
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:756
   def tools; end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:139
@@ -7154,7 +7178,7 @@ class RubyLLM::Chat
   # Replaces the usage ledger. Used by the Rails integration when
   # rebuilding a persisted chat.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1623
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1629
   def usage_entries=(entries); end
 
   # Returns whether the conversation can't continue until something
@@ -7165,7 +7189,7 @@ class RubyLLM::Chat
   #
   #   chat.step until chat.complete? || chat.waiting?
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:534
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:535
   def waiting?; end
 
   # Enables provider prompt caching. With no arguments the provider's
@@ -7183,7 +7207,7 @@ class RubyLLM::Chat
   #   chat.with_caching(cache)
   #   chat.with_caching(false)
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1049
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1055
   def with_caching(options = T.unsafe(nil)); end
 
   # Enables document citations, so the model backs its claims with quotes
@@ -7194,7 +7218,7 @@ class RubyLLM::Chat
   #   response = chat.ask "Who created Ruby?", with: "facts.txt"
   #   response.citations.each { |citation| puts citation.cited_text }
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1027
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1033
   def with_citations(enabled = T.unsafe(nil)); end
 
   # Lets the model run code in a Sandbox. The model gets one tool,
@@ -7246,7 +7270,7 @@ class RubyLLM::Chat
   # runs outside a sandbox. To run code on the provider's servers
   # instead, use <tt>with_provider_tools(:code_execution)</tt>.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1175
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1181
   def with_code_execution(enabled = T.unsafe(nil), **options); end
 
   # Enables provider-side context compaction, so a long conversation keeps
@@ -7274,14 +7298,14 @@ class RubyLLM::Chat
   # replaces it; OpenRouter drops messages from the middle of the
   # conversation instead, and has no threshold of its own.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1084
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1090
   def with_compaction(options = T.unsafe(nil)); end
 
   # Rebinds the chat to +context+, a Context built with RubyLLM.context,
   # so subsequent requests use its configuration. Pass +nil+ to return to
   # the global RubyLLM.config. Returns +self+.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1325
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1331
   def with_context(context); end
 
   # Keeps tool results within shares of the model's context window, from
@@ -7311,7 +7335,7 @@ class RubyLLM::Chat
   # known window the budget does nothing, and the chat logs a warning
   # once.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1120
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1126
   def with_context_budget(budget = T.unsafe(nil), **shares); end
 
   # Identifies the end user behind the conversation for the provider's
@@ -7324,7 +7348,7 @@ class RubyLLM::Chat
   # The value is sent as given, so use an opaque id such as a hash of
   # your user id, never personal data.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1300
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1306
   def with_end_user(end_user); end
 
   # Sets fallback models to try, in order, when generation fails. +on:+
@@ -7360,7 +7384,7 @@ class RubyLLM::Chat
   #
   #   chat.with_temperature(0.2).with_fallbacks(drop_unsupported: true)
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:937
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:943
   def with_fallbacks(*models, on: T.unsafe(nil), drop_unsupported: T.unsafe(nil)); end
 
   # Attaches +store+ to the chat and gives the model tools to work
@@ -7411,7 +7435,7 @@ class RubyLLM::Chat
   # converter for PDFs and images, in Configuration#file_converters to
   # read more.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1270
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1276
   def with_file_store(store = T.unsafe(nil), inline_limit: T.unsafe(nil), tools: T.unsafe(nil)); end
 
   # Sets extra HTTP headers sent with completion requests, replacing any
@@ -7421,7 +7445,7 @@ class RubyLLM::Chat
   #
   #   chat.with_headers('anthropic-beta' => 'fine-grained-tool-streaming-2025-05-14')
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1353
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1359
   def with_headers(headers); end
 
   # Sets the system instructions for the conversation, replacing any
@@ -7437,7 +7461,7 @@ class RubyLLM::Chat
   #   chat.with_instructions policy, cache_until_here: { ttl: "1h" }
   #   chat.with_instructions nil
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:697
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:698
   def with_instructions(instructions, append: T.unsafe(nil), cache_until_here: T.unsafe(nil)); end
 
   # Caps the number of tokens the model may generate.
@@ -7446,7 +7470,7 @@ class RubyLLM::Chat
   #
   #   chat.with_max_output_tokens(1000)
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:961
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:967
   def with_max_output_tokens(max_output_tokens); end
 
   # Connects MCP servers, each an MCP instance or class, and gives the
@@ -7467,7 +7491,7 @@ class RubyLLM::Chat
   #
   #   chat.with_mcp(GitHub, defer: true)
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:797
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:798
   def with_mcp(*servers, defer: T.unsafe(nil)); end
 
   # Switches the chat to +model_id+ and its provider. Pass +provider:+ to
@@ -7487,7 +7511,7 @@ class RubyLLM::Chat
   #   chat.with_model('claude-sonnet-5')
   #   chat.with_model('gpt-6.1-sol', protocol: :chat_completions)
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:896
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:902
   def with_model(model_id, provider: T.unsafe(nil), protocol: T.unsafe(nil), assume_model_exists: T.unsafe(nil)); end
 
   # Attributes the usage of every attempt the chat makes to +owner+, such
@@ -7503,7 +7527,7 @@ class RubyLLM::Chat
   # RubyLLM never sends the owner to the provider; see #with_end_user
   # for the identifier providers receive.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1317
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1323
   def with_owner(owner); end
 
   # Sets options in the provider's request vocabulary, merged into the
@@ -7512,7 +7536,7 @@ class RubyLLM::Chat
   #
   #   chat.with_provider_options(service_tier: "flex")
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1341
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1347
   def with_provider_options(provider_options); end
 
   # Enables tools that run on the provider's servers, such as web search
@@ -7541,7 +7565,7 @@ class RubyLLM::Chat
   # Raises UnsupportedServerToolError at request time when the provider
   # has no provider-tool support or does not define a requested alias.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:836
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:837
   def with_provider_tools(*tools, **tools_with_options); end
 
   # Sets the schema for structured output. Accepts a JSON Schema Hash, a
@@ -7560,7 +7584,7 @@ class RubyLLM::Chat
   # Pass +nil+ to remove the schema, returning the chat to plain text
   # responses.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1373
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1379
   def with_schema(schema); end
 
   # Gives the model skills: folders of instructions, scripts, and files
@@ -7585,7 +7609,7 @@ class RubyLLM::Chat
   # a +SKILL.md+ that breaks the specification, and ArgumentError when
   # two skills share a name.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1217
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1223
   def with_skills(*skills); end
 
   # Sets the sampling temperature for subsequent requests. Pass +nil+ to
@@ -7593,7 +7617,7 @@ class RubyLLM::Chat
   #
   #   chat.with_temperature(0.2)
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:950
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:956
   def with_temperature(temperature); end
 
   # Configures extended thinking for models that support it. With no
@@ -7612,13 +7636,18 @@ class RubyLLM::Chat
   #   chat.with_thinking(budget: 10_000)
   #   chat.with_thinking(display: :summarized)
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:982
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:988
   def with_thinking(enabled = T.unsafe(nil), **options); end
 
   # Configures how the model uses the registered tools. +choice:+
   # constrains tool use to +:auto+, +:none+, +:required+, a tool name, or
   # a Tool class. +calls:+ limits how many tool calls one response may
-  # contain (+:many+ or +:one+). +concurrency:+ runs tool calls
+  # contain: +:one+ (or +1+) and +:many+ ask the provider, and a larger
+  # Integer runs at most that many of a response's calls to the chat's
+  # tools, in the response's order. Each call past it gets an error
+  # result straight away, without running or asking for approval, and
+  # emits one +tool_calls_capped.ruby_llm+ event per response. It is off
+  # by default. +concurrency:+ runs tool calls
   # concurrently: +true+ or +:threads+ for threads, +:fibers+ for fibers.
   # +rounds:+ limits how many model responses that ask for tools one
   # #complete may run, however many calls each holds. It is off by
@@ -7631,10 +7660,10 @@ class RubyLLM::Chat
   #
   #   chat.with_tools(Weather, Search).with_tool_options(choice: :required)
   #   chat.with_tool_options(calls: :one, concurrency: :threads)
-  #   chat.with_tool_options(rounds: 25)
+  #   chat.with_tool_options(rounds: 25, calls: 50)
   #   chat.with_tool_options(choice: nil)
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:866
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:872
   def with_tool_options(**options); end
 
   # Registers +tools+, each a Tool class or instance, for the model to
@@ -7659,7 +7688,7 @@ class RubyLLM::Chat
   #
   #   chat.with_tools(nil).with_tools(NewTool)
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:727
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:728
   def with_tools(*tools, defer: T.unsafe(nil)); end
 
   # Takes +queued+, a QueuedMessage or its id, out of the queue before the
@@ -7669,27 +7698,30 @@ class RubyLLM::Chat
   #
   #   chat.withdraw(queued) # => true
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:440
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:441
   def withdraw(queued); end
 
   private
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1868
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1895
   def add_callback(name, &block); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2747
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2814
   def add_tool_result_message(tool_call, result); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1898
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1925
   def advance(steering_only:, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1764
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1791
   def agent_fields; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1762
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1789
   def agent_run_chat; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2525
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2554
+  def answer_capped_tool_calls(response); end
+
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2595
   def answer_claimed_tool_calls(claimed, server_calls, decisions, executable, denied); end
 
   # A call that had started in a process that stopped before saving its
@@ -7698,165 +7730,177 @@ class RubyLLM::Chat
   # paused for an answer or a task carries on as usual. Returns the calls
   # left to run.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2547
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2617
   def answer_interrupted_tool_calls(tool_calls); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1952
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1979
   def answered?; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2982
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3101
+  def apply_tool_calls(value); end
+
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3049
   def apply_tool_choice(choice); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3017
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3084
   def apply_tool_concurrency(value); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2632
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2702
   def approval_decision(tool, tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2944
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3011
   def asked_question?(id); end
 
   # A run's names shift as files arrive, so descriptions are not memoized.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2346
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2373
   def attachment_describer; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3122
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3197
   def awaiting_approval_names; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3101
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3176
   def blank_response?(message); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1773
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1800
   def build_file_tools; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1888
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1915
   def build_message_queue(queued = T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1854
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1881
   def build_schema_payload(schema, schema_def, strict); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1769
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1796
   def build_skill_loader; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2918
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2985
   def cancel_task(task); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2892
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2959
   def cancel_tasks; end
 
   # The transport retries through the checkpoint, so a cancelled request
   # stops at its failure. A chat cancelled while a request failed was going
   # to stop anyway, so the cancellation is what the caller hears about.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1881
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1908
   def cancellable_request(&); end
+
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2575
+  def capped_tool_call?(tool_call); end
+
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2582
+  def capped_tool_call_error; end
+
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2569
+  def capped_tool_call_ids(response); end
 
   # A forced call with no tools to call would reach the provider without
   # the constraint, since protocols drop a choice when there are no tools.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3003
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3070
   def check_requested_tool_choice; end
 
   # A chat with MCP servers checks its choice once it lists their tools,
   # so building it never contacts them.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2994
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3061
   def check_tool_choice(choice, given = T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2558
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2628
   def claim_tool_calls(executable, answered); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2905
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2972
   def close_unstarted_tool_calls; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1818
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1845
   def coerce_message(message_or_attributes); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2304
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2331
   def context_budget_for_model; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2974
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3041
   def decline_note(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2606
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2676
   def deny_tool_calls(tool_calls); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2457
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2484
   def discard_missing_uploads(error); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2198
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2225
   def drop_provider_option(parameter); end
 
   # Clears the setting +error+ names for one retry, and returns how to put
   # it back, or +nil+ when the chat did not opt in or never set it.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2183
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2210
   def drop_unsupported_parameter(error); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2674
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2741
   def escalation_approved?(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2513
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2540
   def execute_pending_tool_calls(response); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2769
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2836
   def execute_tool(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2717
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2784
   def execute_tool_with_callbacks(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2709
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2776
   def execute_tools_concurrently(tool_calls, &on_result); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2597
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2667
   def execution_decision(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1842
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1869
   def extract_schema_definition(schema); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1847
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1874
   def extract_schema_strict(schema, schema_def); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2285
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2312
   def fallback_error?(error); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2253
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2280
   def fallback_to_next_model!(fallback_queue, error:, attempt:, streaming:, chunks_yielded:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2662
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2729
   def find_tool_call(id); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2278
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2305
   def finish_fallback(fallback, response: T.unsafe(nil), fallback_error: T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3068
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3143
   def forced_tool_choice?; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1805
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1832
   def format_option_keys(keys); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1983
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2010
   def generate_attempt(stream_tracker:, usage_start:, &block); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1969
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1996
   def generate_once(stream_tracker: T.unsafe(nil), usage_start: T.unsafe(nil), &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2094
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2121
   def generate_with_fallbacks(&block); end
 
   # A tool that halted ends the turn once its round has every result.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1965
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1992
   def halted_result; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2700
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2767
   def handle_concurrent_tool_calls(tool_calls); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2687
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2754
   def handle_sequential_tool_calls(tool_calls); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3076
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3151
   def hidden_from_model?(tool); end
 
   # :method: dup
@@ -7876,108 +7920,111 @@ class RubyLLM::Chat
   # original. The copy starts with the same queued messages in a queue
   # of its own.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:221
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:222
   def initialize_copy(source); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2876
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2943
   def input_pending?(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3112
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3187
   def inspect_attributes; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2053
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2587
+  def instrument_capped_tool_calls(response); end
+
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2080
   def instrumentation_payload(streaming:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3011
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3078
   def invalid_tool_choice(message); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2815
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2882
   def invoke_tool(tool, tool_call, arguments); end
 
   # Keeps the text a cancelled stream showed, as a reply marked
   # cancelled. Tool calls it had not finished and its thinking, whose
   # signature would not verify, are left out.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2013
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2040
   def keep_cancelled_reply(text, usage_start); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1948
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1975
   def last_conversation_message; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3072
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3147
   def last_non_system_message; end
 
   # A blank response answers nothing, so it never hides the round before
   # it, as the placeholder of a process that died after a tool finished.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3087
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3162
   def latest_response(list); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2471
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2498
   def link_completion_usage(response, usage_start, resumed = T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2572
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2642
   def max_run_time_for(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1809
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1836
   def message_list(new_messages); end
 
   # Retries the same model without each parameter it rejects, when the
   # chat opted in, then moves on to the next model with every parameter
   # back. Each parameter is dropped at most once per model.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2167
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2194
   def next_attempt!(fallback_queue, drops, error:, **details); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3034
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3108
   def normalize_calls(calls); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1794
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1821
   def normalize_compaction(options); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3045
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3120
   def normalize_rounds(rounds); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1832
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1859
   def normalize_schema_payload(raw_schema); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3051
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3126
   def normalize_tool_choice(choice); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3022
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3089
   def normalize_tool_concurrency(concurrency); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2040
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2067
   def note_fallback(message); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2978
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3045
   def note_text(note); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2853
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2920
   def noted_result(result, notes); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2593
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2663
   def partition_pending_tool_calls(pending); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2866
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2933
   def pause_tool_call(tool_call, state); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2871
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2938
   def paused?(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2938
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3005
   def pending_question(question); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3107
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3182
   def pending_tool_calls(response); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3080
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3155
   def pending_tool_response; end
 
   # What a process leaves behind before the provider answers, unlike a
   # blank answer, which carries its finish reason or usage.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3095
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3170
   def placeholder?(message); end
 
   # Preprocessing builds a per-request view of the conversation: the
@@ -7985,86 +8032,86 @@ class RubyLLM::Chat
   # the original attachments while each provider's upload is memoized on
   # them. An attachment's store keeps its uploads for later processes.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2293
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2320
   def preprocessed_messages(list = T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2809
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2876
   def progress_listener(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2434
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2461
   def provider_compaction; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2389
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2416
   def provider_completion(usage_recorder:, progress_recorder: T.unsafe(nil), stream_tracker: T.unsafe(nil), &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1873
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1900
   def raise_if_cancelled!; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1930
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1957
   def raise_if_tool_rounds_spent!(rounds); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2948
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3015
   def record_answer(question, response); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2081
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2108
   def record_completion_event(event, result); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2023
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2050
   def record_generated_message(result, usage_start, announce: T.unsafe(nil), resumed: T.unsafe(nil), keep_unfinished: T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2476
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2503
   def record_out_of_band_usage(response); end
 
   # An unfinished response stands in the transcript while it continues,
   # so a later #complete resumes it when the run stops early.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2034
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2061
   def record_progress(partial); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2626
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2696
   def record_tool_call_decision(tool_call, decision); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2928
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2995
   def record_tool_call_input(tool_call, input); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2465
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2492
   def record_usage_entry(entry); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2614
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2684
   def refusal(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2619
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2689
   def refusal_error(tool_call, note); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2969
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3036
   def refuse(tool_call, note); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2567
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2637
   def release_tool_calls(ids, stopped_by, finished:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2642
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2712
   def remembered_tool?(call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2646
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2716
   def remembered_tool_identity(tool_call); end
 
   # A provider-executed call is closed with the refusal its provider
   # expects. Another provider takes it as an ordinary tool call.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2383
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2410
   def remote_refusal(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2044
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2071
   def replace_unfinished(message); end
 
   # A provider can delete a file RubyLLM uploaded for an attachment. A
   # request that fails over such a file before streaming anything uploads
   # the file again and runs once more; one that streamed is not repeated.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2449
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2476
   def replacing_missing_uploads(request_messages, streamed = T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1783
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1810
   def request_caching; end
 
   # A process that dies mid-round leaves a blank assistant placeholder,
@@ -8073,7 +8120,7 @@ class RubyLLM::Chat
   # conversation moved past as unfinished. The latest round stays as it
   # is: the loop runs its calls or waits on them.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2357
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2384
   def request_history(list); end
 
   # The one place a tool's Tool.rescue_from handlers run, so they cover
@@ -8082,139 +8129,142 @@ class RubyLLM::Chat
   # stops, not a failure, so it never reaches a handler; a handler may
   # end the turn with Tool#halt.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2835
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2902
   def rescuing_tool(tool); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1779
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1806
   def resolved_thinking; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2580
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2650
   def respond_to_tool_approvals(tool_calls, decisions); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2207
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2234
   def restore_parameters(drops); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2145
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2172
   def resume_stand_in(fallback_queue); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2211
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2238
   def retry_without_parameter!(error:, attempt:, streaming:, chunks_yielded:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2670
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2737
   def reused_tool_call_id?(id); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2728
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2795
   def run_around_tool_call(tool_call, &execute); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2493
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2520
   def run_callbacks(name, *args); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2576
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2646
   def running_elsewhere?(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1863
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1890
   def sanitize_schema_name(name); end
 
   # Records +response+ to +question+ and returns whether it did. An
   # approval is approved or denied only while no decision came first, so
   # of two people deciding at once, the first one's decision stands.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2955
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3022
   def settle_question(question, response); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1944
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1971
   def settled?(steering_only); end
 
   # The tool has run, so a result that cannot be sent goes back as an
   # error: raising would leave the call pending and run it again.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2763
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2830
   def split_tool_result(result); end
 
   # A round can stall once while another process lets its claim go, and
   # goes on the next time, perhaps to pause. A second stall in a row that
   # leaves nothing to wait on would repeat forever.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1917
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1944
   def stalled_round?(stalled, generated:, move:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1938
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1965
   def stop_tool_round; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2235
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2262
   def switch_to_fallback_model(fallback); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2274
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2301
   def switch_to_usable_fallback(fallback_queue); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2884
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2951
   def task_for(tool_call, state); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2657
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2724
   def tool_call_answered?(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2681
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2748
   def tool_call_approval(tool, tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2924
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2991
   def tool_call_input(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3059
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:3134
   def tool_name_for_choice_class(tool_class); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1926
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:1953
   def turn_result; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2880
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2947
   def unanswered?(state); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2932
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2565
+  def unanswered_capped_tool_calls(response); end
+
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2999
   def unanswered_questions(tool_call); end
 
   # Names a few close tools rather than every tool, which can run to
   # thousands of characters in a chat with many.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2801
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2868
   def unavailable_tool_error(name); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2049
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2076
   def unfinished?(message); end
 
   # A call +interrupted+ after it started may have done its work, so the
   # model hears it may have partly run, as for an MCP call that broke off.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2374
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2401
   def unfinished_result(tool_call, interrupted: T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2367
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2394
   def unfinished_results(response, answered); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2333
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2360
   def unsupported_attachment_handler; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2310
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2337
   def warn_about_unknown_window; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2845
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2912
   def with_decline_notes(result, input); end
 
   # While a fallback is left, the transport hands a timeout, a failed
   # connection, or a long retry wait to it instead of retrying the same
   # model. Without one, the model is retried as configured.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2158
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2185
   def with_fallback_ready(fallback_queue, &); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2323
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2350
   def with_mcp_outages(list); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2221
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2248
   def with_model_restored; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2246
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2273
   def with_resolved_model(model); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2316
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2343
   def with_skill_listing(list); end
 
   # One #complete is a run. While it lasts, @stand_ins holds the
@@ -8223,10 +8273,10 @@ class RubyLLM::Chat
   # replies are marked as stood in, rather than waiting on the model that
   # just failed again; the next run starts on the chat's own model.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2137
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2164
   def within_run; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2497
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2524
   def wrap_streaming_block(tool_call_ids:, stream_tracker: T.unsafe(nil), &block); end
 end
 
@@ -8341,7 +8391,7 @@ RubyLLM::Chat::ContextBudget::STEP = T.let(T.unsafe(nil), Float)
 # pkg:gem/ruby_llm#lib/ruby_llm/chat/context_budget.rb:17
 RubyLLM::Chat::ContextBudget::TOO_LONG = T.let(T.unsafe(nil), String)
 
-# pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2178
+# pkg:gem/ruby_llm#lib/ruby_llm/chat.rb:2205
 RubyLLM::Chat::DROPPED_VALUES = T.let(T.unsafe(nil), Hash)
 
 # What Chat#with_file_store changes in a conversation. Every attachment is
@@ -8406,7 +8456,7 @@ class RubyLLM::Chat::FileReferences
 
   private
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:195
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:192
   def as_text(file, config); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:143
@@ -8415,45 +8465,45 @@ class RubyLLM::Chat::FileReferences
   # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:158
   def extract(file); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:233
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:230
   def read_path(call); end
 
   # Returns the path each read_file call asked for, by call id.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:227
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:224
   def read_paths(list); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:242
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:239
   def readable(content); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:150
   def record_read(attachment, file); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:216
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:213
   def reference(path, file); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:254
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:251
   def safe_id(id); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:250
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:247
   def safe_name(name); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:191
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:188
   def start_of(attachment, file); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:205
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:202
   def text_attachment(file, text); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:187
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:184
   def too_long?(attachment); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:167
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:164
   def view_message(message, current:, reads:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:174
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:171
   def view_of(attachment, shown:, read:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:238
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/file_references.rb:235
   def write(path, content); end
 
   class << self
@@ -8702,7 +8752,7 @@ class RubyLLM::Chat::ToolCallState
   # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:10
   def initialize; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:91
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:102
   def claim(requested, **); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:57
@@ -8717,7 +8767,7 @@ class RubyLLM::Chat::ToolCallState
   # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:71
   def denied?(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:83
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:94
   def escalation_spent?(tool_call); end
 
   # Runs the block while no other thread settles or decides through
@@ -8733,7 +8783,7 @@ class RubyLLM::Chat::ToolCallState
   # process that stopped before saving its result, so it is answered
   # as interrupted instead of running again.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:106
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:117
   def interrupted?(_tool_call); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:53
@@ -8749,16 +8799,16 @@ class RubyLLM::Chat::ToolCallState
   # normally or by +stopped_by+, the signal or exit that stopped it.
   # A round that +finished+ left only calls that paused unanswered.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:98
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:109
   def release(_ids, _stopped_by = T.unsafe(nil), finished: T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:75
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:86
   def remember(identity); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:79
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:90
   def remembered?(call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:110
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:121
   def running_elsewhere?(_tool_call); end
 
   # Replaces the input +tool_call+ is paused on with what the block
@@ -8769,18 +8819,27 @@ class RubyLLM::Chat::ToolCallState
   # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:40
   def settle(tool_call); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:87
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:98
   def spend_escalation(tool_call); end
 
   # Notes that +tool_call+, claimed with its round, starts running now.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:101
+  # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:112
   def started(_tool_call); end
 
   private
 
   # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:19
   def initialize_copy(source); end
+
+  class << self
+    # Returns the identity a remembered approval of +call+ applies to:
+    # later calls to the same tool. A run_code call outside a namespace
+    # is approved one call at a time.
+    #
+    # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_call_state.rb:78
+    def remembered_identity(call); end
+  end
 end
 
 # pkg:gem/ruby_llm#lib/ruby_llm/chat/tool_concurrency.rb:5
@@ -10154,7 +10213,7 @@ class RubyLLM::CodeExecution::Workspace::Unavailable < ::StandardError; end
 # overrides.
 #
 # Provider credentials such as +openai_api_key+ are declared by each
-# provider. See https://rubyllm.com/next/configuration-providers/ for
+# provider. See https://rubyllm.com/configuration-providers/ for
 # provider credentials and endpoint settings.
 #
 # Assigning an empty or whitespace-only string to any option stores
@@ -12877,17 +12936,18 @@ class RubyLLM::FileStore
   # Returns the file at +path+ as an Attachment, to send it to a model.
   # Raises FileNotFoundError when there is none.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:266
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:279
   def attachment(path, file: T.unsafe(nil)); end
 
   # Keeps +text+ as the conversion of +file+, in memory.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:277
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:296
   def cache_text(file, text); end
 
   # Returns the converted text kept for +file+, or +nil+, from memory.
+  # A file that can no longer be read has none.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:272
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:286
   def cached_text(file); end
 
   # Deletes the file at +path+ and returns its StoredFile, or +nil+ when
@@ -12967,7 +13027,7 @@ class RubyLLM::FileStore
   # attachment gets a numbered name beside it, such as
   # <tt>report-2.pdf</tt>.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:289
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:309
   def store_attachment(attachment); end
 
   # Returns the text of the file at +path+: its content when it is text,
@@ -12982,6 +13042,13 @@ class RubyLLM::FileStore
   #
   # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:254
   def text(path, config: T.unsafe(nil)); end
+
+  # Returns the converted text of +file+ and the digest of the bytes it
+  # came from. With <tt>local: true</tt>, only converters that run on
+  # this machine for free are tried.
+  #
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:261
+  def text_with_digest(file, config:, local: T.unsafe(nil)); end
 
   # Runs the block with the store locked and returns its value, so a tool
   # that reads a file and writes it back sees no other change in
@@ -13002,25 +13069,34 @@ class RubyLLM::FileStore
 
   private
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:321
+  # A stored type is kept, unless it is the generic
+  # application/octet-stream, which leaves detection to the bytes.
+  #
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:356
+  def attachment_of(file, content); end
+
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:362
+  def cached_path?(file); end
+
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:341
   def candidates(name); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:305
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:325
   def folder?(_path); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:313
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:333
   def refuse_file(path); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:309
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:329
   def refuse_folder(path); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:330
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:350
   def same_content?(file, content, digest); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:334
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:368
   def text_key(file); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:317
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store.rb:337
   def write_attachment(path, attachment, content); end
 
   class << self
@@ -14163,22 +14239,25 @@ class RubyLLM::FileStore::Tools::Read < ::RubyLLM::FileStore::Tools::Base
 
   private
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/file_store/tools/read.rb:83
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store/tools/read.rb:89
   def characters(file, text, offset, limit); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/file_store/tools/read.rb:92
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store/tools/read.rb:63
+  def contents(file); end
+
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store/tools/read.rb:98
   def header(file, range); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/file_store/tools/read.rb:63
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store/tools/read.rb:69
   def lines(file, text, offset, limit); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/file_store/tools/read.rb:97
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store/tools/read.rb:103
   def more_lines(total, last); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/file_store/tools/read.rb:101
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store/tools/read.rb:107
   def shorten(line); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/file_store/tools/read.rb:107
+  # pkg:gem/ruby_llm#lib/ruby_llm/file_store/tools/read.rb:113
   def unreadable(file); end
 
   class << self
@@ -18768,30 +18847,30 @@ class RubyLLM::Models
 
   # :startdoc:
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:530
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:553
   def initialize(models = T.unsafe(nil)); end
 
   # Returns an array of the Model entries the configured provider still
   # lists. Models it has stopped listing are left out; #find still resolves
   # them, and #unlisted reports them.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:567
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:590
   def all; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:585
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:608
   def all_including_unlisted; end
 
   # Returns a new Models registry containing only models with audio
   # output.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:634
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:657
   def audio_models; end
 
   # Returns a new Models registry containing only models in +family+.
   #
   #   RubyLLM.models.by_family('claude-sonnet')
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:648
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:671
   def by_family(family); end
 
   # Returns a new Models registry containing only models from +provider+.
@@ -18799,24 +18878,24 @@ class RubyLLM::Models
   #
   #   RubyLLM.models.by_provider(:openai).select { |model| model.supports?(:vision) }
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:657
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:680
   def by_provider(provider); end
 
   # Returns a new Models registry containing only chat models.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:623
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:646
   def chat_models; end
 
   # Yields each Model in the registry.
   #
   #   RubyLLM.models.each { |model| puts model.id }
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:593
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:616
   def each(&); end
 
   # Returns a new Models registry containing only embedding models.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:628
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:651
   def embedding_models; end
 
   # Returns the Model matching +model_id+, resolving aliases along the
@@ -18827,26 +18906,26 @@ class RubyLLM::Models
   #   RubyLLM.models.find 'gpt-6.1-sol'
   #   RubyLLM.models.find 'claude-sonnet-5', provider: :bedrock
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:605
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:628
   def find(model_id, provider: T.unsafe(nil), config: T.unsafe(nil)); end
 
   # Returns the Model that resolution uses for +model_id+. Without
   # +provider+, it prefers providers configured in +config+, falling back
   # to #find's choice when none of them carries the model.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:616
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:639
   def find_configured(model_id, provider: T.unsafe(nil), config: T.unsafe(nil)); end
 
   # Returns a new Models registry containing only models with image
   # output.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:640
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:663
   def image_models; end
 
   # Returns an array of the Model entries the configured provider still
   # lists. Reads the same as #all, which already excludes the rest.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:583
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:606
   def listed; end
 
   # Replaces the models in this registry with those read from the JSON
@@ -18854,13 +18933,13 @@ class RubyLLM::Models
   # <tt>RubyLLM.config.model_registry_file</tt>. A missing or invalid
   # file falls back to the registry bundled with the gem.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:538
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:561
   def load_from_json(file = T.unsafe(nil)); end
 
   # Replaces the models in this registry with entries from the configured
   # model-registry store.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:545
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:568
   def load_from_store; end
 
   # Replaces the registry with the latest published RubyLLM catalog,
@@ -18875,13 +18954,13 @@ class RubyLLM::Models
   #   RubyLLM.models.refresh
   #   RubyLLM.models.refresh(remote_only: true).chat_models
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:673
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:696
   def refresh(remote_only: T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:686
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:709
   def refresh_from_providers(remote_only: T.unsafe(nil)); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:691
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:714
   def resolve(model_id, provider: T.unsafe(nil), assume_model_exists: T.unsafe(nil), config: T.unsafe(nil)); end
 
   # Exports this registry to +file+ as pretty-printed JSON. The default is
@@ -18890,7 +18969,7 @@ class RubyLLM::Models
   #
   #   RubyLLM.models.save_to_json('/tmp/models.json')
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:559
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:582
   def save_to_json(file = T.unsafe(nil)); end
 
   # Returns an array of the Model entries the configured provider has
@@ -18899,62 +18978,62 @@ class RubyLLM::Models
   #
   #   RubyLLM.models.unlisted.map(&:id)
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:577
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:600
   def unlisted; end
 
   private
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:722
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:745
   def fetch_published_models; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:708
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:731
   def file_store; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:736
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:759
   def merge_discovered_models(published, payload, remote_only:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:754
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:777
   def persist_registry!(models, published:); end
 
   # A provider that answered replaces its own models and the published
   # catalog replaces what it covers. Everything else survives the refresh,
   # including the local providers a remote_only run never asks.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:747
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:770
   def preserved_providers(provider_fetch, published); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:729
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:752
   def published_catalog; end
 
   # The ETag identifies the published catalog, not the merged registry, so
   # it may only be sent while the catalog it stands for is still on disk.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:717
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:740
   def published_store; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:697
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:720
   def replace_models(models); end
 
   # Filters keep the unlisted entries so #find and #unlisted still see them
   # after a chain such as by_provider(:openai).unlisted.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:704
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:727
   def select_models(&); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:792
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:815
   def store_description(store); end
 
   # A store keeps entries the merge dropped, such as the unlisted rows a
   # Rails application still references, so its answer wins over the merge.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:777
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:800
   def stored_models; end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:788
+  # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:811
   def write_published_catalog(published); end
 
   class << self
-    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:331
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:354
     def add_provider_metadata(models_dev_model, provider_model); end
 
     # Returns an array of the Model entries the configured provider still
@@ -18979,13 +19058,13 @@ class RubyLLM::Models
     # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:55
     def audio_models(*args, **kwargs, &block); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:363
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:386
     def augment_capabilities(provider_slug, capabilities, model_id, modalities); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:356
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:379
     def augment_model_capabilities(model); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:391
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:414
     def blank_value?(value); end
 
     # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:64
@@ -19128,7 +19207,7 @@ class RubyLLM::Models
     # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:55
     def find_index(*args, **kwargs, &block); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:310
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:333
     def find_models_dev_model(key, models_dev_by_key, provider_model = T.unsafe(nil)); end
 
     # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:55
@@ -19164,10 +19243,10 @@ class RubyLLM::Models
     # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:55
     def index_by(*args, **kwargs, &block); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:317
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:340
     def index_by_key(models); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:323
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:346
     def index_provider_aliases(models); end
 
     # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:55
@@ -19236,10 +19315,10 @@ class RubyLLM::Models
     # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:55
     def member?(*args, **kwargs, &block); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:350
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:373
     def merge_capabilities(models_dev_model, provider_model, modalities); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:287
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:310
     def merge_models(provider_models, models_dev_models); end
 
     # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:276
@@ -19260,19 +19339,26 @@ class RubyLLM::Models
     # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:55
     def minmax_by(*args, **kwargs, &block); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:435
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:458
     def models_dev_capabilities(model_data, modalities, provider_slug); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:488
+    # models.dev sometimes drops a model its provider still serves. Until it
+    # lists the model again, keep the pricing, modalities and limits it last
+    # gave, and say so, so the gap gets reported upstream.
+    #
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:294
+    def models_dev_gaps(existing_models, listed_models, models_dev_models); end
+
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:511
     def models_dev_metadata(model_data, provider_key); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:404
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:427
     def models_dev_model_attributes(model_data, provider_slug, provider_key); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:430
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:453
     def models_dev_model_id(id, provider_slug); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:445
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:468
     def models_dev_pricing(cost); end
 
     # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:243
@@ -19284,13 +19370,13 @@ class RubyLLM::Models
     # models.dev leaves a field out where it has no opinion, so only the
     # capabilities it reports on can overrule what a provider claims.
     #
-    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:372
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:395
     def models_dev_reported_capabilities(models_dev_model); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:474
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:497
     def models_dev_text_tokens_pricing(text_standard, cost); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:468
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:491
     def models_dev_unit_pricing(cost); end
 
     # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:102
@@ -19308,13 +19394,13 @@ class RubyLLM::Models
     # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:55
     def none?(*args, **kwargs, &block); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:382
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:405
     def normalize_embedding_modalities(data); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:518
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:541
     def normalize_models_dev_knowledge(value); end
 
-    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:509
+    # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:532
     def normalize_models_dev_modalities(modalities); end
 
     # pkg:gem/ruby_llm#lib/ruby_llm/models.rb:55
@@ -27731,7 +27817,7 @@ module RubyLLM::Protocols::Gemini::Batches
 
   private
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:120
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:189
   def batch_name(id); end
 
   # batchGenerateContent ignores responseJsonSchema and returns JSON of
@@ -27741,25 +27827,37 @@ module RubyLLM::Protocols::Gemini::Batches
   # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:80
   def batch_schema_payload(payload); end
 
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:181
+  def enum_key(schema); end
+
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:173
+  def enum_types(schema, types); end
+
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:185
+  def enum_value_of(type); end
+
   # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:68
   def gemini_batch_request(request, model); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:60
   def inline_batch_responses(body); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:112
-  def nullable_type(schema); end
+  # Gemini's Schema.enum is a list of strings; it constrains an integer
+  # or number schema to those values written as strings.
+  #
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:165
+  def numeric_enum(schema); end
 
   # A batch starts as an Operation wrapping the batch in `metadata`; polling
   # returns the batch directly. Read either shape.
   #
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:126
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:195
   def parse_batch_response(data); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:140
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:209
   def parse_batch_status(raw_status, completed:); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:148
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:217
   def parse_inline_response(inline, index); end
 
   # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:91
@@ -27767,7 +27865,23 @@ module RubyLLM::Protocols::Gemini::Batches
 
   # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:99
   def response_schema_hash(node); end
+
+  # Gemini's Schema takes one type, so a JSON Schema type array becomes
+  # nullable plus anyOf, each member keeping the keywords and enum
+  # values of its type.
+  #
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:134
+  def type_union(schema); end
+
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:149
+  def type_union_members(schema, types); end
+
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:155
+  def union_member(schema, type); end
 end
+
+# pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:120
+RubyLLM::Protocols::Gemini::Batches::ENUM_VALUE_TYPES = T.let(T.unsafe(nil), Hash)
 
 # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:88
 RubyLLM::Protocols::Gemini::Batches::JSON_SCHEMA_ONLY_KEYS = T.let(T.unsafe(nil), Array)
@@ -27777,6 +27891,12 @@ RubyLLM::Protocols::Gemini::Batches::JSON_SCHEMA_ONLY_KEYS = T.let(T.unsafe(nil)
 #
 # pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:13
 RubyLLM::Protocols::Gemini::Batches::TERMINAL = T.let(T.unsafe(nil), Array)
+
+# pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:119
+RubyLLM::Protocols::Gemini::Batches::TYPED_KEYWORDS = T.let(T.unsafe(nil), Array)
+
+# pkg:gem/ruby_llm#lib/ruby_llm/protocols/gemini/batches.rb:112
+RubyLLM::Protocols::Gemini::Batches::TYPE_KEYWORDS = T.let(T.unsafe(nil), Hash)
 
 # Explicit content caching via the Gemini cachedContents API.
 #
@@ -30411,40 +30531,40 @@ class RubyLLM::Protocols::OpenAI::Decisions < ::RubyLLM::Protocol
 
   private
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:94
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:96
   def describe(value); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:98
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:100
   def parse_answer(answer, question); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:106
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:108
   def parse_choice(answer, question); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:124
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:126
   def parse_distribution(entries, key, names); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:115
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:117
   def parse_score(answer, question); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:128
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:130
   def parse_tokens(usage); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:82
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:84
   def render_choices(question); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:52
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:54
   def render_image(image); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:43
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:45
   def render_input(input, attachments); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:71
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:73
   def render_instructions(question); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:88
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:90
   def render_levels(question); end
 
-  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:60
+  # pkg:gem/ruby_llm#lib/ruby_llm/protocols/openai/decisions.rb:62
   def render_question(question); end
 end
 

@@ -18,11 +18,8 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     RubyLLM::Message.new(role: :assistant, content:, finish_reason: "stop")
   end
 
-  # run_humanize는 HumanMonolithAgent.chat.with_skills.ask 체인을 타므로
-  # 스텁도 with_skills를 지원해야 실제 호출 경로를 검증한다.
   def build_humanize_chat(response, &capture)
     chat = Object.new
-    chat.define_singleton_method(:with_skills) { self }
     chat.define_singleton_method(:ask) do |prompt|
       capture&.call(prompt)
       response
@@ -385,6 +382,23 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
     assert_logged infos, "article #{article.id}", "humanize_aborted"
   end
 
+  test "run_humanize는 gate_unverified=true이면 article을 갱신하지 않고 경고와 함께 실패를 반환한다" do
+    article = articles(:ruby_article)
+    article.update!(summary_body: "원본 요약")
+    chat = build_humanize_chat(llm_message({ "summary_body" => "게이트를 거치지 않은 본문", "gate_unverified" => true }))
+
+    result = nil
+    warns = capture_logs(:warn) do
+      HumanMonolithAgent.stub(:chat, chat) do
+        result = ArticleAgentsService.new.send(:run_humanize, article)
+      end
+    end
+
+    assert_equal :humanize_gate_unverified, result.failure
+    assert_equal "원본 요약", article.reload.summary_body
+    assert_logged warns, "article #{article.id}", "humanize_gate_unverified"
+  end
+
   # 모델이 JSON이 아닌 텍스트를 돌려주면 parsed가 JSON::ParserError를 낸다.
   # 이때 article을 건드리지 않고 :humanize_invalid_response로 끝나며, 사유가 warn 로그에
   # 남아야 한다. (코드 펜스로 감싼 JSON은 Articles::AgentResponse.structured가 풀어
@@ -430,7 +444,6 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
   test "run_humanize는 예외가 나면 예외 클래스를 로그에 남기고 :humanize_failed를 반환한다" do
     article = articles(:ruby_article)
     chat = Object.new
-    chat.define_singleton_method(:with_skills) { self }
     chat.define_singleton_method(:ask) { |_prompt| raise Faraday::TimeoutError, "timed out" }
 
     result = nil
@@ -553,7 +566,6 @@ class ArticleAgentsServiceTest < ActiveSupport::TestCase
 
   def failing_chat(error)
     chat = Object.new
-    chat.define_singleton_method(:with_skills) { self }
     chat.define_singleton_method(:ask) { |_prompt| raise error }
     chat
   end

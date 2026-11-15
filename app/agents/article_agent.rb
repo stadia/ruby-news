@@ -3,8 +3,8 @@
 # rbs_inline: enabled
 
 class ArticleAgent < RubyLLM::Agent
-  model "openai/gpt-6-luna", provider: :openrouter, assume_model_exists: true
-  # temperature 0.2
+  model "gpt-6.1-terra", provider: :openai
+  temperature 0.2
   tools SearchRelatedArticles, GetExistingTags, ValidateSlug
 
   instructions {
@@ -16,7 +16,7 @@ class ArticleAgent < RubyLLM::Agent
 
   기술 블로그 전문 에디터로서, 원문을 분석하여 한국어 기술 아티클을 작성한다.
   원문의 내용에서 벗어나지 않되, 기술 블로그 특유의 직설적이고 간결한 문체로 쓴다.
-  특히 Gemini 계열 모델이 장황한 도입부, 반복, 마케팅 문구를 생성하지 않도록 구조와 형식을 엄격히 지킨다.
+  장황한 도입부, 반복, 마케팅 문구를 생성하지 않도록 구조와 형식을 엄격히 지킨다.
 
   ## 최우선 원칙
 

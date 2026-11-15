@@ -35,71 +35,71 @@ class OmniAuth::Strategies::OAuth2
   include ::OmniAuth::Strategy
   extend ::OmniAuth::Strategy::ClassMethods
 
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:48
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:50
   def access_token; end
 
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:48
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:50
   def access_token=(_arg0); end
 
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:70
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:72
   def authorize_params; end
 
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:106
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:108
   def callback_phase; end
 
   # The state the provider sends back, which OmniAuth uses to find the
   # origin and params that remember_sign_in stored.
   #
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:98
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:100
   def callback_sign_in_key; end
 
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:50
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:52
   def client; end
 
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:62
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:64
   def request_phase; end
 
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:102
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:104
   def token_params; end
 
   protected
 
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:206
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:210
   def build_access_token; end
 
   # Whether the callback's state is missing or doesn't match the one the
   # request phase stored, unless the provider ignores state.
   #
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:130
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:132
   def csrf_detected?; end
 
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:212
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:216
   def deep_symbolize(options); end
 
   # The access token from the callback's code, refreshed if it's already
   # expired.
   #
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:201
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:205
   def fetch_access_token; end
 
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:218
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:222
   def options_for(option); end
 
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:177
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:179
   def pkce_authorize_params; end
 
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:192
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:196
   def pkce_token_params; end
 
   # constant-time comparison algorithm to prevent timing attacks
   #
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:231
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:235
   def secure_compare(string_a, string_b); end
 
   # Stores the state, redirect URI, and PKCE verifier of a sign-in by its
   # state, so several can be in progress at once.
   #
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:139
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:141
   def store_sign_in(state, redirect_uri); end
 
   # What the request phase stored for this callback's state, removed from
@@ -107,13 +107,13 @@ class OmniAuth::Strategies::OAuth2
   # omniauth.state and omniauth.redirect_uri keys, which hold the latest
   # sign-in and which provider gems and tests set directly.
   #
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:154
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:156
   def stored_sign_in; end
 
   # A copy of the stored sign-ins, which are changed by assigning the
   # session key, not in place.
   #
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:172
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:174
   def stored_sign_ins; end
 
   class << self
@@ -125,36 +125,38 @@ end
 # An error that is indicated in the OAuth 2.0 callback.
 # This could be a `redirect_uri_mismatch` or other
 #
-# pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:237
+# pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:241
 class OmniAuth::Strategies::OAuth2::CallbackError < ::StandardError
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:240
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:244
   def initialize(error, error_reason = T.unsafe(nil), error_uri = T.unsafe(nil)); end
 
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:238
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:242
   def error; end
 
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:238
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:242
   def error=(_arg0); end
 
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:238
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:242
   def error_reason; end
 
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:238
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:242
   def error_reason=(_arg0); end
 
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:238
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:242
   def error_uri; end
 
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:238
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:242
   def error_uri=(_arg0); end
 
-  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:246
+  # pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:250
   def message; end
 end
 
 # How many sign-ins can be in progress at once, for example in several
-# tabs. Starting another drops the oldest. Each one adds about 300
-# bytes to the session, which may be a 4 KB cookie.
+# tabs. Starting another drops the oldest. With OmniAuth's origin and
+# params, and the encoding of a Rails cookie session, each one adds
+# about 500 bytes with PKCE to the session, which may be a 4 KB
+# cookie.
 #
-# pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:24
+# pkg:gem/omniauth-oauth2#lib/omniauth/strategies/oauth2.rb:26
 OmniAuth::Strategies::OAuth2::MAX_STORED_SIGN_INS = T.let(T.unsafe(nil), Integer)
