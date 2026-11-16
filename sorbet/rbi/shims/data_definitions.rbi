@@ -144,3 +144,24 @@ module ArticleHumanizer
     def reason; end
   end
 end
+
+module Articles
+  module PlaceholderLinks
+    class Change
+      sig { returns(Integer) }
+      def article_id; end
+
+      sig { returns(T.nilable(String)) }
+      def slug; end
+
+      sig { returns(String) }
+      def attribute; end
+
+      sig { returns(String) }
+      def before; end
+
+      sig { returns(String) }
+      def after; end
+    end
+  end
+end
