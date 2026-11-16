@@ -55,6 +55,37 @@ class Articles::PlaceholderLinksTest < ActiveSupport::TestCase
     assert_equal text, repair(text)
   end
 
+  test "더 긴 펜스와 들여쓰기 코드 블록 안도 건드리지 않는다" do
+    text = "````md\n```\n[x](https://example.com/articles/ruby-3-4-features)\n```\n````\n" \
+           "~~~~\n~~~\n[y](https://example.com)\n~~~\n~~~~\n" \
+           "예시:\n\n    [문서](https://example.com/configuration-guide)\n\t[탭](https://example.com)\n"
+
+    assert_equal text, repair(text)
+  end
+
+  test "펜스 밖으로 나오면 다시 고친다" do
+    assert_equal "````\n[a](https://example.com)\n````\n[제목](/articles/ruby-3-4-features)",
+                 repair("````\n[a](https://example.com)\n````\n[제목](https://example.com/articles/ruby-3-4-features)")
+  end
+
+  test "정보 문자열이 붙은 펜스 줄은 닫는 펜스가 아니고, 들여쓴 중첩 목록은 고친다" do
+    fenced = "```\n```ruby\n[x](https://example.com)\n```\n"
+
+    assert_equal fenced, repair(fenced)
+    assert_equal "- 상위\n    - [제목](/articles/ruby-3-4-features)\n",
+                 repair("- 상위\n    - [제목](https://example.com/articles/ruby-3-4-features)\n")
+  end
+
+  test "이미지는 건드리지 않는다" do
+    assert_equal "![스크린샷](https://example.com/a.png)", repair("![스크린샷](https://example.com/a.png)")
+  end
+
+  test "미확정 기사로는 잇지 않는다" do
+    articles(:ruby_article).update_columns(title_ko: nil)
+
+    assert_equal "제목", repair("[제목](https://example.com/articles/ruby-3-4-features)")
+  end
+
   test "repair_all은 드라이런에서 바꿀 내용만 보고하고 저장하지 않는다" do
     article = articles(:korean_content_article)
     article.update_columns(summary_body: "[관련](https://example.com/articles/ruby-3-4-features)")
