@@ -367,7 +367,7 @@ GEM
     loofah (2.25.3)
       crass (~> 1.0.2)
       nokogiri (>= 1.19.5)
-    madmin (3.3.0)
+    madmin (3.4.1)
       importmap-rails
       rails (>= 7.0.0)
       stimulus-rails
@@ -1019,7 +1019,7 @@ DEPENDENCIES
   jbuilder
   letter_opener
   lexxy (~> 1.0)
-  madmin (~> 3.3.0)
+  madmin (~> 3.4.1)
   meta-tags
   minitest (~> 6.0)
   minitest-mock
