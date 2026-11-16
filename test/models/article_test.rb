@@ -92,6 +92,16 @@ class ArticleTest < ActiveSupport::TestCase
     assert_predicate article, :should_federate?
   end
 
+  # #1161: 생성·윤문·번역·관리자 수정 어느 경로로 저장하든 자리표시자 링크를 남기지 않는다.
+  test "저장할 때 요약 본문의 example.com 자리표시자 링크를 고친다" do
+    article = articles(:korean_content_article)
+    article.update!(summary_body: "[관련](https://example.com/articles/ruby-3-4-features)",
+                    summary_body_ja: "『関連』（https://example.com/articles/no-such-slug）")
+
+    assert_equal "[관련](/articles/ruby-3-4-features)", article.reload.summary_body
+    assert_equal "『関連』", article.summary_body_ja
+  end
+
   test "url은 필수 항목이어야 한다" do
     article = Article.new(title: "Test Article", origin_url: "https://example.com/test", user: @user)
 

@@ -88,6 +88,7 @@ class ArticleAgent < RubyLLM::Agent
   - 검색 결과 중 연관성이 있는 기사만 ValidateSlug로 slug 존재를 확인한 뒤 summary_body에 1~2회 자연스럽게 링크한다
   - 관련 기사 링크는 반드시 검색 결과의 title_ko를 링크 텍스트로 사용해 [title_ko](path) 형식으로 작성한다
   - 관련 기사 path나 slug 주소만 문장에 노출하지 않는다
+  - 링크 주소에는 도구가 돌려준 path(/articles/...)를 그대로 쓴다. https://, 도메인, example.com 같은 자리표시자 호스트를 붙이지 않는다
   - 연관성이 없으면 링크를 넣지 않는다. 억지로 연결하지 않는다
   - summary_body를 제외한 다른 필드에는 마크다운 링크를 넣지 않는다
 

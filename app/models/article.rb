@@ -186,6 +186,10 @@ class Article < ApplicationRecord
   # 판별 기준은 JAPANESE_TITLE_REGEX 를 사용한다.
   before_save :assign_japanese_title
 
+  # 요약 모델이 관련 기사 링크 주소를 example.com 자리표시자로 쓰는 경우가 있어(#1161),
+  # 생성·윤문·번역·관리자 수정 어느 경로로 저장하든 여기서 고친다.
+  before_save :repair_placeholder_links
+
   # 요약을 어느 경로로 바꾸든(원 요약 재생성, 관리자 수정) 이전 윤문 기록은 현재 요약에 대한
   # 것이 아니므로 대기로 되돌린다. 윤문 결과를 같은 저장에서 함께 쓰는 경우는 그대로 둔다.
   before_update :reset_humanize_status, if: :humanize_status_stale?
@@ -356,6 +360,13 @@ class Article < ApplicationRecord
   #: () -> void
   def discard_show_hn
     self.deleted_at = Time.zone.now if title&.match?(/Show HN/i)
+  end
+
+  #: () -> void
+  def repair_placeholder_links
+    %w[summary_body summary_body_ja].each do |attribute|
+      self[attribute] = Articles::PlaceholderLinks.repair(self[attribute]) if attribute_changed?(attribute)
+    end
   end
 
   #: () -> void
