@@ -19,7 +19,7 @@ class YoutubeSiteJobTest < ActiveSupport::TestCase
       flunk "쿼터 초과 시 last_checked_at을 갱신하면 안 된다"
     end
 
-    Site.stub(:find, site) do
+    Site.stub(:find_by, site) do
       assert_no_enqueued_jobs do
         assert_nothing_raised do
           YoutubeSiteJob.perform_now([ 123, 456 ])
@@ -34,7 +34,7 @@ class YoutubeSiteJobTest < ActiveSupport::TestCase
     site = Object.new
     site.define_singleton_method(:init_client) { Object.new }
 
-    Site.stub(:find, site) do
+    Site.stub(:find_by, site) do
       assert_no_enqueued_jobs do
         assert_nothing_raised do
           YoutubeSiteJob.perform_now(123)
@@ -66,5 +66,13 @@ class YoutubeSiteJobTest < ActiveSupport::TestCase
     }
 
     Yt::Errors::RequestError.new({ "response_body" => response_body }.to_json)
+  end
+
+  test "삭제된 사이트는 건너뛰고 나머지 ID로 체인을 이어간다" do
+    missing_id = Site.maximum(:id).to_i + 1000
+
+    assert_enqueued_with(job: YoutubeSiteJob, args: [ [ 1, 2 ] ]) do
+      assert_nothing_raised { YoutubeSiteJob.perform_now([ missing_id, 1, 2 ]) }
+    end
   end
 end
