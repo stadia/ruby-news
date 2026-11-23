@@ -652,13 +652,13 @@ class Puma::Cluster < ::Puma::Runner
 
   # @version 5.0.0
   #
-  # pkg:gem/puma#lib/puma/cluster.rb:324
+  # pkg:gem/puma#lib/puma/cluster.rb:323
   def fork_worker!; end
 
-  # pkg:gem/puma#lib/puma/cluster.rb:275
+  # pkg:gem/puma#lib/puma/cluster.rb:274
   def halt; end
 
-  # pkg:gem/puma#lib/puma/cluster.rb:331
+  # pkg:gem/puma#lib/puma/cluster.rb:330
   def mold_worker!; end
 
   # @!attribute [r] next_worker_index
@@ -669,28 +669,28 @@ class Puma::Cluster < ::Puma::Runner
   # pkg:gem/puma#lib/puma/cluster.rb:254
   def phased_restart(refork = T.unsafe(nil)); end
 
-  # pkg:gem/puma#lib/puma/cluster.rb:315
+  # pkg:gem/puma#lib/puma/cluster.rb:314
   def preload?; end
 
   # pkg:gem/puma#lib/puma/cluster.rb:72
   def redirect_io; end
 
-  # pkg:gem/puma#lib/puma/cluster.rb:319
+  # pkg:gem/puma#lib/puma/cluster.rb:318
   def refork?; end
 
-  # pkg:gem/puma#lib/puma/cluster.rb:280
+  # pkg:gem/puma#lib/puma/cluster.rb:279
   def reload_worker_directory; end
 
   # pkg:gem/puma#lib/puma/cluster.rb:249
   def restart; end
 
-  # pkg:gem/puma#lib/puma/cluster.rb:406
+  # pkg:gem/puma#lib/puma/cluster.rb:405
   def run; end
 
   # We do this in a separate method to keep the lambda scope
   # of the signals handlers as small as possible.
   #
-  # pkg:gem/puma#lib/puma/cluster.rb:337
+  # pkg:gem/puma#lib/puma/cluster.rb:336
   def setup_signals; end
 
   # @version 5.0.0
@@ -709,7 +709,7 @@ class Puma::Cluster < ::Puma::Runner
   # @!attribute [r] stats
   # @return [Hash]
   #
-  # pkg:gem/puma#lib/puma/cluster.rb:291
+  # pkg:gem/puma#lib/puma/cluster.rb:290
   def stats; end
 
   # pkg:gem/puma#lib/puma/cluster.rb:263
@@ -738,55 +738,55 @@ class Puma::Cluster < ::Puma::Runner
 
   private
 
-  # pkg:gem/puma#lib/puma/cluster.rb:720
+  # pkg:gem/puma#lib/puma/cluster.rb:719
   def activate_mold(mold); end
 
-  # pkg:gem/puma#lib/puma/cluster.rb:657
+  # pkg:gem/puma#lib/puma/cluster.rb:656
   def clear_pending_workers; end
 
-  # pkg:gem/puma#lib/puma/cluster.rb:755
+  # pkg:gem/puma#lib/puma/cluster.rb:754
   def idle_timed_out_worker_pids; end
 
-  # pkg:gem/puma#lib/puma/cluster.rb:759
+  # pkg:gem/puma#lib/puma/cluster.rb:758
   def idle_workers; end
 
-  # pkg:gem/puma#lib/puma/cluster.rb:685
+  # pkg:gem/puma#lib/puma/cluster.rb:684
   def molds; end
 
   # Returns true once workers can be restarted. With `mold_worker`, a refork
   # first promotes a new mold and waits for it, while a phased restart
   # retires all molds so workers are forked from the master.
   #
-  # pkg:gem/puma#lib/puma/cluster.rb:692
+  # pkg:gem/puma#lib/puma/cluster.rb:691
   def prepare_phased_restart; end
 
-  # pkg:gem/puma#lib/puma/cluster.rb:709
+  # pkg:gem/puma#lib/puma/cluster.rb:708
   def promote_mold; end
 
   # Returns the process status once the process has exited, true if it has
   # exited but its status cannot be collected, or nil if it is still running.
   #
-  # pkg:gem/puma#lib/puma/cluster.rb:665
+  # pkg:gem/puma#lib/puma/cluster.rb:664
   def reap(handle, reaped_children); end
 
   # A promoted mold has forked no workers, so it is stopped now. An active
   # mold stops forking, and is stopped once the restart completes.
   #
-  # pkg:gem/puma#lib/puma/cluster.rb:732
+  # pkg:gem/puma#lib/puma/cluster.rb:731
   def retire_molds; end
 
-  # pkg:gem/puma#lib/puma/cluster.rb:602
+  # pkg:gem/puma#lib/puma/cluster.rb:601
   def single_worker_warning; end
 
   # @version 5.0.0
   #
-  # pkg:gem/puma#lib/puma/cluster.rb:741
+  # pkg:gem/puma#lib/puma/cluster.rb:740
   def timeout_workers; end
 
   # loops thru @workers, removing workers that exited, and calling
   # `#term` if needed
   #
-  # pkg:gem/puma#lib/puma/cluster.rb:613
+  # pkg:gem/puma#lib/puma/cluster.rb:612
   def wait_workers; end
 end
 
@@ -3630,79 +3630,79 @@ module Puma::MiniSSL
   end
 end
 
-# pkg:gem/puma#lib/puma/minissl.rb:252
+# pkg:gem/puma#lib/puma/minissl.rb:249
 class Puma::MiniSSL::Context
-  # pkg:gem/puma#lib/puma/minissl.rb:256
+  # pkg:gem/puma#lib/puma/minissl.rb:253
   def initialize; end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:332
+  # pkg:gem/puma#lib/puma/minissl.rb:329
   def ca; end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:355
+  # pkg:gem/puma#lib/puma/minissl.rb:352
   def ca=(ca); end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:331
+  # pkg:gem/puma#lib/puma/minissl.rb:328
   def cert; end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:350
+  # pkg:gem/puma#lib/puma/minissl.rb:347
   def cert=(cert); end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:333
+  # pkg:gem/puma#lib/puma/minissl.rb:330
   def cert_pem; end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:360
+  # pkg:gem/puma#lib/puma/minissl.rb:357
   def cert_pem=(cert_pem); end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:370
+  # pkg:gem/puma#lib/puma/minissl.rb:367
   def check; end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:268
+  # pkg:gem/puma#lib/puma/minissl.rb:265
   def check_file(file, desc); end
 
   # non-jruby Context properties
   #
-  # pkg:gem/puma#lib/puma/minissl.rb:329
+  # pkg:gem/puma#lib/puma/minissl.rb:326
   def key; end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:341
+  # pkg:gem/puma#lib/puma/minissl.rb:338
   def key=(key); end
 
   # Executes the command to return the password needed to decrypt the key.
   #
-  # pkg:gem/puma#lib/puma/minissl.rb:376
+  # pkg:gem/puma#lib/puma/minissl.rb:373
   def key_password; end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:330
+  # pkg:gem/puma#lib/puma/minissl.rb:327
   def key_password_command; end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:346
+  # pkg:gem/puma#lib/puma/minissl.rb:343
   def key_password_command=(key_password_command); end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:334
+  # pkg:gem/puma#lib/puma/minissl.rb:331
   def key_pem; end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:365
+  # pkg:gem/puma#lib/puma/minissl.rb:362
   def key_pem=(key_pem); end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:254
+  # pkg:gem/puma#lib/puma/minissl.rb:251
   def no_tlsv1; end
 
   # disables TLSv1
   # @!attribute [w] no_tlsv1=
   #
-  # pkg:gem/puma#lib/puma/minissl.rb:418
+  # pkg:gem/puma#lib/puma/minissl.rb:415
   def no_tlsv1=(tlsv1); end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:254
+  # pkg:gem/puma#lib/puma/minissl.rb:251
   def no_tlsv1_1; end
 
   # disables TLSv1 and TLSv1.1.  Overrides `#no_tlsv1=`
   # @!attribute [w] no_tlsv1_1=
   #
-  # pkg:gem/puma#lib/puma/minissl.rb:425
+  # pkg:gem/puma#lib/puma/minissl.rb:422
   def no_tlsv1_1=(tlsv1_1); end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:339
+  # pkg:gem/puma#lib/puma/minissl.rb:336
   def reuse; end
 
   # Controls session reuse.  Allowed values are as follows:
@@ -3714,37 +3714,37 @@ class Puma::MiniSSL::Context
   # * 's' - where s is an integer strings for size.
   # * ',t' - where t is an integer strings for timeout.
   #
-  # pkg:gem/puma#lib/puma/minissl.rb:395
+  # pkg:gem/puma#lib/puma/minissl.rb:392
   def reuse=(reuse_str); end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:339
+  # pkg:gem/puma#lib/puma/minissl.rb:336
   def reuse_cache_size; end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:339
+  # pkg:gem/puma#lib/puma/minissl.rb:336
   def reuse_timeout; end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:335
+  # pkg:gem/puma#lib/puma/minissl.rb:332
   def ssl_cipher_filter; end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:335
+  # pkg:gem/puma#lib/puma/minissl.rb:332
   def ssl_cipher_filter=(_arg0); end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:336
+  # pkg:gem/puma#lib/puma/minissl.rb:333
   def ssl_ciphersuites; end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:336
+  # pkg:gem/puma#lib/puma/minissl.rb:333
   def ssl_ciphersuites=(_arg0); end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:337
+  # pkg:gem/puma#lib/puma/minissl.rb:334
   def verification_flags; end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:337
+  # pkg:gem/puma#lib/puma/minissl.rb:334
   def verification_flags=(_arg0); end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:253
+  # pkg:gem/puma#lib/puma/minissl.rb:250
   def verify_mode; end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:253
+  # pkg:gem/puma#lib/puma/minissl.rb:250
   def verify_mode=(_arg0); end
 end
 
@@ -3808,7 +3808,7 @@ end
 Puma::MiniSSL::HAS_TLS1_3 = T.let(T.unsafe(nil), TrueClass)
 
 Puma::MiniSSL::OPENSSL_LIBRARY_VERSION = T.let(T.unsafe(nil), String)
-Puma::MiniSSL::OPENSSL_NO_SSL3 = T.let(T.unsafe(nil), FalseClass)
+Puma::MiniSSL::OPENSSL_NO_SSL3 = T.let(T.unsafe(nil), TrueClass)
 Puma::MiniSSL::OPENSSL_NO_TLS1 = T.let(T.unsafe(nil), FalseClass)
 Puma::MiniSSL::OPENSSL_NO_TLS1_1 = T.let(T.unsafe(nil), FalseClass)
 Puma::MiniSSL::OPENSSL_VERSION = T.let(T.unsafe(nil), String)
@@ -3825,32 +3825,32 @@ end
 # pkg:gem/puma#lib/puma.rb:12
 class Puma::MiniSSL::SSLError < ::StandardError; end
 
-# pkg:gem/puma#lib/puma/minissl.rb:462
+# pkg:gem/puma#lib/puma/minissl.rb:459
 class Puma::MiniSSL::Server
-  # pkg:gem/puma#lib/puma/minissl.rb:463
+  # pkg:gem/puma#lib/puma/minissl.rb:460
   def initialize(socket, ctx); end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:469
+  # pkg:gem/puma#lib/puma/minissl.rb:466
   def accept; end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:476
+  # pkg:gem/puma#lib/puma/minissl.rb:473
   def accept_nonblock; end
 
   # @!attribute [r] addr
   # @version 5.0.0
   #
-  # pkg:gem/puma#lib/puma/minissl.rb:490
+  # pkg:gem/puma#lib/puma/minissl.rb:487
   def addr; end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:494
+  # pkg:gem/puma#lib/puma/minissl.rb:491
   def close; end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:498
+  # pkg:gem/puma#lib/puma/minissl.rb:495
   def closed?; end
 
   # @!attribute [r] to_io
   #
-  # pkg:gem/puma#lib/puma/minissl.rb:484
+  # pkg:gem/puma#lib/puma/minissl.rb:481
   def to_io; end
 end
 
@@ -3876,7 +3876,7 @@ class Puma::MiniSSL::Socket
 
   # @!attribute [r] peeraddr
   #
-  # pkg:gem/puma#lib/puma/minissl.rb:227
+  # pkg:gem/puma#lib/puma/minissl.rb:224
   def peeraddr; end
 
   # OpenSSL is loaded in `MiniSSL::ContextBuilder` when
@@ -3886,7 +3886,7 @@ class Puma::MiniSSL::Socket
   # @return [OpenSSL::X509::Certificate, nil]
   # @!attribute [r] peercert
   #
-  # pkg:gem/puma#lib/puma/minissl.rb:237
+  # pkg:gem/puma#lib/puma/minissl.rb:234
   def peercert; end
 
   # pkg:gem/puma#lib/puma/minissl.rb:87
@@ -3941,7 +3941,7 @@ class Puma::MiniSSL::Socket
   # pkg:gem/puma#lib/puma/minissl.rb:207
   def flush_write_buffer; end
 
-  # pkg:gem/puma#lib/puma/minissl.rb:215
+  # pkg:gem/puma#lib/puma/minissl.rb:212
   def flush_write_buffer_nonblock; end
 
   # pkg:gem/puma#lib/puma/minissl.rb:200
@@ -3951,16 +3951,16 @@ end
 # https://github.com/openssl/openssl/blob/master/include/openssl/x509_vfy.h.in
 # /* Certificate verify flags */
 #
-# pkg:gem/puma#lib/puma/minissl.rb:438
+# pkg:gem/puma#lib/puma/minissl.rb:435
 Puma::MiniSSL::VERIFICATION_FLAGS = T.let(T.unsafe(nil), Hash)
 
-# pkg:gem/puma#lib/puma/minissl.rb:434
+# pkg:gem/puma#lib/puma/minissl.rb:431
 Puma::MiniSSL::VERIFY_FAIL_IF_NO_PEER_CERT = T.let(T.unsafe(nil), Integer)
 
-# pkg:gem/puma#lib/puma/minissl.rb:432
+# pkg:gem/puma#lib/puma/minissl.rb:429
 Puma::MiniSSL::VERIFY_NONE = T.let(T.unsafe(nil), Integer)
 
-# pkg:gem/puma#lib/puma/minissl.rb:433
+# pkg:gem/puma#lib/puma/minissl.rb:430
 Puma::MiniSSL::VERIFY_PEER = T.let(T.unsafe(nil), Integer)
 
 # Provides an IO-like object that always appears to contain no data.
