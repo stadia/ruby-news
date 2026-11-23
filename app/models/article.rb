@@ -232,15 +232,27 @@ class Article < ApplicationRecord
     # 같은 URL의 재시도에서만 HTTP·YouTube API 준비 결과를 재사용한다.
     return if @metadata_prepared_url == url
 
+    validated_url = url
     result = metadata_service.call(self)
     discard_show_hn
     @metadata_prepared_url = url unless result.failure? && result.failure == :blocked_url
+    abort_if_prepared_url_taken(validated_url)
     return unless result.failure?
 
     logger.debug { "Article metadata preparation failed for #{url}: #{result.failure}" }
     return unless result.failure == :blocked_url
 
     errors.add(:url, :invalid)
+    throw :abort
+  end
+
+  # url 유니크 검증은 원래 링크로 통과하지만, 리다이렉트·추적 쿼리 정리로 url이 바뀌면
+  # 기존 기사와 겹쳐 INSERT가 유니크 인덱스에 걸린다. 검증 오류처럼 저장을 멈춘다.
+  #: (String? validated_url) -> void
+  def abort_if_prepared_url_taken(validated_url)
+    return if url == validated_url || !Article.exists?(url: url)
+
+    errors.add(:url, :taken, value: url, prepared: true)
     throw :abort
   end
 

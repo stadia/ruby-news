@@ -18,7 +18,8 @@ module Articles
       def save_submitted(article, user_id:)
         outcome = save_with_slug_retry(article)
         return article.discarded? ? :discarded : :created if outcome == :saved
-        return :duplicate if outcome == :duplicate || (article.duplicate_url? && only_url_conflicts?(article))
+        return :duplicate if outcome == :duplicate || prepared_url_taken?(article) ||
+                             (article.duplicate_url? && only_url_conflicts?(article))
 
         :invalid
       rescue ActiveRecord::RecordNotUnique => e
@@ -56,6 +57,14 @@ module Articles
 
         # 준비된 URL이 재검증에서 충돌하면 INSERT 위반과 같은 안내로 처리한다.
         only_url_conflicts?(article) ? :duplicate : :invalid
+      end
+
+      # 리다이렉트·정규화로 바뀐 url이 기존 기사와 겹치면(Article#abort_if_prepared_url_taken)
+      # 그 url의 기사가 하나로 정해지므로 예전 INSERT 위반과 같이 중복으로 돌려준다.
+      # 컨트롤러는 살아 있는 기사면 그 기사로 보내고, 소프트 삭제된 기사면 재등록 불가로 안내한다.
+      #: (Article article) -> bool
+      def prepared_url_taken?(article)
+        article.errors.where(:url, :taken, prepared: true).any?
       end
 
       #: (Article article) -> bool

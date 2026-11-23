@@ -19,6 +19,24 @@ class ArticleTest < ActiveSupport::TestCase
 
   # ========== Validation Tests ==========
 
+  test "리다이렉트로 최종 URL이 기존 기사와 같아지면 예외 없이 url 중복 오류로 저장을 막는다" do
+    existing = @article
+    redirect_to_existing = Object.new
+    redirect_to_existing.define_singleton_method(:call) do |article|
+      article.url = existing.url
+      Dry::Monads::Success(article)
+    end
+    article = Article.new(url: "https://tracking.example.net/click?id=1", user: @user, site: @site)
+
+    Articles::MetadataPreparationService.stub(:new, ->(*) { redirect_to_existing }) do
+      assert_no_difference -> { Article.count } do
+        assert_not article.save
+      end
+    end
+    assert_includes article.errors.details[:url], { error: :taken, value: existing.url, prepared: true }
+  end
+
+
   # 경로·쿼리는 대소문자를 구분하므로(YouTube 영상 ID 등) 대소문자만 다른 URL은 다른 기사다.
   # DB 유니크 인덱스와 기존 기사 조회도 대소문자를 구분하므로 검증도 같은 기준을 쓴다(#1092).
   test "대소문자만 다른 URL은 중복이 아니다" do

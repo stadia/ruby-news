@@ -116,6 +116,29 @@ module Articles
       end
     end
 
+    test "메타데이터 준비로 바뀐 url이 기존 기사와 겹치면 중복으로 돌려주고 그 기사를 찾는다" do
+      existing = articles(:similar_article)
+      redirect_to_existing = Object.new
+      redirect_to_existing.define_singleton_method(:call) do |article|
+        article.url = existing.url
+        Dry::Monads::Success(article)
+      end
+      article = Article.new(url: "https://tracking.example.net/click?id=1", user: users(:john))
+
+      MetadataPreparationService.stub(:new, ->(*) { redirect_to_existing }) do
+        assert_equal :duplicate, Submission.save_submitted(article, user_id: users(:john).id)
+      end
+      assert_equal existing, Submission.existing_for(article)
+    end
+
+    test "제출한 url 그대로 url만 겹치면 폼 오류로 남긴다" do
+      existing = articles(:similar_article)
+      article = Article.new(url: existing.url, origin_url: "https://example.com/other-origin", user: users(:john))
+
+      assert_equal :invalid, Submission.save_submitted(article, user_id: users(:john).id)
+      assert article.errors.of_kind?(:url, :taken)
+    end
+
     test "등록 오류 번역은 모든 지원 로케일에 실제로 존재한다" do
       expected = {
         ko: [ "삭제되었거나 등록 대상에서 제외된 글의 URL입니다.", "등록 중 충돌이 발생했습니다. 잠시 후 다시 시도해 주세요." ],
