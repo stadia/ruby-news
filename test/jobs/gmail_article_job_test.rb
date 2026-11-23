@@ -68,4 +68,14 @@ class GmailArticleJobTest < ActiveSupport::TestCase
       assert_nothing_raised { GmailArticleJob.perform_now([ missing_id, 1, 2 ]) }
     end
   end
+
+  test "DB 연결 오류로 재시도하면 처리하던 사이트 ID를 그대로 다시 예약한다" do
+    raise_connection_error = ->(*) { raise ActiveRecord::ConnectionNotEstablished, "down" }
+
+    Site.stub(:find_by, raise_connection_error) do
+      assert_enqueued_with(job: GmailArticleJob, args: [ [ 1, 2 ] ]) do
+        GmailArticleJob.perform_now([ 1, 2 ])
+      end
+    end
+  end
 end

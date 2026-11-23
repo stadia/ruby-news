@@ -12,8 +12,8 @@ class RssSitePageJob < ApplicationJob
 
   #: (Array[Integer] | Integer ids) -> void
   def perform(ids)
-    ids = [ ids ] unless ids.is_a?(Array)
-    site_id = ids.shift
+    # ids는 Active Job의 arguments와 같은 객체라 shift로 바꾸면 재시도에서 현재 사이트가 빠진다.
+    site_id, *ids = Array(ids)
     return if site_id.nil?
 
     site = Site.find_by(id: site_id)

@@ -12,8 +12,8 @@ class RssSiteJob < ApplicationJob
   # Performs the job for a given site ID.
   #: (Array[Integer] | Integer ids) -> void
   def perform(ids)
-    ids = [ ids ] unless ids.is_a?(Array)
-    site_id = ids.shift
+    # ids는 Active Job의 arguments와 같은 객체라 shift로 바꾸면 재시도에서 현재 사이트가 빠진다.
+    site_id, *ids = Array(ids)
     site = Site.kept.find_by(id: site_id)
     if site.nil?
       RssSiteJob.perform_later(ids) unless ids.empty?
@@ -22,10 +22,7 @@ class RssSiteJob < ApplicationJob
 
     begin
       feed = fetch_feed(site)
-      unless feed
-        RssSiteJob.perform_later(ids) unless ids.empty?
-        return
-      end
+      return unless feed # 다음 잡 예약은 ensure가 한다
 
       create_articles_from_feed(feed, site)
 
