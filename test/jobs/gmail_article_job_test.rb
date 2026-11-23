@@ -78,4 +78,27 @@ class GmailArticleJobTest < ActiveSupport::TestCase
       end
     end
   end
+
+  test "링크의 최종 URL이 기존 기사와 같으면 잡을 실패시키지 않고 체크포인트를 갱신한다" do
+    User.first.update_columns(username: "bot") # 잡은 bot 계정으로 기사를 만든다
+    existing = articles(:ruby_article)
+    site = sites(:newsletter)
+    site.update!(email: "bot@example.com", last_checked_at: 2.days.ago)
+    client = Gmail.allocate
+    client.define_singleton_method(:fetch_email_links) { |*_args, **_kwargs| [ "https://links.newsletter.dev/c/abc123" ] }
+    site.define_singleton_method(:init_client) { client }
+    redirect_to_existing = Object.new
+    redirect_to_existing.define_singleton_method(:call) do |article|
+      article.url = existing.url
+      Dry::Monads::Success(article)
+    end
+
+    Site.stub(:find_by, site) do
+      Articles::MetadataPreparationService.stub(:new, ->(*) { redirect_to_existing }) do
+        assert_nothing_raised { GmailArticleJob.perform_now([ site.id ]) }
+      end
+    end
+
+    assert_operator site.reload.last_checked_at, :>, 1.minute.ago
+  end
 end
