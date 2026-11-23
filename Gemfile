@@ -63,7 +63,7 @@ group :development, :test do
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "dotenv-rails"
   gem "faker"
-  gem "i18n-tasks", "~> 1.1.2"
+  gem "i18n-tasks", "~> 1.2.1"
   gem "minitest", "~> 6.0"
   gem "minitest-mock"
   gem "rubocop", require: false
