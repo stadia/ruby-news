@@ -7,7 +7,7 @@ class YoutubeSiteJobTest < ActiveSupport::TestCase
 
   test "YouTube API 쿼터 초과 오류는 job을 실패시키지 않는다" do
     error = youtube_quota_exceeded_error
-    client = Object.new
+    client = Youtube::Channel.allocate
     client.define_singleton_method(:videos) do
       raise error
     end
@@ -73,6 +73,34 @@ class YoutubeSiteJobTest < ActiveSupport::TestCase
 
     assert_enqueued_with(job: YoutubeSiteJob, args: [ [ 1, 2 ] ]) do
       assert_nothing_raised { YoutubeSiteJob.perform_now([ missing_id, 1, 2 ]) }
+    end
+  end
+
+  test "YouTube 클라이언트를 만들지 못한 사이트는 건너뛰고 체인을 이어간다" do
+    site = Object.new
+    site.define_singleton_method(:init_client) { nil }
+
+    site.define_singleton_method(:update) { |**| flunk "조회하지 못했으면 last_checked_at을 갱신하면 안 된다" }
+
+    Site.stub(:find_by, site) do
+      assert_enqueued_with(job: YoutubeSiteJob, args: [ [ 456 ] ]) do
+        YoutubeSiteJob.perform_now([ 123, 456 ])
+      end
+    end
+  end
+
+  test "영상 목록을 받지 못한 사이트는 건너뛰고 체인을 이어간다" do
+    client = Youtube::Channel.allocate
+    client.define_singleton_method(:videos) { nil }
+    site = Object.new
+    site.define_singleton_method(:init_client) { client }
+
+    site.define_singleton_method(:update) { |**| flunk "조회하지 못했으면 last_checked_at을 갱신하면 안 된다" }
+
+    Site.stub(:find_by, site) do
+      assert_enqueued_with(job: YoutubeSiteJob, args: [ [ 456 ] ]) do
+        YoutubeSiteJob.perform_now([ 123, 456 ])
+      end
     end
   end
 end

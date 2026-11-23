@@ -19,13 +19,25 @@ class YoutubeSiteJob < ApplicationJob
     return if site_id.nil?
 
     site = Site.find_by(id: site_id)
-    if site.nil?
-      # 예약 후 삭제된 사이트 하나 때문에 뒤의 사이트 수집까지 끊기지 않도록 건너뛴다.
+    if site
+      crawl(site)
+    else
       logger.warn "site #{site_id} not found, skipping YoutubeSiteJob"
-      YoutubeSiteJob.perform_later(ids) unless ids.empty?
-      return
     end
 
+    # 사이트 하나를 처리하지 못해도 뒤의 사이트 수집은 이어간다. 쿼터 초과만 아래 rescue에서 체인을 멈춘다.
+    YoutubeSiteJob.perform_later(ids) unless ids.empty?
+  rescue Yt::Errors::RequestError => e
+    raise unless youtube_quota_exceeded?(e)
+
+    logger.warn("YoutubeSiteJob stopped because YouTube API quota was exceeded: #{e.message}")
+  end
+
+  private
+
+  # 조회하지 못한 사이트는 last_checked_at을 갱신하지 않아 다음 실행에서 놓친 영상을 다시 본다.
+  #: (Site site) -> void
+  def crawl(site)
     client = site.init_client
     return unless client.is_a?(Youtube::Channel)
 
@@ -43,14 +55,7 @@ class YoutubeSiteJob < ApplicationJob
     end
 
     site.update(last_checked_at: Time.zone.now)
-    YoutubeSiteJob.perform_later(ids) unless ids.empty?
-  rescue Yt::Errors::RequestError => e
-    raise unless youtube_quota_exceeded?(e)
-
-    logger.warn("YoutubeSiteJob stopped because YouTube API quota was exceeded: #{e.message}")
   end
-
-  private
 
   #: (Yt::Errors::RequestError error) -> bool
   def youtube_quota_exceeded?(error)
