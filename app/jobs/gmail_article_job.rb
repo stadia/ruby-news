@@ -74,13 +74,11 @@ class GmailArticleJob < ApplicationJob
   # Creates an article for a given link.
   #: (String link, Site site) -> void
   def create_article(link, site)
-    article = Article.create_with(url: link, site: site, user: User.find_by(username: "bot"))
-                     .find_or_create_by!(origin_url: link)
-
-    if article.previously_new_record?
-      logger.info "Created article for #{link}"
-      sleep 1
-    end
+    # 호출부가 origin_url 존재를 이미 확인했다. find_or_create_by!는 유니크 위반 시 origin_url로 다시 찾다가
+    # 다른 기사와 겹친 url 경합에서 RecordNotFound로 잡을 폐기시키므로, 위반을 그대로 받아 아래에서 기록한다.
+    Article.create!(origin_url: link, url: link, site: site, user: User.find_by(username: "bot"))
+    logger.info "Created article for #{link}"
+    sleep 1
   rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotSaved => e
     logger.error "Failed to create article for #{link}: #{e.message}"
   rescue ActiveRecord::RecordNotUnique => e

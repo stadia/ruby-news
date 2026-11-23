@@ -101,4 +101,30 @@ class GmailArticleJobTest < ActiveSupport::TestCase
 
     assert_operator site.reload.last_checked_at, :>, 1.minute.ago
   end
+
+  # 다른 잡이 exists? 확인과 INSERT 사이에 같은 최종 url을 먼저 저장한 경합(exists?를 false로 고정해 흉내 낸다).
+  test "동시 저장으로 url 유니크 인덱스에 걸려도 잡을 실패시키지 않는다" do
+    User.first.update_columns(username: "bot")
+    existing = articles(:ruby_article)
+    site = sites(:newsletter)
+    site.update!(email: "bot@example.com", last_checked_at: 2.days.ago)
+    client = Gmail.allocate
+    client.define_singleton_method(:fetch_email_links) { |*_args, **_kwargs| [ "https://links.newsletter.dev/c/race" ] }
+    site.define_singleton_method(:init_client) { client }
+    redirect_to_existing = Object.new
+    redirect_to_existing.define_singleton_method(:call) do |article|
+      article.url = existing.url
+      Dry::Monads::Success(article)
+    end
+
+    Site.stub(:find_by, site) do
+      Article.stub(:exists?, false) do
+        Articles::MetadataPreparationService.stub(:new, ->(*) { redirect_to_existing }) do
+          assert_nothing_raised { GmailArticleJob.perform_now([ site.id ]) }
+        end
+      end
+    end
+
+    assert_operator site.reload.last_checked_at, :>, 1.minute.ago
+  end
 end

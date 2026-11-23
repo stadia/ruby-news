@@ -60,7 +60,8 @@ module Articles
       end
 
       # 리다이렉트·정규화로 바뀐 url이 기존 기사와 겹치면(Article#abort_if_prepared_url_taken)
-      # 그 url의 기사가 하나로 정해지므로, 예전 INSERT 위반과 같이 기존 기사로 보낸다.
+      # 그 url의 기사가 하나로 정해지므로 예전 INSERT 위반과 같이 중복으로 돌려준다.
+      # 컨트롤러는 살아 있는 기사면 그 기사로 보내고, 소프트 삭제된 기사면 재등록 불가로 안내한다.
       #: (Article article) -> bool
       def prepared_url_taken?(article)
         article.errors.where(:url, :taken, prepared: true).any?
