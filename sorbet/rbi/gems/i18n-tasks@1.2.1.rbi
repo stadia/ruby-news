@@ -49,7 +49,7 @@ module I18n::Tasks
   end
 end
 
-# pkg:gem/i18n-tasks#lib/i18n/tasks/base_task.rb:25
+# pkg:gem/i18n-tasks#lib/i18n/tasks/base_task.rb:26
 class I18n::Tasks::BaseTask
   include ::I18n::Tasks::SplitKey
   include ::I18n::Tasks::KeyPatternMatching
@@ -66,11 +66,12 @@ class I18n::Tasks::BaseTask
   include ::I18n::Tasks::Configuration
   include ::I18n::Tasks::Data
   include ::I18n::Tasks::Stats
+  include ::I18n::Tasks::Prune
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/base_task.rb:42
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/base_task.rb:44
   def initialize(config_file: T.unsafe(nil), **config); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/base_task.rb:47
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/base_task.rb:49
   def inspect; end
 end
 
@@ -304,66 +305,66 @@ I18n::Tasks::Data::Adapter::YamlAdapter::TRAILING_SPACE_REGEX = T.let(T.unsafe(n
 # pkg:gem/i18n-tasks#lib/i18n/tasks/data.rb:7
 I18n::Tasks::Data::DATA_DEFAULTS = T.let(T.unsafe(nil), Hash)
 
-# pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:8
+# pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:9
 module I18n::Tasks::Data::FileFormats
   mixes_in_class_methods ::I18n::Tasks::Data::FileFormats::ClassMethods
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:13
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:14
   def adapter_dump(tree, format); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:22
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:23
   def adapter_op(op, format, tree, config); end
 
   # @return [Hash]
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:18
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:19
   def adapter_parse(tree, format); end
 
   protected
 
   # @return [Hash]
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:39
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:40
   def load_file(path); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:61
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:64
   def normalized?(path, tree); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:34
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:35
   def read_config(format); end
 
   # @return [String]
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:46
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:47
   def read_file(path); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:30
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:31
   def write_config(format); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:50
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:51
   def write_tree(path, tree, sort = T.unsafe(nil)); end
 
   class << self
-    # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:9
+    # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:10
     def included(base); end
   end
 end
 
-# pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:67
+# pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:70
 module I18n::Tasks::Data::FileFormats::ClassMethods
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:86
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:89
   def adapter_by_name(name); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:74
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:77
   def adapter_name_for_path(path); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:82
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:85
   def adapter_names; end
 
   # @param pattern [String] File.fnmatch pattern
   # @param adapter [responds to parse(string)->hash and dump(hash)->string]
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:70
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/file_formats.rb:73
   def register_adapter(name, pattern, adapter); end
 end
 
@@ -498,19 +499,21 @@ class I18n::Tasks::Data::Router::ConservativeRouter < ::I18n::Tasks::Data::Route
 
   protected
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/router/conservative_router.rb:59
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/router/conservative_router.rb:50
   def adapter; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/router/conservative_router.rb:59
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/router/conservative_router.rb:50
   def base_locale; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/router/conservative_router.rb:51
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/router/conservative_router.rb:41
   def base_tree; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/router/conservative_router.rb:55
-  def key_path(locale, key); end
+  # Looked up by key parts: splitting the dotted key would lose blank keys (e.g. `''`) and split keys containing a dot.
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/router/conservative_router.rb:46
+  def key_path(locale, key_parts); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/router/conservative_router.rb:59
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/router/conservative_router.rb:50
   def locales; end
 end
 
@@ -597,9 +600,19 @@ class I18n::Tasks::Data::Router::PatternRouter
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/router/pattern_router.rb:12
   def routes; end
 
+  protected
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/router/pattern_router.rb:46
+  def pattern_path(locale, key); end
+
+  # @return [Siblings] the subtree of forest holding these leaves, without walking the rest of the forest
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/router/pattern_router.rb:57
+  def select_leaves(forest, leaves); end
+
   private
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/router/pattern_router.rb:55
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/router/pattern_router.rb:67
   def compile_routes(routes); end
 end
 
@@ -694,7 +707,7 @@ class I18n::Tasks::Data::Tree::Node
   def to_hash(sort = T.unsafe(nil)); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/node.rb:164
-  def to_json(*_arg0, **_arg1, &_arg2); end
+  def to_json(*, **, &); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/node.rb:143
   def to_nodes; end
@@ -703,7 +716,7 @@ class I18n::Tasks::Data::Tree::Node
   def to_siblings; end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/node.rb:165
-  def to_yaml(*_arg0, **_arg1, &_arg2); end
+  def to_yaml(*, **, &); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/node.rb:10
   def value; end
@@ -729,7 +742,7 @@ class I18n::Tasks::Data::Tree::Node
     # value can be a nested hash
     #
     # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/node.rb:195
-    def from_key_value(key, value); end
+    def from_key_value(key, value, parent: T.unsafe(nil)); end
   end
 end
 
@@ -759,7 +772,7 @@ class I18n::Tasks::Data::Tree::Nodes
   def attributes; end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/nodes.rb:16
-  def blank?(*_arg0, **_arg1, &_arg2); end
+  def blank?(*, **, &); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/nodes.rb:79
   def children(&block); end
@@ -771,10 +784,10 @@ class I18n::Tasks::Data::Tree::Nodes
   def derive(new_attr = T.unsafe(nil)); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/nodes.rb:16
-  def each(*_arg0, **_arg1, &_arg2); end
+  def each(*, **, &); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/nodes.rb:16
-  def empty?(*_arg0, **_arg1, &_arg2); end
+  def empty?(*, **, &); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/nodes.rb:44
   def inspect; end
@@ -786,7 +799,7 @@ class I18n::Tasks::Data::Tree::Nodes
   def merge!(nodes); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/nodes.rb:16
-  def present?(*_arg0, **_arg1, &_arg2); end
+  def present?(*, **, &); end
 
   # methods below change state
   #
@@ -794,22 +807,22 @@ class I18n::Tasks::Data::Tree::Nodes
   def remove!(node); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/nodes.rb:16
-  def size(*_arg0, **_arg1, &_arg2); end
+  def size(*, **, &); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/nodes.rb:16
-  def to_a(*_arg0, **_arg1, &_arg2); end
+  def to_a(*, **, &); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/nodes.rb:33
   def to_hash(sort = T.unsafe(nil)); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/nodes.rb:41
-  def to_json(*_arg0, **_arg1, &_arg2); end
+  def to_json(*, **, &); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/nodes.rb:18
   def to_nodes; end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/nodes.rb:42
-  def to_yaml(*_arg0, **_arg1, &_arg2); end
+  def to_yaml(*, **, &); end
 
   protected
 
@@ -830,20 +843,25 @@ class I18n::Tasks::Data::Tree::Siblings < ::I18n::Tasks::Data::Tree::Nodes
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:17
   def initialize(opts = T.unsafe(nil)); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:90
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:98
   def [](full_key); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:122
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:130
   def []=(full_key, node); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:142
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:150
   def append(nodes); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:132
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:140
   def append!(nodes); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:25
   def attributes; end
+
+  # @return [Node] by key parts, which may be blank or contain a dot
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:88
+  def dig(first_key, *rest); end
 
   # @return [Node] by full key
   #
@@ -853,17 +871,17 @@ class I18n::Tasks::Data::Tree::Siblings < ::I18n::Tasks::Data::Tree::Nodes
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:15
   def key_to_node; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:155
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:163
   def merge(nodes); end
 
   # @param on_leaves_merge [Proc] invoked when a leaf is merged with another leaf
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:147
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:155
   def merge!(nodes, on_leaves_merge: T.unsafe(nil)); end
 
   # @param on_leaves_merge [Proc] invoked when a leaf is merged with another leaf
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:184
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:192
   def merge_node!(node, on_leaves_merge: T.unsafe(nil)); end
 
   # @param from_pattern [Regexp]
@@ -879,17 +897,17 @@ class I18n::Tasks::Data::Tree::Siblings < ::I18n::Tasks::Data::Tree::Nodes
 
   # methods below change state
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:126
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:134
   def remove!(node); end
 
   # @param nodes [Enumerable] Modified in-place.
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:208
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:216
   def remove_nodes_and_emptied_ancestors(nodes); end
 
   # @param nodes [Enumerable] Modified in-place.
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:214
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:222
   def remove_nodes_and_emptied_ancestors!(nodes); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:29
@@ -900,22 +918,22 @@ class I18n::Tasks::Data::Tree::Siblings < ::I18n::Tasks::Data::Tree::Nodes
 
   # add or replace node by full key
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:93
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:101
   def set(full_key, node); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:175
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:183
   def set_root_key!(new_key, data = T.unsafe(nil)); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:167
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:175
   def subtract_by_key(other); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:171
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:179
   def subtract_by_key!(other); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:159
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:167
   def subtract_keys(keys); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:163
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:171
   def subtract_keys!(keys); end
 
   private
@@ -923,54 +941,54 @@ class I18n::Tasks::Data::Tree::Siblings < ::I18n::Tasks::Data::Tree::Nodes
   # Adds all the ancestors that only contain the given nodes as descendants to the given nodes.
   # @param nodes [Set] Modified in-place.
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:230
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:238
   def add_ancestors_that_only_contain_nodes!(nodes); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:236
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:244
   def conditionally_warn_add_children_to_leaf(node, children); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:221
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:229
   def find_nodes(keys); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:243
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:251
   def warn_add_children_to_leaf(node); end
 
   class << self
-    # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:308
+    # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:316
     def [](hash, opts = T.unsafe(nil)); end
 
-    # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:254
+    # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:262
     def build_forest(opts = T.unsafe(nil), &block); end
 
     # build forest from [[Full Key, Value]]
     #
-    # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:311
+    # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:319
     def from_flat_pairs(pairs); end
 
-    # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:276
+    # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:284
     def from_key_attr(key_attrs, opts = T.unsafe(nil), &block); end
 
-    # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:288
+    # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:296
     def from_key_names(keys, opts = T.unsafe(nil), &block); end
 
     # @param key_occurrences [I18n::Tasks::Scanners::KeyOccurrences]
     # @return [Siblings]
     #
-    # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:265
+    # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:273
     def from_key_occurrences(key_occurrences); end
 
     # build forest from nested hash, e.g. {'es' => { 'common' => { name => 'Nombre', 'age' => 'Edad' } } }
     # this is the native i18n gem format
     #
-    # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:300
+    # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:308
     def from_nested_hash(hash, opts = T.unsafe(nil)); end
 
-    # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:250
+    # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:258
     def null; end
 
     private
 
-    # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:321
+    # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/siblings.rb:329
     def parse_parent_opt!(opts); end
   end
 end
@@ -987,15 +1005,15 @@ module I18n::Tasks::Data::Tree::Traversal
 
   # @return [Set<I18n::Tasks::Data::Tree::Node>]
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/traversal.rb:139
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/traversal.rb:138
   def get_nodes_by_key_filter(root: T.unsafe(nil), &block); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/traversal.rb:163
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/traversal.rb:162
   def grep_keys(match, opts = T.unsafe(nil)); end
 
   # @return [Siblings]
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/traversal.rb:152
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/traversal.rb:151
   def intersect_keys(other_tree, key_opts = T.unsafe(nil), &block); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/traversal.rb:69
@@ -1016,7 +1034,7 @@ module I18n::Tasks::Data::Tree::Traversal
   def levels(&block); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/traversal.rb:9
-  def nodes(&_arg0); end
+  def nodes(&); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/traversal.rb:83
   def root_key_value_data(sort = T.unsafe(nil)); end
@@ -1026,27 +1044,27 @@ module I18n::Tasks::Data::Tree::Traversal
 
   # @return [Siblings]
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/traversal.rb:123
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/traversal.rb:122
   def select_keys(root: T.unsafe(nil), &block); end
 
   # @return [Siblings]
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/traversal.rb:131
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/traversal.rb:130
   def select_keys!(root: T.unsafe(nil), &block); end
 
   # Select the nodes for which the block returns true. Pre-order traversal.
   # @return [Siblings] a new tree
   #
   # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/traversal.rb:93
-  def select_nodes(&block); end
+  def select_nodes(parent: T.unsafe(nil), &block); end
 
   # Select the nodes for which the block returns true. Pre-order traversal.
   # @return [Siblings] self
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/traversal.rb:108
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/traversal.rb:107
   def select_nodes!(&block); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/traversal.rb:169
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/data/tree/traversal.rb:168
   def set_each_value!(val_pattern, key_pattern = T.unsafe(nil), &value_proc); end
 end
 
@@ -1084,8 +1102,28 @@ module I18n::Tasks::Interpolations
   # pkg:gem/i18n-tasks#lib/i18n/tasks/interpolations.rb:10
   def inconsistent_interpolations(locales: T.unsafe(nil), base_locale: T.unsafe(nil)); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/interpolations.rb:34
+  # Plural forms are compared as a group, because a locale has different forms than the base locale, and its forms
+  # cover different counts: the Russian `one` is used for 1, 21, 31, ..., so it needs `%{count}` even when the
+  # English `one` spells the number out. A form may only use the variables of the base forms, and must keep the
+  # variables of the same base form (or of `other` if the base locale does not have it). It may drop `%{count}`
+  # if it is used for at most one count, and must have it if it is used for several. The counts each form is used
+  # for come from the locale's rule in rails-i18n.
+  #
+  # Keys that are not plural forms in the translated group have no base form to compare with, and are skipped.
+  #
+  # @return [Array<I18n::Tasks::Data::Tree::Node>] the inconsistent forms of `node`
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/interpolations.rb:65
+  def inconsistent_plural_forms(locale, base_node, node); end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/interpolations.rb:88
+  def interpolation_variables(value); end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/interpolations.rb:92
   def reserved_interpolations(locales: T.unsafe(nil)); end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/interpolations.rb:82
+  def several_plural_counts?(form_counts, form_key); end
 
   class << self
     # pkg:gem/i18n-tasks#lib/i18n/tasks/interpolations.rb:6
@@ -1095,6 +1133,14 @@ module I18n::Tasks::Interpolations
     def variable_regex=(_arg0); end
   end
 end
+
+# pkg:gem/i18n-tasks#lib/i18n/tasks/interpolations.rb:51
+I18n::Tasks::Interpolations::COUNT_VARIABLE = T.let(T.unsafe(nil), String)
+
+# The forms that are used for at most one count when the locale has no plural rule in rails-i18n.
+#
+# pkg:gem/i18n-tasks#lib/i18n/tasks/interpolations.rb:53
+I18n::Tasks::Interpolations::SINGLE_COUNT_PLURAL_FORMS = T.let(T.unsafe(nil), Array)
 
 # pkg:gem/i18n-tasks#lib/i18n/tasks/key_pattern_matching.rb:5
 module I18n::Tasks::KeyPatternMatching
@@ -1168,7 +1214,7 @@ module I18n::Tasks::Logging
   # pkg:gem/i18n-tasks#lib/i18n/tasks/logging.rb:17
   def log_warn(message); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/logging.rb:33
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/logging.rb:32
   def program_name; end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/logging.rb:9
@@ -1187,7 +1233,7 @@ module I18n::Tasks::Logging
     # pkg:gem/i18n-tasks#lib/i18n/tasks/logging.rb:17
     def log_warn(message); end
 
-    # pkg:gem/i18n-tasks#lib/i18n/tasks/logging.rb:33
+    # pkg:gem/i18n-tasks#lib/i18n/tasks/logging.rb:32
     def program_name; end
 
     # pkg:gem/i18n-tasks#lib/i18n/tasks/logging.rb:9
@@ -1207,21 +1253,16 @@ module I18n::Tasks::MissingKeys
   # @yield [::I18n::Tasks::Data::Tree::Node]
   # @yieldreturn [Boolean] whether to collapse the node
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:147
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:143
   def collapse_same_key_in_locales!(forest); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:31
   def eq_base_keys(opts = T.unsafe(nil)); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:132
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:128
   def equal_values_tree(locale, compare_to = T.unsafe(nil)); end
 
-  # Loads rails-i18n pluralization config for the given locale.
-  #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:90
-  def load_rails_i18n_pluralization!(locale); end
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:140
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:136
   def locale_key_missing?(locale, key); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:38
@@ -1229,7 +1270,7 @@ module I18n::Tasks::MissingKeys
 
   # keys present in compared_to, but not in locale
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:96
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:91
   def missing_diff_tree(locale, compared_to = T.unsafe(nil)); end
 
   # @param types [:used, :diff, :plural] all if `nil`.
@@ -1241,7 +1282,7 @@ module I18n::Tasks::MissingKeys
   # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:16
   def missing_keys_types; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:59
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:60
   def missing_plural_forest(locales, _base = T.unsafe(nil)); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:53
@@ -1249,22 +1290,11 @@ module I18n::Tasks::MissingKeys
 
   # keys used in the code missing translations in locale
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:110
-  def missing_used_tree(locale); end
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:105
+  def missing_used_tree(locale, used: T.unsafe(nil)); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:82
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:83
   def required_plural_keys_for_locale(locale); end
-
-  private
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:189
-  def alternate_locale_from(locale); end
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:176
-  def plural_keys_for_locale(locale); end
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:197
-  def set_from_rails_i18n_pluralization(configuration, locale); end
 
   class << self
     # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:12
@@ -1275,46 +1305,86 @@ end
 # pkg:gem/i18n-tasks#lib/i18n/tasks/missing_keys.rb:6
 I18n::Tasks::MissingKeys::MISSING_TYPES = T.let(T.unsafe(nil), Array)
 
-# pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:4
+# pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:5
 module I18n::Tasks::PluralKeys
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:12
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:13
   def collapse_plural_nodes!(tree); end
 
   # @param [String] key i18n key
   # @param [String] locale to pull key data from
   # @return [String] the base form if the key is a specific plural form (e.g. apple for apple.many), the key otherwise.
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:27
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:28
   def depluralize_key(key, locale = T.unsafe(nil)); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:56
+  # Loads rails-i18n pluralization config for the given locale.
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:81
+  def load_rails_i18n_pluralization!(locale); end
+
+  # @param [String] locale
+  # @param [Array<String>] form_keys the plural forms of a group in the locale
+  # @return [Hash{String => Integer}, nil] how many counts in PLURAL_RULE_COUNTS select each form,
+  #   with the locale's rails-i18n rule, nil if the locale has no rule.
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:93
+  def plural_form_counts(locale, form_keys); end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:57
   def plural_forms?(s); end
 
   # @param [::I18n::Tasks::Data::Tree::Traversal] tree
   # @yieldparam node [::I18n::Tasks::Data::Tree::Node] plural node
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:42
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:43
   def plural_nodes(tree); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:60
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:61
   def plural_suffix?(key); end
+
+  # @param [String] locale
+  # @return [Hash, nil] the rails-i18n plural configuration of the locale (`:keys` and `:rule`), nil if it has none.
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:67
+  def rails_i18n_plural_config(locale); end
+
+  private
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:113
+  def alternate_locale_from(locale); end
+
+  # The form I18n::Backend::Pluralization picks for the count.
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:105
+  def plural_form_for_count(rule, form_keys, count); end
 end
 
 # Ref: http://cldr.unicode.org/index/cldr-spec/plural-rules
 #
-# pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:6
+# pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:7
 I18n::Tasks::PluralKeys::CLDR_CATEGORY_KEYS = T.let(T.unsafe(nil), Array)
 
 # Ref: https://unicode-org.github.io/cldr/ldml/tr35-numbers.html#Explicit_0_1_rules
 #
-# pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:10
+# pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:11
 I18n::Tasks::PluralKeys::EXPLICIT_0_1 = T.let(T.unsafe(nil), Array)
 
-# pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:8
+# pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:9
 I18n::Tasks::PluralKeys::PLURAL_KEY_RE = T.let(T.unsafe(nil), Regexp)
 
-# pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:7
+# pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:8
 I18n::Tasks::PluralKeys::PLURAL_KEY_SUFFIXES = T.let(T.unsafe(nil), Set)
+
+# Counts from 0 up to this cover every plural rule in rails-i18n, as they look at `n % 100` at most.
+#
+# pkg:gem/i18n-tasks#lib/i18n/tasks/plural_keys.rb:87
+I18n::Tasks::PluralKeys::PLURAL_RULE_COUNTS = T.let(T.unsafe(nil), Range)
+
+# pkg:gem/i18n-tasks#lib/i18n/tasks/prune.rb:3
+module I18n::Tasks::Prune
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/prune.rb:4
+  def prunable_keys(base_locale:, locales:); end
+end
 
 # pkg:gem/i18n-tasks#lib/i18n/tasks/references.rb:4
 module I18n::Tasks::References
@@ -1331,14 +1401,14 @@ module I18n::Tasks::References
   # @param [Hash] ref_data
   # @param [I18n::Tasks::Data::Tree::Siblings] new_resolved_refs
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/references.rb:55
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/references.rb:63
   def add_occurences!(ref_data, new_resolved_refs); end
 
   # Given a forest of references, merge trees into one tree, ensuring there are no conflicting references.
   # @param roots [I18n::Tasks::Data::Tree::Siblings]
   # @return [I18n::Tasks::Data::Tree::Siblings]
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/references.rb:79
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/references.rb:87
   def merge_reference_trees(roots); end
 
   # @param [I18n::Tasks::Data::Tree::Node] ref
@@ -1347,7 +1417,7 @@ module I18n::Tasks::References
   # @param [I18n::Tasks::Data::Tree::Siblings] resolved_refs
   # @param [I18n::Tasks::Data::Tree::Siblings] refs
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/references.rb:38
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/references.rb:46
   def process_leaf!(ref, usage, raw_refs, resolved_refs, refs); end
 
   # @param [I18n::Tasks::Data::Tree::Node] ref
@@ -1356,8 +1426,14 @@ module I18n::Tasks::References
   # @param [I18n::Tasks::Data::Tree::Siblings] resolved_refs
   # @param [I18n::Tasks::Data::Tree::Siblings] refs
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/references.rb:69
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/references.rb:77
   def process_non_leaf!(ref, usage, raw_refs, resolved_refs, refs); end
+
+  # Selecting the references of each locale before merging gives the same forest as
+  # data_forest.select_keys, without deep-copying every locale tree first.
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/references.rb:35
+  def reference_trees; end
 end
 
 # This module provides a factory class for creating a Ruby parser instance.
@@ -1389,6 +1465,12 @@ class I18n::Tasks::Scanners::AstMatchers::BaseMatcher
 
   protected
 
+  # Adjacent string literals, e.g. `"a.b" \ ".c"`, and multi-line string literals are parsed
+  # as a `dstr` of `str` parts only: they are as static as a `str`.
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ast_matchers/base_matcher.rb:62
+  def adjacent_string_literals?(node); end
+
   # Extract an array as a single string.
   #
   # @param array_join_with [String] joiner of the array elements.
@@ -1397,7 +1479,7 @@ class I18n::Tasks::Scanners::AstMatchers::BaseMatcher
   # @param array_reject_blank [Boolean] if true, empty strings and `nil`s are skipped.
   # @return [String, nil] `nil` is returned only when a dynamic value is encountered in strict mode.
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ast_matchers/base_matcher.rb:94
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ast_matchers/base_matcher.rb:103
   def extract_array_as_string(node, array_join_with:, array_flatten: T.unsafe(nil), array_reject_blank: T.unsafe(nil)); end
 
   # Extract the whole hash from a node of type `:hash`
@@ -1405,7 +1487,7 @@ class I18n::Tasks::Scanners::AstMatchers::BaseMatcher
   # @param node [AST::Node] a node of type `:hash`.
   # @return [Hash] the whole hash from the node
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ast_matchers/base_matcher.rb:61
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ast_matchers/base_matcher.rb:70
   def extract_hash(node); end
 
   # Extract a hash pair with a given literal key.
@@ -1414,10 +1496,11 @@ class I18n::Tasks::Scanners::AstMatchers::BaseMatcher
   # @param key [String] node key as a string (indifferent symbol-string matching).
   # @return [AST::Node, nil] a node of type `:pair` or nil.
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ast_matchers/base_matcher.rb:78
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ast_matchers/base_matcher.rb:87
   def extract_hash_pair(node, key); end
 
-  # If the node type is of `%i(sym str int false true)`, return the value as a string.
+  # If the node type is of `%i(sym str int false true)`, or a `dstr` of string literals only
+  # (see `adjacent_string_literals?`), return the value as a string.
   # Otherwise, if `config[:strict]` is `false` and the type is of `%i(dstr dsym)`,
   # return the source as if it were a string.
   #
@@ -1430,7 +1513,7 @@ class I18n::Tasks::Scanners::AstMatchers::BaseMatcher
   # @return [String, nil] `nil` is returned only when a dynamic value is encountered in strict mode
   #     or the node type is not supported.
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ast_matchers/base_matcher.rb:27
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ast_matchers/base_matcher.rb:28
   def extract_string(node, array_join_with: T.unsafe(nil), array_flatten: T.unsafe(nil), array_reject_blank: T.unsafe(nil)); end
 end
 
@@ -1475,6 +1558,11 @@ class I18n::Tasks::Scanners::AstMatchers::RailsModelMatcher < ::I18n::Tasks::Sca
   # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ast_matchers/rails_model_matcher.rb:14
   def human_attribute_name_to_key_occurences(send_node:, location:); end
 
+  # Foo::Bar -> "foo/bar", like Rails' model_name.i18n_key
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ast_matchers/rails_model_matcher.rb:78
+  def model_key(const_node); end
+
   # User.model_name.human(count: 2)
   # s(:send,
   #   s(:send,
@@ -1484,10 +1572,10 @@ class I18n::Tasks::Scanners::AstMatchers::RailsModelMatcher < ::I18n::Tasks::Sca
   #       s(:sym, :count),
   #       s(:int, 2))))
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ast_matchers/rails_model_matcher.rb:43
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ast_matchers/rails_model_matcher.rb:57
   def model_name_human_to_key_occurences(send_node:, location:); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ast_matchers/rails_model_matcher.rb:63
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ast_matchers/rails_model_matcher.rb:87
   def underscore(value); end
 end
 
@@ -1541,17 +1629,17 @@ I18n::Tasks::Scanners::ErbAstScanner::DEFAULT_REGEXP = T.let(T.unsafe(nil), Rege
 # @abstract The child must implement {#scan_file}.
 # @since 0.9.0
 #
-# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/file_scanner.rb:10
+# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/file_scanner.rb:11
 class I18n::Tasks::Scanners::FileScanner < ::I18n::Tasks::Scanners::Scanner
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/file_scanner.rb:13
-  def initialize(config: T.unsafe(nil), file_finder_provider: T.unsafe(nil), file_reader: T.unsafe(nil)); end
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/file_scanner.rb:14
+  def initialize(config: T.unsafe(nil), file_finder_provider: T.unsafe(nil), file_reader: T.unsafe(nil), parse_cache: T.unsafe(nil)); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/file_scanner.rb:11
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/file_scanner.rb:12
   def config; end
 
   # @return (see Scanner#keys)
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/file_scanner.rb:25
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/file_scanner.rb:28
   def keys; end
 
   protected
@@ -1559,7 +1647,7 @@ class I18n::Tasks::Scanners::FileScanner < ::I18n::Tasks::Scanners::Scanner
   # @note This method is cached, it will only access the filesystem on the first invocation.
   # @return (see FileFinder#find_files)
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/file_scanner.rb:62
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/file_scanner.rb:65
   def find_files; end
 
   # Read a file. Reads of the same path are cached.
@@ -1567,14 +1655,14 @@ class I18n::Tasks::Scanners::FileScanner < ::I18n::Tasks::Scanners::Scanner
   # @param path [String]
   # @return [String] file contents
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/file_scanner.rb:46
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/file_scanner.rb:49
   def read_file(path); end
 
   # Extract all occurrences of translate calls from the file at the given path.
   #
   # @return [Array<[key, Results::KeyOccurrence]>] each occurrence found in the file
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/file_scanner.rb:38
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/file_scanner.rb:41
   def scan_file(_path); end
 
   # Traverse the paths and yield the matching ones.
@@ -1584,11 +1672,11 @@ class I18n::Tasks::Scanners::FileScanner < ::I18n::Tasks::Scanners::Scanner
   # @yieldparam (see FileFinder#traverse_files)
   # @return (see FileFinder#traverse_files)
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/file_scanner.rb:56
-  def traverse_files(&_arg0); end
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/file_scanner.rb:59
+  def traverse_files(&); end
 end
 
-# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/files/file_finder.rb:3
+# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/files/parse_cache.rb:5
 module I18n::Tasks::Scanners::Files; end
 
 # Finds the files in the specified search paths with support for exclusion / inclusion patterns.
@@ -1678,7 +1766,7 @@ class I18n::Tasks::Scanners::Files::FileFinder
   #     absolute or relative to the working directory.
   # @param only [Array<String>, nil] {File.fnmatch}-compatible patterns files to include.
   #     Files not matching any of the inclusion patterns will be excluded.
-  # @param exclude [Arry<String>] {File.fnmatch}-compatible patterns of files to exclude.
+  # @param exclude [Array<String>] {File.fnmatch}-compatible patterns of files to exclude.
   #     Files matching any of the exclusion patterns will be excluded even if they match an inclusion pattern.
   #
   # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/files/file_finder.rb:16
@@ -1696,17 +1784,38 @@ class I18n::Tasks::Scanners::Files::FileFinder
   # @return [Array<of block results>]
   #
   # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/files/file_finder.rb:29
-  def traverse_files(&_arg0); end
+  def traverse_files(&); end
 
   private
 
+  # Paths found under `.` start with `./`, which neither `*.rb` nor `app/**` match: try them without it too.
   # @param path [String]
-  # @param globs [Array<String>]
+  # @param split_globs [Array(Array<String>, Array<String>)] from {#split_extension_globs}
   # @return [Boolean]
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/files/file_finder.rb:57
-  def path_fnmatch_any?(path, globs); end
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/files/file_finder.rb:58
+  def path_fnmatch_any?(path, split_globs); end
+
+  # `File.fnmatch("*.png", path)` is `path.end_with?(".png")`, except for a path starting with a dot,
+  # which `*` does not match without `File::FNM_DOTMATCH`.
+  # @param path [String]
+  # @param split_globs [Array(Array<String>, Array<String>)] from {#split_extension_globs}
+  # @return [Boolean]
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/files/file_finder.rb:68
+  def path_fnmatch_split_globs?(path, split_globs); end
+
+  # @param globs [Array<String>]
+  # @return [Array(Array<String>, Array<String>)] the suffixes of the extension globs, and the other globs
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/files/file_finder.rb:79
+  def split_extension_globs(globs); end
 end
+
+# ASCII only: `String#end_with?` raises on incompatible encodings, where `File.fnmatch` returns false.
+#
+# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/files/file_finder.rb:75
+I18n::Tasks::Scanners::Files::FileFinder::EXTENSION_GLOB = T.let(T.unsafe(nil), Regexp)
 
 # Reads the files in 'rb' mode and UTF-8 encoding.
 #
@@ -1722,6 +1831,23 @@ class I18n::Tasks::Scanners::Files::FileReader
   #
   # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/files/file_reader.rb:13
   def read_file(path); end
+end
+
+# Keeps the files parsed while {#retain} runs, so that scanning them again
+# (strictly, then non-strictly) does not parse them twice.
+#
+# @note This class is thread-safe.
+#
+# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/files/parse_cache.rb:10
+class I18n::Tasks::Scanners::Files::ParseCache
+  # @param key [Object] identifies the parse, e.g. the scanner class and the path.
+  # @yieldreturn the parse, computed only if not retained.
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/files/parse_cache.rb:20
+  def fetch(key, &); end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/files/parse_cache.rb:11
+  def retain; end
 end
 
 # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/local_ruby_parser.rb:6
@@ -1921,9 +2047,9 @@ class I18n::Tasks::Scanners::PatternWithScopeScanner < ::I18n::Tasks::Scanners::
   def strip_literal(val); end
 end
 
-# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:221
+# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:253
 class I18n::Tasks::Scanners::PrismScanner < ::I18n::Tasks::Scanners::RubyScanner
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:222
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:254
   def initialize(**args); end
 end
 
@@ -1943,138 +2069,166 @@ module I18n::Tasks::Scanners::PrismScanners; end
 
 # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:9
 class I18n::Tasks::Scanners::PrismScanners::ArgumentsVisitor < ::Prism::Visitor
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:36
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:69
   def visit_arguments_node(node); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:32
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:65
   def visit_array_node(node); end
 
   # Cannot handle arguments that are calls
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:20
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:30
   def visit_call_node(_node); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:40
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:24
+  def visit_constant_read_node(node); end
+
+  # Shorthand hash syntax (e.g. `scope:` as shorthand for `scope: scope`) wraps
+  # the implicit value in an ImplicitNode — delegate to the inner node.
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:36
+  def visit_implicit_node(node); end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:73
   def visit_integer_node(node); end
+
+  # Interpolated nodes (e.g. `Product.human_attribute_name("status.#{status}")`) contain dynamic content that cannot
+  # be statically resolved: return nil. Adjacent string literals (e.g. `"a.b" \ ".c"`) are parsed as an
+  # interpolated node too, but are static.
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:51
+  def visit_interpolated_string_node(node); end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:57
+  def visit_interpolated_symbol_node(_node); end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:61
+  def visit_interpolated_x_string_node(_node); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:10
   def visit_keyword_hash_node(node); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:44
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:77
   def visit_lambda_node(node); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:28
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:19
+  def visit_local_variable_read_node(node); end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:44
   def visit_string_node(node); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:24
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/arguments_visitor.rb:40
   def visit_symbol_node(node); end
 end
 
-# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:360
+# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:394
 class I18n::Tasks::Scanners::PrismScanners::ParsedBeforeAction < ::I18n::Tasks::Scanners::PrismScanners::Root
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:363
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:397
   def initialize(node:, parent:, name: T.unsafe(nil), only: T.unsafe(nil), except: T.unsafe(nil)); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:375
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:409
   def applies_to?(method_name); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:361
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:395
   def except; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:361
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:395
   def except=(_arg0); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:361
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:395
   def name; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:361
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:395
   def name=(_arg0); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:361
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:395
   def only; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:361
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:395
   def only=(_arg0); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:387
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:421
   def path; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:391
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:425
   def process; end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:405
+  def support_relative_keys?; end
+end
+
+# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:240
+class I18n::Tasks::Scanners::PrismScanners::ParsedClass < ::I18n::Tasks::Scanners::PrismScanners::Root
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:243
+  def initialize(node:, parent:, rails:); end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:252
+  def add_child(node); end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:344
+  def controller?; end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:348
+  def mailer?; end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:340
+  def path; end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:356
+  def path_name; end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:241
+  def private_method; end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:328
+  def private_methods!; end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:267
+  def process; end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:275
+  def process_controller; end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:336
+  def support_candidate_keys?; end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:332
+  def support_relative_keys?; end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:352
+  def view_component?; end
+end
+
+# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:364
+class I18n::Tasks::Scanners::PrismScanners::ParsedMethod < ::I18n::Tasks::Scanners::PrismScanners::Root
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:365
+  def initialize(node:, parent:, private_method: T.unsafe(nil)); end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:385
+  def name; end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:377
+  def path; end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:389
+  def process; end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:375
+  def support_candidate_keys?(*, **, &); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:371
   def support_relative_keys?; end
 end
 
-# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:214
-class I18n::Tasks::Scanners::PrismScanners::ParsedClass < ::I18n::Tasks::Scanners::PrismScanners::Root
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:217
-  def initialize(node:, parent:, rails:); end
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:226
-  def add_child(node); end
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:318
-  def controller?; end
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:322
-  def mailer?; end
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:314
-  def path; end
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:326
-  def path_name; end
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:215
-  def private_method; end
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:302
-  def private_methods!; end
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:241
-  def process; end
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:249
-  def process_controller; end
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:310
-  def support_candidate_keys?; end
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:306
-  def support_relative_keys?; end
-end
-
-# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:334
-class I18n::Tasks::Scanners::PrismScanners::ParsedMethod < ::I18n::Tasks::Scanners::PrismScanners::Root
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:335
-  def initialize(node:, parent:, private_method: T.unsafe(nil)); end
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:351
-  def name; end
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:347
-  def path; end
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:355
-  def process; end
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:345
-  def support_candidate_keys?(*_arg0, **_arg1, &_arg2); end
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:341
-  def support_relative_keys?; end
-end
-
-# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:200
+# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:226
 class I18n::Tasks::Scanners::PrismScanners::ParsedModule < ::I18n::Tasks::Scanners::PrismScanners::Root
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:205
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:231
   def path; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:209
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:235
   def path_name; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:201
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:227
   def support_relative_keys?; end
 end
 
@@ -2083,13 +2237,13 @@ class I18n::Tasks::Scanners::PrismScanners::Root
   # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:9
   def initialize(node: T.unsafe(nil), parent: T.unsafe(nil), file_path: T.unsafe(nil), rails: T.unsafe(nil)); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:24
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:28
   def add_call(node); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:19
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:23
   def add_child(node); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:28
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:32
   def add_translation_call(translation_call); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:7
@@ -2098,7 +2252,7 @@ class I18n::Tasks::Scanners::PrismScanners::Root
   # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:7
   def children; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:7
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:19
   def file_path; end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:7
@@ -2107,94 +2261,91 @@ class I18n::Tasks::Scanners::PrismScanners::Root
   # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:7
   def parent; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:36
-  def partial_view?; end
-
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:48
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:56
   def path; end
 
   # Only supported for Rails controllers currently
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:64
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:79
   def private_method; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:59
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:74
   def process; end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:7
   def rails; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:32
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:36
   def rails_view?; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:44
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:52
   def support_candidate_keys?; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:40
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:48
   def support_relative_keys?; end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:7
   def translation_calls; end
 end
 
-# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:69
+# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:84
 class I18n::Tasks::Scanners::PrismScanners::TranslationCall
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:73
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:88
   def initialize(node:, key:, receiver:, options:, parent:, candidate_keys: T.unsafe(nil)); end
 
   # Returns either a single key string or an array of candidate key strings for this call.
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:111
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:126
   def full_key; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:71
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:86
   def key; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:71
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:86
   def node; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:106
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:121
   def occurrences(file_path); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:71
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:86
   def options; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:71
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:86
   def parent; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:71
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:86
   def receiver; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:82
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:97
   def relative_key?; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:96
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:111
   def with_node(node); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:86
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:101
   def with_parent(parent); end
 
   private
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:160
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:184
   def occurrence(file_path); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:151
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:166
   def scope; end
 
   # Not supported for Rails views
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:195
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:221
   def support_candidate_keys?; end
 
   # Only public methods are added to the context path
   # Only some classes supports relative keys
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:190
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:216
   def support_relative_keys?; end
 end
 
-# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:70
+# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/nodes.rb:85
 class I18n::Tasks::Scanners::PrismScanners::TranslationCall::ScopeError < ::StandardError; end
 
 # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:14
@@ -2214,63 +2365,84 @@ class I18n::Tasks::Scanners::PrismScanners::Visitor < ::Prism::Visitor
   # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:17
   def current_module; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:33
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:34
   def parent; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:121
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:142
   def process; end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:17
+  def processed_magic_comment_ids; end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:17
   def root; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:90
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:91
   def visit_call_node(node); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:55
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:56
   def visit_class_node(node); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:73
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:74
   def visit_def_node(node); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:37
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:122
+  def visit_keyword_hash_node(node); end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:132
+  def visit_local_variable_write_node(node); end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:38
   def visit_module_node(node); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:50
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:51
   def visit_program_node(node); end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:127
+  def visit_statements_node(node); end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:137
+  def visit_symbol_node(node); end
 
   private
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:139
+  # Prism 2.0 attaches a comment on its own line to the enclosing statements,
+  # Prism 1.x attached it to the next statement, or the previous one at the end.
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:190
+  def commented_node(node, comment); end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:160
   def handle_comments(node); end
 
   # ---- Rails specific methods ----
   # Returns true if the node was handled
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:178
-  def handle_rails_call_node(node, &_arg1); end
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:210
+  def handle_rails_call_node(node, &); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:165
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:197
   def i18n_receiver?(receiver); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:127
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:148
   def process_arguments(node); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:245
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:277
   def rails_handle_before_action(node); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:199
-  def rails_handle_controller_call_node(node, &_arg1); end
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:231
+  def rails_handle_controller_call_node(node, &); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:318
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:359
   def rails_handle_human_attribute_name(node); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:209
-  def rails_handle_mailer_call_node(node, &_arg1); end
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:241
+  def rails_handle_mailer_call_node(node, &); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:278
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:310
   def rails_handle_model_name(node); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:314
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/prism_scanners/visitor.rb:348
   def rails_model_method_called_on_current_class?(node); end
 end
 
@@ -2291,28 +2463,39 @@ module I18n::Tasks::Scanners::RelativeKeys
   private
 
   # Expand a path and add a trailing {File::SEPARATOR}
-  # @param [String] path relative path
+  # @param [String] path relative or absolute path
+  # @param [String] cwd the working directory to expand it against
   # @return [String] absolute path, with a trailing {File::SEPARATOR}.
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/relative_keys.rb:50
-  def expand_path(path); end
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/relative_keys.rb:60
+  def expand_path(path, cwd); end
+
+  # Expanding a relative path reads the working directory, and this runs for each relative key:
+  # the working directory is read once by the caller, and the paths expanded against it are kept.
+  # @param [Array<String>] paths relative or absolute paths
+  # @param [String] cwd the working directory to expand them against
+  # @return [Array<String>] the paths expanded with {#expand_path}
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/relative_keys.rb:52
+  def expand_paths(paths, cwd); end
 
   # Detect the appropriate relative path root
   # @param [String] path /full/path
-  # @param [Array<String>] roots array of full paths
+  # @param [Array<String>] roots relative or absolute paths
+  # @param [String] cwd the working directory to expand the roots against
   # @return [String] the closest ancestor root for path, with a trailing {File::SEPARATOR}.
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/relative_keys.rb:39
-  def path_root(path, roots); end
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/relative_keys.rb:41
+  def path_root(path, roots, cwd); end
 
   # @param normalized_path [String] path/relative/to/a/root
   # @param calling_method [#call, Symbol, String, false, nil]
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/relative_keys.rb:56
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/relative_keys.rb:66
   def prefix(normalized_path, calling_method: T.unsafe(nil)); end
 end
 
-# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/relative_keys.rb:33
+# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/relative_keys.rb:34
 I18n::Tasks::Scanners::RelativeKeys::DOT = T.let(T.unsafe(nil), String)
 
 # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/results/occurrence.rb:5
@@ -2467,9 +2650,9 @@ class I18n::Tasks::Scanners::RubyAstCallFinder
   def on_send(send_node); end
 end
 
-# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:214
+# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:246
 class I18n::Tasks::Scanners::RubyAstScanner < ::I18n::Tasks::Scanners::RubyScanner
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:215
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:247
   def initialize(**args); end
 end
 
@@ -2520,7 +2703,7 @@ class I18n::Tasks::Scanners::RubyScanner < ::I18n::Tasks::Scanners::FileScanner
 
   protected
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:39
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:44
   def ast_parser_parse_file(path); end
 
   # Convert {Parser::AST::Node} to occurrences.
@@ -2528,7 +2711,7 @@ class I18n::Tasks::Scanners::RubyScanner < ::I18n::Tasks::Scanners::FileScanner
   # @param ast {Parser::Source::Comment}
   # @return [nil, [key, Occurrence]] full absolute key name and the occurrence.
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:112
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:117
   def ast_to_occurences(ast); end
 
   # Convert an array of {Parser::Source::Comment} to occurrences.
@@ -2538,7 +2721,7 @@ class I18n::Tasks::Scanners::RubyScanner < ::I18n::Tasks::Scanners::FileScanner
   # @param comments [Parser::Source::Comment]
   # @return [nil, [key, Occurrence]] full absolute key name and the occurrence.
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:73
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:78
   def comments_to_occurences(path, ast, comments); end
 
   # Create an {Parser::Source::Buffer} with the given contents.
@@ -2548,7 +2731,7 @@ class I18n::Tasks::Scanners::RubyScanner < ::I18n::Tasks::Scanners::FileScanner
   # @param contents [String]
   # @return [Parser::Source::Buffer] file contents
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:61
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:66
   def make_buffer(path, contents = T.unsafe(nil)); end
 
   # Parse file on path and returns AST and comments.
@@ -2556,43 +2739,53 @@ class I18n::Tasks::Scanners::RubyScanner < ::I18n::Tasks::Scanners::FileScanner
   # @param path Path to file to parse
   # @return [{Parser::AST::Node}, [Parser::Source::Comment]]
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:50
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:55
   def path_to_ast_and_comments(path); end
 
   # Extract all occurrences of translate calls from the file at the given path.
   # @return [Array<[key, Results::KeyOccurrence]>] each occurrence found in the file
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:170
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:176
   def prism_parse_file(path); end
 
   # This method handles only parsing to be able to test it properly.
   # Therefore it cannot handle the parsing itself.
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:177
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:184
   def process_prism_results(path, parse_results); end
 
   # Extract all occurrences of translate calls from the file at the given path.
   #
   # @return [Array<[key, Results::KeyOccurrence]>] each occurrence found in the file
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:29
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:34
   def scan_file(path); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:137
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:142
   def setup_ast_matchers; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:131
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:136
   def setup_ast_parser; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:205
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:237
   def skip_prism_comment?(comments); end
 end
+
+# Only the magic comments need comments attached to nodes, and they all contain this.
+#
+# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:24
+I18n::Tasks::Scanners::RubyScanner::MAGIC_COMMENT_MARKER = T.let(T.unsafe(nil), String)
 
 # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:22
 I18n::Tasks::Scanners::RubyScanner::MAGIC_COMMENT_PREFIX = T.let(T.unsafe(nil), Regexp)
 
 # pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:17
 I18n::Tasks::Scanners::RubyScanner::MAGIC_COMMENT_SKIP_PRISM = T.let(T.unsafe(nil), String)
+
+# Prism 2.0 attaches comments to nodes while parsing, and removed ParseResult#attach_comments!
+#
+# pkg:gem/i18n-tasks#lib/i18n/tasks/scanners/ruby_scanner.rb:27
+I18n::Tasks::Scanners::RubyScanner::PRISM_PARSE_OPTIONS = T.let(T.unsafe(nil), Hash)
 
 # Describes the API of a scanner.
 #
@@ -2629,7 +2822,7 @@ end
 module I18n::Tasks::SplitKey
   private
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/split_key.rb:50
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/split_key.rb:60
   def last_key_part(key); end
 
   # split a key by dots (.)
@@ -2639,11 +2832,17 @@ module I18n::Tasks::SplitKey
   # split_key 'a.#{b.c}' # => ['a', '#{b.c}']
   # split_key 'a.b.c', 2 # => ['a', 'b.c']
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/split_key.rb:19
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/split_key.rb:20
   def split_key(key, max = T.unsafe(nil)); end
 
+  # Most keys have no parenthesis: String#split gives the same result
+  # without allocating a new string for every character.
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/split_key.rb:54
+  def split_on_dots(key, max); end
+
   class << self
-    # pkg:gem/i18n-tasks#lib/i18n/tasks/split_key.rb:50
+    # pkg:gem/i18n-tasks#lib/i18n/tasks/split_key.rb:60
     def last_key_part(key); end
 
     # split a key by dots (.)
@@ -2653,8 +2852,14 @@ module I18n::Tasks::SplitKey
     # split_key 'a.#{b.c}' # => ['a', '#{b.c}']
     # split_key 'a.b.c', 2 # => ['a', 'b.c']
     #
-    # pkg:gem/i18n-tasks#lib/i18n/tasks/split_key.rb:19
+    # pkg:gem/i18n-tasks#lib/i18n/tasks/split_key.rb:20
     def split_key(key, max = T.unsafe(nil)); end
+
+    # Most keys have no parenthesis: String#split gives the same result
+    # without allocating a new string for every character.
+    #
+    # pkg:gem/i18n-tasks#lib/i18n/tasks/split_key.rb:54
+    def split_on_dots(key, max); end
   end
 end
 
@@ -2666,6 +2871,9 @@ I18n::Tasks::SplitKey::PARENTHESIS_PAIRS = T.let(T.unsafe(nil), Array)
 
 # pkg:gem/i18n-tasks#lib/i18n/tasks/split_key.rb:9
 I18n::Tasks::SplitKey::START_KEYS = T.let(T.unsafe(nil), Set)
+
+# pkg:gem/i18n-tasks#lib/i18n/tasks/split_key.rb:11
+I18n::Tasks::SplitKey::START_KEYS_PATTERN = T.let(T.unsafe(nil), Regexp)
 
 # pkg:gem/i18n-tasks#lib/i18n/tasks/stats.rb:4
 module I18n::Tasks::Stats
@@ -2723,45 +2931,45 @@ class I18n::Tasks::Translators::BaseTranslator
   # Prepare value for translation.
   # @return [String, Array<String, nil>, nil] value for Google Translate or nil for non-string values
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:94
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:88
   def dump_value(value, opts); end
 
   # @param [Array<[String, Object]>] list of key-value pairs
   # @return [Array<[String, Object]>] translated list
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:70
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:58
   def fetch_translations(list, opts); end
 
   # @param [Array<[String, Object]>] list
   # @param [Array<String>] translated_values
   # @return [Array<[String, Object]>] translated key-value pairs
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:86
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:80
   def from_values(list, translated_values, opts); end
 
   # @return [String]
   # @abstract
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:193
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:195
   def no_results_error_message; end
 
   # @return [Hash]
   # @abstract
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:183
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:177
   def options_for_html; end
 
   # @return [Hash]
   # @abstract
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:188
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:182
   def options_for_plain; end
 
   # @param [Hash] options
   # @return [Hash]
   # @abstract
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:178
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:172
   def options_for_translate_values(options); end
 
   # Parse translated value from the each_translated enumerator
@@ -2769,35 +2977,35 @@ class I18n::Tasks::Translators::BaseTranslator
   # @param [Enumerator] each_translated
   # @return [Object] final translated value
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:112
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:106
   def parse_value(untranslated, each_translated, opts); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:159
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:153
   def raise_interpolation_error(untranslated, translated, e); end
 
   # @param [String] value
   # @return [String] 'hello, %{name}' => 'hello, <round-trippable string>'
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:137
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:131
   def replace_interpolations(value); end
 
   # @param [String] untranslated
   # @param [String] translated
   # @return [String] 'hello, <round-trippable string>' => 'hello, %{name}'
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:148
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:142
   def restore_interpolations(untranslated, translated); end
 
   # @param [Array<[String, Object]>] list of key-value pairs
   # @return [Array<String>] values for translation extracted from list
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:79
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:73
   def to_values(list, opts); end
 
   # @param [Array<[String, Object]>] list of key-value pairs
   # @return [Array<[String, Object]>] translated list
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:48
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:34
   def translate_pairs(list, opts); end
 
   # @param [Array<String>] list
@@ -2805,73 +3013,84 @@ class I18n::Tasks::Translators::BaseTranslator
   # @return [Array<String>]
   # @abstract
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:172
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:166
   def translate_values(list, **options); end
+
+  # @param [Array<[String, Object]>] list
+  # @param [Hash] options
+  # @return [Array<Array<[String, Object]>>]
+  # @abstract
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:189
+  def translation_batches(list, _options); end
 end
 
-# pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:133
+# pkg:gem/i18n-tasks#lib/i18n/tasks/translators/base_translator.rb:127
 I18n::Tasks::Translators::BaseTranslator::INTERPOLATION_KEY_RE = T.let(T.unsafe(nil), Regexp)
 
 # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:6
 class I18n::Tasks::Translators::DeeplTranslator < ::I18n::Tasks::Translators::BaseTranslator
   # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:12
-  def initialize(*_arg0); end
+  def initialize(*); end
 
   protected
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:75
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:78
   def no_results_error_message; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:50
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:49
   def options_for_html; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:54
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:53
   def options_for_plain; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:44
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:43
   def options_for_translate_values(**options); end
 
   # @param [String] value
   # @return [String] 'hello, %{name}' => 'hello, <i18n>%{name}</i18n>'
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:60
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:63
   def replace_interpolations(value); end
 
   # @param [String] untranslated
   # @param [String] translated
   # @return [String] 'hello, <i18n>%{name}</i18n>' => 'hello, %{name}'
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:67
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:70
   def restore_interpolations(untranslated, translated); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:24
   def translate_values(list, from:, to:, **options); end
 
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:57
+  def translation_batches(list, _options); end
+
   private
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:122
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:125
   def all_ready_glossaries; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:101
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:104
   def configure_api_key!; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:126
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:129
   def find_glossary(from, to); end
 
   # The Free API endpoint doesn’t expose glossaries via DeepL.glossaries.list,
   # so if no API-backed glossary is found, fall back to the first ID from i18n-config.yml.
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:116
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:119
   def options_with_glossary(options, from, to); end
 
   # Convert 'es-ES' to 'ES', en-us to EN
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:82
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:85
   def to_deepl_source_locale(locale); end
 
   # Convert 'es-ES' to 'ES' but warn about locales requiring a specific variant
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:87
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/deepl_translator.rb:90
   def to_deepl_target_locale(locale); end
 end
 
@@ -2888,11 +3107,11 @@ I18n::Tasks::Translators::DeeplTranslator::SPECIFIC_TARGETS = T.let(T.unsafe(nil
 # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:12
 class I18n::Tasks::Translators::GoogleTranslator < ::I18n::Tasks::Translators::BaseTranslator
   # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:23
-  def initialize(*_arg0); end
+  def initialize(*); end
 
   protected
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:63
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:93
   def no_results_error_message; end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:55
@@ -2907,27 +3126,36 @@ class I18n::Tasks::Translators::GoogleTranslator < ::I18n::Tasks::Translators::B
   # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:29
   def translate_values(list, **options); end
 
+  # Batches pairs by the request limits so a failed request only skips its own keys.
+  # A single pair can exceed the limits (e.g. a large array value), see #batch_texts.
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:65
+  def translation_batches(list, options); end
+
   private
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:69
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:99
   def api_key; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:127
+  # Splits texts to stay within the request limits. Needed because #translation_batches
+  # cannot split a single pair, as its translated values are mapped back to it.
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:156
   def batch_texts(texts); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:209
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:236
   def handle_error_response(response); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:171
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:199
   def make_request(uri, body); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:189
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:216
   def parse_response(response, expected_count); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:85
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:115
   def replace_newlines_with_placeholder(list); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:93
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:123
   def restore_newlines(translations, html:); end
 
   # @param texts [Array<String>] texts to translate
@@ -2937,10 +3165,10 @@ class I18n::Tasks::Translators::GoogleTranslator < ::I18n::Tasks::Translators::B
   # @param from [String] source language code
   # @return [Array<String>] translated texts
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:110
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:140
   def translate(texts:, api_key:, to:, html:, from: T.unsafe(nil)); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:151
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/google_translator.rb:179
   def translate_batch(texts:, api_key:, to:, from:, html:); end
 end
 
@@ -2967,9 +3195,9 @@ class I18n::Tasks::Translators::OpenAiTranslator < ::I18n::Tasks::Translators::B
   include ::I18n::Tasks::Data::LanguageNames
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:29
-  def initialize(*_arg0); end
+  def initialize(*); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:53
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:57
   def no_results_error_message; end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:45
@@ -2981,33 +3209,39 @@ class I18n::Tasks::Translators::OpenAiTranslator < ::I18n::Tasks::Translators::B
   # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:38
   def options_for_translate_values(from:, to:, **options); end
 
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:53
+  def translation_batches(list, _options); end
+
   private
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:63
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:67
   def api_key; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:126
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:140
   def build_messages(values, from, to); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:90
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:98
   def locale_prompts; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:72
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:76
   def model; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:80
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:84
+  def reasoning_effort; end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:88
   def system_prompt(to_locale); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:76
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:80
   def temperature; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:107
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:110
   def translate(values, from, to); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:94
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:102
   def translate_values(list, from:, to:); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:59
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/openai_translator.rb:63
   def translator; end
 end
 
@@ -3024,7 +3258,7 @@ I18n::Tasks::Translators::OpenAiTranslator::JSON_FORMAT_INSTRUCTIONS_SYSTEM_PROM
 
 # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:7
 class I18n::Tasks::Translators::WatsonxTranslator < ::I18n::Tasks::Translators::BaseTranslator
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:42
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:46
   def no_results_error_message; end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:34
@@ -3036,27 +3270,30 @@ class I18n::Tasks::Translators::WatsonxTranslator < ::I18n::Tasks::Translators::
   # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:27
   def options_for_translate_values(from:, to:, **options); end
 
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:42
+  def translation_batches(list, _options); end
+
   private
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:52
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:56
   def api_key; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:73
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:77
   def model; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:61
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:65
   def project_id; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:77
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:81
   def system_prompt; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:95
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:93
   def translate(values, from, to); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:81
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:85
   def translate_values(list, from:, to:); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:48
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:52
   def translator; end
 end
 
@@ -3071,11 +3308,11 @@ I18n::Tasks::Translators::WatsonxTranslator::DEFAULT_SYSTEM_PROMPT = T.let(T.uns
 # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/yandex_translator.rb:6
 class I18n::Tasks::Translators::YandexTranslator < ::I18n::Tasks::Translators::BaseTranslator
   # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/yandex_translator.rb:7
-  def initialize(*_arg0); end
+  def initialize(*); end
 
   protected
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/yandex_translator.rb:41
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/yandex_translator.rb:45
   def no_results_error_message; end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/yandex_translator.rb:33
@@ -3090,17 +3327,20 @@ class I18n::Tasks::Translators::YandexTranslator < ::I18n::Tasks::Translators::B
   # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/yandex_translator.rb:18
   def translate_values(list, **options); end
 
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/yandex_translator.rb:41
+  def translation_batches(list, _options); end
+
   private
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/yandex_translator.rb:58
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/yandex_translator.rb:62
   def api_key; end
 
   # Convert 'es-ES' to 'es'
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/yandex_translator.rb:48
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/yandex_translator.rb:52
   def to_yandex_compatible_locale(locale); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/yandex_translator.rb:54
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/yandex_translator.rb:58
   def translator; end
 end
 
@@ -3110,32 +3350,46 @@ module I18n::Tasks::UnusedKeys
   def unused_keys(locales: T.unsafe(nil), strict: T.unsafe(nil)); end
 
   # @param [String] locale
-  # @param [Boolean] strict if true, do not match dynamic keys
+  # @param [Boolean, nil] strict if true, do not match dynamic keys. Defaults to `search.strict`.
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/unused_keys.rb:15
-  def unused_tree(locale: T.unsafe(nil), strict: T.unsafe(nil)); end
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/unused_keys.rb:19
+  def unused_tree(locale: T.unsafe(nil), strict: T.unsafe(nil), used_key_names: T.unsafe(nil)); end
+
+  private
+
+  # A key is considered used if it is directly used, or if one of its ancestors is used
+  # (e.g. `t(:section)` covers `section.item.title`).
+  #
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/unused_keys.rb:39
+  def key_used?(key, used_key_names); end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/unused_keys.rb:32
+  def unused_forest(locales, strict:); end
 end
 
 # pkg:gem/i18n-tasks#lib/i18n/tasks/used_keys.rb:17
 module I18n::Tasks::UsedKeys
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/used_keys.rb:122
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/used_keys.rb:123
   def caching_file_finder_provider; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/used_keys.rb:126
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/used_keys.rb:131
   def caching_file_reader; end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/used_keys.rb:110
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/used_keys.rb:111
   def merge_scanner_configs(a, b); end
+
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/used_keys.rb:127
+  def parse_cache; end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/used_keys.rb:69
   def scanner(strict: T.unsafe(nil)); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/used_keys.rb:91
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/used_keys.rb:92
   def search_config; end
 
   # @return [Boolean] whether the key is potentially used in a code expression such as `t("category.#{category_key}")`
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/used_keys.rb:131
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/used_keys.rb:136
   def used_in_expr?(key); end
 
   # pkg:gem/i18n-tasks#lib/i18n/tasks/used_keys.rb:55
@@ -3156,7 +3410,7 @@ module I18n::Tasks::UsedKeys
   # keys in the source that end with a ., e.g. t("category.#{ cat.i18n_key }") or t("category." + category.key)
   # @param [String] replacement for interpolated values.
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/used_keys.rb:145
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/used_keys.rb:150
   def expr_key_re(replacement: T.unsafe(nil)); end
 
   # Replace interpolations in dynamic keys such as "category.#{category.i18n_key}".
@@ -3164,13 +3418,13 @@ module I18n::Tasks::UsedKeys
   # @param replacement [String]
   # @return [String]
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/used_keys.rb:165
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/used_keys.rb:170
   def replace_key_exp(key, replacement); end
 
   # @param strict [Boolean, nil]
   # @return [Boolean]
   #
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/used_keys.rb:139
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/used_keys.rb:144
   def strict?(strict); end
 end
 
@@ -3183,22 +3437,22 @@ I18n::Tasks::UsedKeys::SEARCH_DEFAULTS = T.let(T.unsafe(nil), Hash)
 # pkg:gem/i18n-tasks#lib/i18n/tasks/version.rb:5
 I18n::Tasks::VERSION = T.let(T.unsafe(nil), String)
 
-# pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:119
+# pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:117
 class WatsonxClient
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:123
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:121
   def initialize(key:); end
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:139
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:137
   def generate_text(**opts); end
 
   private
 
-  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:145
+  # pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:143
   def token(key); end
 end
 
-# pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:121
+# pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:119
 WatsonxClient::IBM_CLOUD_IAM_URL = T.let(T.unsafe(nil), String)
 
-# pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:120
+# pkg:gem/i18n-tasks#lib/i18n/tasks/translators/watsonx_translator.rb:118
 WatsonxClient::WATSONX_BASE_URL = T.let(T.unsafe(nil), String)
