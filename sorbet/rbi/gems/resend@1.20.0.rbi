@@ -46,16 +46,16 @@ end
 # pkg:gem/resend#lib/resend/version.rb:3
 module Resend
   class << self
-    # pkg:gem/resend#lib/resend.rb:60
+    # pkg:gem/resend#lib/resend.rb:61
     def api_key; end
 
-    # pkg:gem/resend#lib/resend.rb:60
+    # pkg:gem/resend#lib/resend.rb:61
     def api_key=(_arg0); end
 
-    # pkg:gem/resend#lib/resend.rb:66
+    # pkg:gem/resend#lib/resend.rb:67
     def config; end
 
-    # pkg:gem/resend#lib/resend.rb:62
+    # pkg:gem/resend#lib/resend.rb:63
     def configure; end
   end
 end
@@ -194,7 +194,7 @@ end
 
 # @deprecated Use Segments instead
 #
-# pkg:gem/resend#lib/resend.rb:70
+# pkg:gem/resend#lib/resend.rb:71
 Resend::Audiences = Resend::Segments
 
 # automations api wrapper
@@ -737,10 +737,13 @@ module Resend::Domains
     # pkg:gem/resend#lib/resend/domains.rb:14
     def update(params); end
 
+    # Triggers domain verification. Pass `scope: ["forge"]` to re-check only
+    # the Forge record; without a scope the whole domain is verified.
+    #
     # https://resend.com/docs/api-reference/domains/verify-domain
     #
-    # pkg:gem/resend#lib/resend/domains.rb:38
-    def verify(domain_id = T.unsafe(nil)); end
+    # pkg:gem/resend#lib/resend/domains.rb:41
+    def verify(domain_id = T.unsafe(nil), params = T.unsafe(nil)); end
   end
 end
 
@@ -788,6 +791,28 @@ module Resend::Domains::Claims
     #
     # pkg:gem/resend#lib/resend/domains/claims.rb:49
     def verify(domain_id = T.unsafe(nil)); end
+  end
+end
+
+# Domain Forge API wrapper
+#
+# pkg:gem/resend#lib/resend/domains/forge.rb:6
+module Resend::Domains::Forge
+  class << self
+    # Activate Forge on a domain. Returns the full domain, in the same shape
+    # as Resend::Domains.get. Enabling a domain that is already migrated is
+    # idempotent and returns its current state.
+    #
+    # @param params [Hash] the parameters
+    # @option params [String] :id the ID of the domain (required)
+    # @option params [String] :custom_return_path subdomain for the Return-Path address,
+    #   validated like :custom_return_path on Resend::Domains.create. When omitted, the
+    #   server picks a free DNS label. Set once: it cannot be changed afterwards.
+    #
+    # https://resend.com/docs/api-reference/domains/enable-forge
+    #
+    # pkg:gem/resend#lib/resend/domains/forge.rb:20
+    def enable(params); end
   end
 end
 
