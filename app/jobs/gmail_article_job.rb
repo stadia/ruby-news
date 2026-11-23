@@ -12,11 +12,17 @@ class GmailArticleJob < ApplicationJob
   # Performs the job for a given site ID.
   #: (Array[Integer] | Integer ids) -> void
   def perform(ids)
-    ids = [ ids ] unless ids.is_a?(Array)
-    site_id = ids.shift
+    # ids는 Active Job의 arguments와 같은 객체라 shift로 바꾸면 재시도에서 현재 사이트가 빠진다.
+    site_id, *ids = Array(ids)
     return if site_id.nil?
 
-    site = Site.find(site_id)
+    site = Site.find_by(id: site_id)
+    if site.nil?
+      # 예약 후 삭제된 사이트 하나 때문에 뒤의 사이트 수집까지 끊기지 않도록 건너뛴다.
+      logger.warn "site #{site_id} not found, skipping GmailArticleJob"
+      GmailArticleJob.perform_later(ids) unless ids.empty?
+      return
+    end
     return if site.email.blank?
 
     links = fetch_new_email_links(site)

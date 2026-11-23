@@ -19,4 +19,22 @@ class RssSitePageJobTest < ActiveSupport::TestCase
   test "빈 ID 배열은 오류 없이 종료한다" do
     assert_nothing_raised { RssSitePageJob.perform_now([]) }
   end
+
+  test "삭제된 사이트는 건너뛰고 나머지 ID로 체인을 이어간다" do
+    missing_id = Site.maximum(:id).to_i + 1000
+
+    assert_enqueued_with(job: RssSitePageJob, args: [ [ 1, 2 ] ]) do
+      assert_nothing_raised { RssSitePageJob.perform_now([ missing_id, 1, 2 ]) }
+    end
+  end
+
+  test "DB 연결 오류로 재시도하면 처리하던 사이트 ID를 그대로 다시 예약한다" do
+    raise_connection_error = ->(*) { raise ActiveRecord::ConnectionNotEstablished, "down" }
+
+    Site.stub(:find_by, raise_connection_error) do
+      assert_enqueued_with(job: RssSitePageJob, args: [ [ 1, 2 ] ]) do
+        RssSitePageJob.perform_now([ 1, 2 ])
+      end
+    end
+  end
 end

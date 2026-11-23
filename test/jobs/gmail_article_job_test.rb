@@ -25,7 +25,7 @@ class GmailArticleJobTest < ActiveSupport::TestCase
     original_checked_at = site.last_checked_at
     site.define_singleton_method(:init_client) { nil }
 
-    Site.stub(:find, site) do
+    Site.stub(:find_by, site) do
       assert_nothing_raised { GmailArticleJob.perform_now([ site.id ]) }
     end
 
@@ -39,7 +39,7 @@ class GmailArticleJobTest < ActiveSupport::TestCase
     client.define_singleton_method(:fetch_email_links) { |*_args, **_kwargs| [] }
     site.define_singleton_method(:init_client) { client }
 
-    Site.stub(:find, site) do
+    Site.stub(:find_by, site) do
       GmailArticleJob.perform_now([ site.id ])
     end
 
@@ -54,10 +54,28 @@ class GmailArticleJobTest < ActiveSupport::TestCase
     client.define_singleton_method(:fetch_email_links) { |*_args, **_kwargs| [ "http://10.0.0.5/internal-link" ] }
     site.define_singleton_method(:init_client) { client }
 
-    Site.stub(:find, site) do
+    Site.stub(:find_by, site) do
       assert_nothing_raised { GmailArticleJob.perform_now([ site.id ]) }
     end
 
     assert_operator site.reload.last_checked_at, :>, 1.minute.ago
+  end
+
+  test "삭제된 사이트는 건너뛰고 나머지 ID로 체인을 이어간다" do
+    missing_id = Site.maximum(:id).to_i + 1000
+
+    assert_enqueued_with(job: GmailArticleJob, args: [ [ 1, 2 ] ]) do
+      assert_nothing_raised { GmailArticleJob.perform_now([ missing_id, 1, 2 ]) }
+    end
+  end
+
+  test "DB 연결 오류로 재시도하면 처리하던 사이트 ID를 그대로 다시 예약한다" do
+    raise_connection_error = ->(*) { raise ActiveRecord::ConnectionNotEstablished, "down" }
+
+    Site.stub(:find_by, raise_connection_error) do
+      assert_enqueued_with(job: GmailArticleJob, args: [ [ 1, 2 ] ]) do
+        GmailArticleJob.perform_now([ 1, 2 ])
+      end
+    end
   end
 end
