@@ -593,7 +593,7 @@ GEM
       packwerk (>= 3)
       railties (>= 6.0.0)
       zeitwerk
-    pagy (43.8.2)
+    pagy (43.8.4)
       json
       uri
       yaml
@@ -1066,7 +1066,7 @@ DEPENDENCIES
   ostruct
   packwerk (~> 3.3)
   packwerk-extensions (~> 0.4)
-  pagy (~> 43.6)
+  pagy (~> 43.8)
   pg (~> 1.7)
   pg_query
   pg_search

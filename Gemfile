@@ -106,7 +106,7 @@ group :test do
 end
 
 gem "google-protobuf", require: false
-gem "pagy", "~> 43.6" # omit patch digit
+gem "pagy", "~> 43.8" # omit patch digit
 gem "sorbet-runtime"
 # silence Ruby 3.4 warnings
 gem "acts-as-taggable-on"
