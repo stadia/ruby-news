@@ -32,7 +32,7 @@ AI 에이전트를 위한 프로젝트 룰북입니다.
 - 서비스 객체를 만들거나 수정할 때는 기존 `OperationService` 을 상속하여 ROP 패턴을 따른다. 단순한 유틸리티성 서비스는 `class << self` 를 사용한 함수 모듈로 작성한다.
 - 소셜 미디어 연동 코드는 `SocialMediaService` 기반 구조와 플랫폼별 서비스 분리를 유지한다.
 - 변경을 마무리하기 전에 테스트 여부와 미실행 사유를 명확히 남긴다.
-- **젬을 올리면(`bundle update`, `bundle add`, Gemfile 수정) 같은 커밋에서 `bin/tapioca gem`을 돌린다.** `srb tc`는 `sorbet/rbi/gems`의 파일을 그대로 읽을 뿐 Gemfile.lock과 맞는지 묻지 않아, RBI 드리프트는 로컬에서 전혀 보이지 않다가 CI의 `tapioca gem --verify`에서 터진다. `Gemfile.lock`이 스테이징되면 lefthook의 `tapioca-gem-drift` 훅이 이를 검사한다(검증만 하고 재생성은 하지 않는다).
+- **젬을 올리면(`bundle update`, `bundle add`, Gemfile 수정) 같은 커밋에서 `bin/tapioca gem`을 돌린다.** `srb tc`는 `sorbet/rbi/gems`의 파일을 그대로 읽을 뿐 Gemfile.lock과 맞는지 묻지 않아, RBI 드리프트는 로컬에서 전혀 보이지 않다가 CI의 `tapioca gem --verify`에서 터진다. `Gemfile.lock`이 스테이징되면 lefthook의 `tapioca-gem-drift` 훅이 이를 검사한다(검증만 하고 재생성은 하지 않는다). 로컬 생성은 herb·reactionview RBS 리라이터 우회 패치가 필요하다: `RUBYOPT="-r$PWD/sorbet/tapioca/skip_broken_rbs_rewrite.rb" bin/tapioca gem`. Dependabot bundler PR은 `.github/workflows/dependabot-rbi.yml`이 같은 방식으로 RBI를 재생성해 커밋하고 CI를 다시 돌린다.
 - **`db/schema.rb`는 커밋 대상이다. 마이그레이션을 추가하면 덤프된 schema.rb를 같은 커밋에 넣는다.** CI는 두 가지를 검사한다. `Check db/schema.rb round-trips`는 커밋된 schema.rb를 로드한 뒤 다시 덤프해도 같은지를 본다. `Check db/schema.rb matches migrations`는 schema.rb 없이 새 DB에 전체 마이그레이션을 돌린 덤프가 커밋된 파일(`git show HEAD:db/schema.rb`)과 같은지를 본다.
   - **커밋할 schema.rb는 schema.rb를 치운 새 DB에서 전체 마이그레이션을 돌려 얻은 덤프여야 한다.** 평소 쓰는 개발 DB의 덤프에는 로컬 드리프트(#934)가 섞여 CI diff가 실패한다. PostgreSQL 메이저 버전(18)과 확장 구성(ra-pg 이미지)도 CI와 맞춘다. 제약식 역파싱과 `enable_extension` 목록이 환경에 따라 달라진다.
     ```sh

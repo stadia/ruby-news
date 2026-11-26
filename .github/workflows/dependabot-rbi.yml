@@ -1,0 +1,91 @@
+name: Dependabot RBI
+
+# Dependabot은 Gemfile.lock만 올리고 sorbet/rbi/gems는 그대로 둔다. 그래서 CI typecheck의
+# `tapioca gem --verify`가 실패한다(#1190). Dependabot의 bundler PR에서 바뀐 젬의 RBI만 재생성해
+# 같은 브랜치에 커밋한다.
+on:
+  pull_request:
+    paths:
+      - Gemfile.lock
+
+permissions: {}
+
+concurrency:
+  group: dependabot-rbi-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  regenerate:
+    # Dependabot이 열고 Dependabot이 push한 경우만 돈다. 이 잡의 커밋(github-actions[bot])은
+    # GITHUB_TOKEN push라 워크플로를 다시 깨우지 않으므로 루프가 생기지 않는다.
+    if: github.actor == 'dependabot[bot]' && github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write # RBI 커밋 push
+      actions: write # CI 재실행(workflow_dispatch)
+
+    # require.rb가 config/environment로 앱을 부팅하므로 boundaries 잡과 같은 DB·libvips를 준비한다.
+    # development 환경은 로컬 .env를 전제하므로 test 환경으로 부팅한다(로컬 비교에서 생성 RBI가 같았다).
+    env:
+      RAILS_ENV: test
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/ra-news_test
+      PGGSSENCMODE: disable
+
+    services:
+      postgres:
+        image: ghcr.io/stadia/ra-pg:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libvips-dev
+
+      - name: Prepare database
+        run: bin/rails db:create:primary db:schema:load:primary
+
+      # 인자 없이 돌리면 Gemfile.lock과 버전이 다른 젬만 생성하고, 빠진 젬의 RBI는 지운다.
+      - name: Regenerate gem RBIs
+        run: RUBYOPT="-r$PWD/sorbet/tapioca/skip_broken_rbs_rewrite.rb" bin/tapioca gem -e test
+
+      # 패치가 Spoom::Sorbet::Translate에 prepend되므로 spoom RBI를 재생성하면 extend가 새어 들어간다.
+      - name: Strip patch leak
+        run: sed -i '/extend ::SkipBrokenRbsRewrite/d' sorbet/rbi/gems/*.rbi
+
+      - name: Commit and re-run CI
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          git add -A sorbet/rbi/gems
+          if git diff --cached --quiet; then
+            echo "RBI가 이미 최신이다."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(sorbet): Dependabot 업데이트에 맞춰 gem RBI 재생성"
+          git push origin "HEAD:$HEAD_REF"
+          # GITHUB_TOKEN push는 pull_request 이벤트를 만들지 않아 새 커밋에 CI가 붙지 않는다.
+          # workflow_dispatch는 예외라 직접 깨운다.
+          gh workflow run ci.yml --ref "$HEAD_REF"
