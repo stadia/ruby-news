@@ -105,6 +105,12 @@ class Users::RegistrationsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[name='user[password]']"
   end
 
+  test "GET password without session redirects to login" do
+    get account_password_path
+
+    assert_redirected_to new_user_session_path
+  end
+
   test "PATCH update with invalid profile params rerenders edit page" do
     sign_in_as(@user)
 

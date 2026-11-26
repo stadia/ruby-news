@@ -4,8 +4,9 @@
 
 class Users::RegistrationsController < Devise::RegistrationsController
   layout -> { Components::Layout }
-  before_action :authenticate_user!, only: %i[edit password update destroy]
-  before_action :set_current_user_resource, only: %i[edit password update destroy]
+  # Devise 컨트롤러 안의 authenticate_user!는 force 없이 아무것도 하지 않는다. 대신 Devise의 authenticate_scope!
+  # (force 인증 + resource 설정)를 password에도 건다. 같은 콜백을 다시 선언하면 Devise의 only 목록을 덮으므로 모두 적는다.
+  prepend_before_action :authenticate_scope!, only: %i[edit password update destroy]
 
   def new
     build_resource
@@ -80,10 +81,6 @@ class Users::RegistrationsController < Devise::RegistrationsController
   def safe_signup_host
     host = request.host.to_s.downcase
     User::SUPPORTED_SIGNUP_HOSTS.include?(host) ? host : User::SUPPORTED_SIGNUP_HOSTS.first
-  end
-
-  def set_current_user_resource
-    self.resource = current_user
   end
 
   def updating_password?
