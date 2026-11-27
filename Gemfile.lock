@@ -834,7 +834,7 @@ GEM
       logger
     ruby2ruby (2.6.2)
       sexp_processor (~> 4.6)
-    ruby_llm (2.2.1)
+    ruby_llm (2.2.3)
       base64
       faraday (>= 1.10.0, != 2.0.0)
       faraday-multipart (>= 1)
